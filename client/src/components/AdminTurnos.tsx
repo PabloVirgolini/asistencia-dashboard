@@ -397,7 +397,7 @@ export default function AdminTurnos() {
                     <Label className="text-slate-700 font-semibold flex items-center gap-2">
                       <Building className="w-4 h-4 text-slate-400" /> Sector
                     </Label>
-                    <Select value={selectedSector} onValueChange={setSelectedSector}>
+                    <Select value={selectedSector} onValueChange={(val) => { setSelectedSector(val); setSelectedCargos([]); }}>
                       <SelectTrigger className="bg-white shadow-sm border-slate-200"><SelectValue placeholder="Seleccionar sector..." /></SelectTrigger>
                       <SelectContent>
                         {sectores?.map((s: any) => (
@@ -411,8 +411,20 @@ export default function AdminTurnos() {
                       <Briefcase className="w-4 h-4 text-slate-400" /> Cargos
                     </Label>
                     <div className="bg-white border border-slate-200 rounded-lg p-3 max-h-48 overflow-y-auto shadow-sm">
-                      {cargos?.map((c: any) => (
-                        <div key={c.id_cargo} className="flex items-center space-x-3 mb-2 last:mb-0">
+                      {!selectedSector ? (
+                        <p className="text-sm text-slate-400">Selecciona un sector primero</p>
+                      ) : (
+                        cargos
+                          ?.filter((c: any) => {
+                            // Filtramos los cargos que estén asignados a personas del sector seleccionado
+                            const personasDelSector = personal?.filter((p: any) => p.sectorPertenencia?.toString() === selectedSector);
+                            if (!personasDelSector || personasDelSector.length === 0) return true; // Si no hay personal en el sector, mostramos todos por default o los permitimos? 
+                            // O podríamos obligar a que exista personal con ese cargo. 
+                            // Mejor: Dejamos pasar si el cargo existe en personasDelSector
+                            return personasDelSector.some((p: any) => p.cargo_id === c.id_cargo);
+                          })
+                          .map((c: any) => (
+                            <div key={c.id_cargo} className="flex items-center space-x-3 mb-2 last:mb-0">
                           <input
                             type="checkbox"
                             id={`cargo-${c.id_cargo}`}
@@ -489,7 +501,7 @@ export default function AdminTurnos() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end p-6 bg-white rounded-xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]">
               <div className="lg:col-span-6 space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-start gap-4">
                   <Label className="text-slate-700 font-semibold flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-slate-400" /> Días de la Semana
                   </Label>
