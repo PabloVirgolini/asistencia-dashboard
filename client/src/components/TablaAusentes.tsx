@@ -14,13 +14,16 @@ interface Ausente {
   legajo: string;
   nombre: string;
   sector: string;
+  cargo: string;
+  nivel_criticidad: number;
 }
 
 interface TablaAusentesProps {
   ausentes: Ausente[];
+  showEncargados?: boolean;
 }
 
-export default function TablaAusentes({ ausentes }: TablaAusentesProps) {
+export default function TablaAusentes({ ausentes, showEncargados = true }: TablaAusentesProps) {
   const getSectorColor = (sector: string) => {
     const colors: Record<string, string> = {
       "Termoformado": "bg-purple-100 text-purple-800",
@@ -67,10 +70,15 @@ export default function TablaAusentes({ ausentes }: TablaAusentesProps) {
                 {ausentes.map((ausente) => (
                   <TableRow
                     key={ausente.legajo}
-                    className="border-slate-100 hover:bg-red-50 transition-colors"
+                    className={`border-slate-100 transition-colors ${ausente.nivel_criticidad > 1 ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-red-50'}`}
                   >
                     <TableCell className="font-medium text-slate-900">
-                      {ausente.nombre}
+                      {showEncargados && ausente.cargo?.toLowerCase().includes("encargado") ? `(E) ${ausente.nombre}` : ausente.nombre}
+                      {ausente.nivel_criticidad > 1 && (
+                        <Badge variant="outline" className="ml-2 bg-red-100 text-red-800 border-red-200">
+                          Cargo Crítico
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-slate-600">
                       {ausente.legajo}

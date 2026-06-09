@@ -15,7 +15,8 @@ import {
   insertPersonal,
   updatePersonal,
   deletePersonal,
-  getActivePersonal
+  getActivePersonal,
+  getCargos
 } from "./attendance";
 import { signToken } from "./jwt";
 
@@ -102,6 +103,10 @@ export const appRouter = router({
         return getActivePersonal();
     }),
 
+    getCargos: adminProcedure.query(() => {
+        return getCargos();
+    }),
+
     addPerson: adminProcedure
       .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string() }))
       .mutation(({ input }) => {
@@ -110,9 +115,9 @@ export const appRouter = router({
       }),
 
     editPerson: adminProcedure
-      .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), activo: z.number() }))
+      .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), activo: z.number(), cargo_id: z.number() }))
       .mutation(({ input }) => {
-        updatePersonal(input.legajo, input.nombre, input.sector, input.activo);
+        updatePersonal(input.legajo, input.nombre, input.sector, input.activo, input.cargo_id);
         return { success: true };
       }),
 

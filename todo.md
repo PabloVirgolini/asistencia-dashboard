@@ -58,3 +58,8 @@
 - [x] Crear guía de administrador
 - [x] Validar todas las funcionalidades
 - [x] Preparar para producción
+
+## Fase 8: Lógica Avanzada de Turnos (Pendiente)
+- [ ] Analizar estructura de la base de datos para mapear turnos y horarios de entrada.
+- [ ] Implementar cruce de cargos, horarios y días para determinar si la fichada representa una llegada tarde.
+- [ ] Reflejar visualmente en el Dashboard el estado de tardanza de cada persona.

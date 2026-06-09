@@ -16,6 +16,7 @@ Este plan refleja el estado estabilizado del proyecto (Junio 2026) tras la recup
 
 ### Fase 2: Expansión de Features Core
 En base a los tips acordados, se procederá con la implementación de:
+- **Lógica de Turnos y Llegadas Tarde (PENDIENTE):** Revisar y programar la lógica que cruza los horarios de entrada dependiendo del cargo y los días, para determinar con exactitud si un empleado ingresó tarde o no.
 - **Exportación de Datos:** Capacidad de exportar reportes de asistencia en formatos como PDF y Excel.
 - **Notificaciones Web Push:** Sistema de alertas en tiempo real cuando algún empleado fiche tarde.
 - **Mejoras del Dashboard:** (Cualquier ajuste menor visual derivado de los nuevos features).

@@ -14,14 +14,18 @@ interface Presente {
   legajo: string;
   nombre: string;
   sector: string;
+  cargo: string;
+  nivel_criticidad: number;
   primeraFichada: string;
+  llegadaTarde?: boolean;
 }
 
 interface TablaPresentesProps {
   presentes: Presente[];
+  showEncargados?: boolean;
 }
 
-export default function TablaPresentes({ presentes }: TablaPresentesProps) {
+export default function TablaPresentes({ presentes, showEncargados = true }: TablaPresentesProps) {
   const formatTime = (dateTimeStr: string) => {
     try {
       const date = new Date(dateTimeStr);
@@ -87,7 +91,12 @@ export default function TablaPresentes({ presentes }: TablaPresentesProps) {
                     className="border-slate-100 hover:bg-emerald-50 transition-colors"
                   >
                     <TableCell className="font-medium text-slate-900">
-                      {presente.nombre}
+                      {showEncargados && presente.cargo?.toLowerCase().includes("encargado") ? `(E) ${presente.nombre}` : presente.nombre}
+                      {presente.llegadaTarde && (
+                        <Badge variant="outline" className="ml-2 bg-orange-50 text-orange-700 border-orange-200">
+                          Llegó Tarde
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-slate-600">
                       {presente.legajo}

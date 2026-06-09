@@ -23,6 +23,9 @@ export default function AdminPanel() {
   const { data: personal, isLoading: isPersonalLoading } = trpc.admin.getPersonal.useQuery(undefined, {
     enabled: !!user
   });
+  const { data: cargos } = trpc.admin.getCargos.useQuery(undefined, {
+    enabled: !!user
+  });
 
   const logoutMutation = trpc.auth.logout.useMutation();
   const addSectorMutation = trpc.admin.addSector.useMutation();
@@ -43,6 +46,7 @@ export default function AdminPanel() {
   const [legajo, setLegajo] = useState('');
   const [nombre, setNombre] = useState('');
   const [personaSector, setPersonaSector] = useState('');
+  const [personaCargo, setPersonaCargo] = useState('1');
   const [editingPerson, setEditingPerson] = useState<string | null>(null);
 
   React.useEffect(() => {
@@ -92,7 +96,8 @@ export default function AdminPanel() {
           legajo,
           nombre,
           sector: personaSector,
-          activo: 1
+          activo: 1,
+          cargo_id: parseInt(personaCargo)
         });
         toast.success('Empleado actualizado');
       } else {
@@ -116,6 +121,7 @@ export default function AdminPanel() {
     setLegajo(p.legajo);
     setNombre(p.nombre);
     setPersonaSector(p.sectorPertenencia);
+    setPersonaCargo(p.cargo_id?.toString() || '1');
     setIsPersonModalOpen(true);
   };
 
@@ -124,6 +130,7 @@ export default function AdminPanel() {
     setLegajo('');
     setNombre('');
     setPersonaSector('');
+    setPersonaCargo('1');
     setIsPersonModalOpen(true);
   };
 
@@ -207,6 +214,21 @@ export default function AdminPanel() {
                           </SelectContent>
                         </Select>
                       </div>
+                      {editingPerson && (
+                        <div>
+                          <Label>Cargo / Función</Label>
+                          <Select value={personaCargo} onValueChange={setPersonaCargo} required>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Seleccione un cargo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {cargos?.map((c: any) => (
+                                <SelectItem key={c.id_cargo} value={c.id_cargo.toString()}>{c.descripcion}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                       <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
                         Guardar
                       </Button>
@@ -229,7 +251,7 @@ export default function AdminPanel() {
                       {personal?.map((p: any) => (
                         <TableRow key={p.legajo}>
                           <TableCell className="font-medium">{p.legajo}</TableCell>
-                          <TableCell>{p.nombre}</TableCell>
+                          <TableCell>{p.nombre} {p.cargo_id && p.cargo_id > 1 ? <span className="text-xs font-bold text-indigo-600 ml-2">(E)</span> : null}</TableCell>
                           <TableCell>{p.sectorPertenencia}</TableCell>
                           <TableCell className="text-right space-x-2">
                             <Button variant="ghost" size="icon" onClick={() => openEditPerson(p)}>

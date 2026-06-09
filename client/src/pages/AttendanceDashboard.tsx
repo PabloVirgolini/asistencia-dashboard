@@ -9,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { AlertCircle, CheckCircle2, Users, UserCheck, UserX } from "lucide-react";
 import TablaPresentes from "@/components/TablaPresentes";
@@ -19,6 +21,7 @@ import ResumenDia from "@/components/ResumenDia";
 export default function AttendanceDashboard() {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSector, setSelectedSector] = useState<string>("todos");
+  const [showEncargados, setShowEncargados] = useState<boolean>(true);
   const [nextUpdateTime, setNextUpdateTime] = useState<Date | null>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -162,6 +165,10 @@ export default function AttendanceDashboard() {
                 ))}
               </SelectContent>
             </Select>
+            <div className="flex items-center space-x-2 bg-white px-4 rounded-md border border-slate-200">
+              <Switch id="show-encargados" checked={showEncargados} onCheckedChange={setShowEncargados} />
+              <Label htmlFor="show-encargados" className="text-slate-600 font-medium">Resaltar Encargados</Label>
+            </div>
           </div>
         </div>
 
@@ -195,8 +202,8 @@ export default function AttendanceDashboard() {
 
             {/* Tablas de asistencia */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-              <TablaPresentes presentes={attendanceQuery.data.presentes} />
-              <TablaAusentes ausentes={attendanceQuery.data.ausentes} />
+              <TablaPresentes presentes={attendanceQuery.data.presentes} showEncargados={showEncargados} />
+              <TablaAusentes ausentes={attendanceQuery.data.ausentes} showEncargados={showEncargados} />
             </div>
           </>
         ) : null}

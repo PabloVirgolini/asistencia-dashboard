@@ -15,3 +15,7 @@ Eres el Analista de Sistemas del proyecto "AsistenciaPersonal". Tu objetivo prin
 - **Naturaleza Híbrida de la Base de Datos (`data2.db`)**: 
   - La tabla `fichadas` es de **solo lectura** para la app web. Su única fuente de verdad y escritura son los scripts locales en Python (`ImportarFichadas.py`, `DetectarDobleFichada.py`) ejecutados cada hora vía `.bat`.
   - Las tablas `personal`, `sectores` y `admins` son de **lectura/escritura exclusiva** de la app web a través del Panel de Administración protegido por JWT, garantizando que el reloj biométrico no sobrescriba a los empleados dados de alta.
+- **Lógica Temporal y de Cargos**: 
+  - La arquitectura evita codificar el turno directamente en el empleado. En su lugar, existe un `historial_turnos` y una tabla maestra de `horarios`. Esto permite que el sistema responda a la pregunta: *"El martes pasado, a qué hora debía entrar esta persona y cuál era su nivel de criticidad?"* cruzando `Sector + Cargo + Turno + Día de la Semana`.
+- **Manejo Estricto de Fechas y Zonas Horarias**:
+  - Toda manipulación de strings con formato `YYYY-MM-DD` en el cliente React debe ser parseada extrayendo explícitamente sus componentes (`split('-')`) e inicializando el objeto Date usando la firma local: `new Date(year, monthIndex, day)`. Está estrictamente **prohibido** utilizar `new Date("YYYY-MM-DD")` para evitar corrimientos de días provocados por la conversión implícita a UTC en navegadores con zonas horarias negativas (ej: Argentina GMT-3).

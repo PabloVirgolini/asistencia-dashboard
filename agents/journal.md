@@ -31,3 +31,15 @@ Este archivo es un bitácora para documentar todos los avances, diagnósticos, s
   1. Se verificó (leyendo los scripts Python `ImportarFichadas.py`, etc.) que el reloj biométrico solo alimenta la tabla `fichadas`. Las tablas `personal` y `sectores` son seguras para administrar desde la web.
   2. Se configuró una tabla `admins` en SQLite y un flujo de JWT (`jose`) con cookies seguras (`httpOnly`).
   3. Se diseñaron las rutas `/login` y `/admin` calcando la estética *Premium* solicitada, creando una bifurcación clara: la ruta raíz `/` es el monitor público "solo lectura" para los empleados, y `/login` es la puerta exclusiva para Recursos Humanos.
+
+### [2026-06-09] - Fase 8: Lógica Avanzada de Turnos y Cargos
+- **Avance:** Se implementó una lógica de negocio compleja para soportar turnos rotativos, cargos con distinto nivel de criticidad y control de llegadas tarde.
+- **Detalle Arquitectónico:**
+  1. Se crearon las tablas `cargos`, `turnos_horarios`, `horarios` e `historial_turnos` para mapear de manera precisa a qué hora debe ingresar un empleado según su sector, cargo, día de la semana y turno histórico.
+  2. Se modificaron las consultas en el backend (`server/attendance.ts`) para realizar cruces de información y calcular al vuelo la variable `llegadaTarde`.
+  3. Se actualizó el Dashboard visualmente bajo las directrices del Agente UX: los encargados tienen el prefijo `(E)` y se pueden ocultar con un switch. Aquellos con rol crítico que faltan tiñen de rojo la tabla de ausentes con un badge de "Cargo Crítico". Los presentes con retraso reciben un badge naranja de "Llegó Tarde".
+
+### [2026-06-09] - Resolución de Bug de Zona Horaria (Timezones)
+- **Problema:** El selector de fechas del Dashboard (`SelectorFecha.tsx`) parecía "trabarse" y no dejaba avanzar a la fecha actual (ej. 9/6/2026), mostrando erróneamente el día anterior (8/6/2026).
+- **Diagnóstico:** Se descubrió que al usar `new Date("YYYY-MM-DD")` en JavaScript, el motor asume automáticamente que la hora es `00:00:00 UTC`. Al aplicar la zona horaria local de Argentina (GMT-3), el horario retrocedía 3 horas, cayendo en las `21:00:00` del día anterior. Esto causaba un desajuste visual (el render mostraba el día 8) y un desajuste lógico (la validación creía que la variable ya estaba en el día 9).
+- **Solución:** Se reemplazó el parseo de string directo por la construcción explícita `new Date(year, month - 1, day)`, la cual instruye al motor de JS a utilizar el huso horario local desde el momento de la instanciación de la fecha.

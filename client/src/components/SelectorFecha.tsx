@@ -21,8 +21,8 @@ export default function SelectorFecha({
 
   const formatDateDisplay = (dateStr: string) => {
     if (!dateStr) return "Seleccionar fecha";
-    const [year, month, day] = dateStr.split("-");
-    return new Date(`${year}-${month}-${day}`).toLocaleDateString("es-ES", {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString("es-ES", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -71,7 +71,10 @@ export default function SelectorFecha({
   };
 
   const selectedDateObj = selectedDate
-    ? new Date(selectedDate + "T00:00:00")
+    ? (() => {
+        const [year, month, day] = selectedDate.split("-").map(Number);
+        return new Date(year, month - 1, day);
+      })()
     : undefined;
 
   return (

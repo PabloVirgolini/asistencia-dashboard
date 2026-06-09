@@ -71,13 +71,18 @@ export interface AttendanceRecord {
   legajo: string;
   nombre: string;
   sector: string;
+  cargo: string;
+  nivel_criticidad: number;
   primeraFichada: string;
+  llegadaTarde?: boolean;
 }
 
 export interface AbsenceRecord {
   legajo: string;
   nombre: string;
   sector: string;
+  cargo: string;
+  nivel_criticidad: number;
 }
 
 export interface AttendanceSummary {
@@ -97,6 +102,12 @@ export function getSectors(): SectorRecord[] {
   return stmt.all() as SectorRecord[];
 }
 
+export function getCargos(): { id_cargo: number, descripcion: string }[] {
+  const db = getDb();
+  const stmt = db.prepare('SELECT id_cargo, descripcion FROM cargos ORDER BY id_cargo ASC');
+  return stmt.all() as { id_cargo: number, descripcion: string }[];
+}
+
 /**
  * Obtiene el personal activo, opcionalmente filtrado por sector
  */
@@ -105,9 +116,12 @@ export function getActivePersonal(sector?: string): PersonalRecord[] {
   let query = `
     SELECT 
       p.id, p.legajo, p.nombre, p.activo, p.enCapacitacion, 
-      s.descripcion as sectorPertenencia 
+      s.descripcion as sectorPertenencia,
+      c.descripcion as cargo,
+      p.cargo_id
     FROM personal p
     LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
+    LEFT JOIN cargos c ON p.cargo_id = c.id_cargo
     WHERE p.activo = 1
   `;
   
@@ -146,10 +160,16 @@ export function getPresentesByDate(date: string, sector?: string): AttendanceRec
       p.legajo,
       p.nombre,
       s.descripcion as sector,
-      MIN(f.hora) as primeraFichada
+      c.descripcion as cargo,
+      c.nivel_criticidad,
+      MIN(f.hora) as primeraFichada,
+      h.hora_entrada as horaEsperada
     FROM personal p
     INNER JOIN fichadas f ON CAST(p.legajo AS INTEGER) = CAST(SUBSTR(f.legajo, 3) AS INTEGER)
     LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
+    LEFT JOIN cargos c ON p.cargo_id = c.id_cargo
+    LEFT JOIN historial_turnos ht ON ht.legajo = p.legajo AND ht.fecha_inicio <= ? AND (ht.fecha_fin IS NULL OR ht.fecha_fin >= ?)
+    LEFT JOIN horarios h ON h.id_cargo = p.cargo_id AND h.id_turno = ht.id_turno AND h.id_sector = p.sectorPertenencia AND h.dia_semana = ?
     WHERE p.activo = 1
       AND f.hora >= ? AND f.hora < ?
   `;
@@ -158,17 +178,38 @@ export function getPresentesByDate(date: string, sector?: string): AttendanceRec
     query += ' AND p.sectorPertenencia = ?';
   }
   
-  query += ' GROUP BY p.legajo, p.nombre, s.descripcion ORDER BY primeraFichada ASC';
+  query += ' GROUP BY p.legajo, p.nombre, s.descripcion, c.descripcion, c.nivel_criticidad, h.hora_entrada ORDER BY primeraFichada ASC';
   
   const startOfDay = `${date} 00:00:00`;
   const endOfDay = `${date} 23:59:59`;
+  const jsDate = new Date(date + 'T00:00:00');
+  const dayOfWeek = jsDate.getDay(); // 0 a 6
   
   const stmt = db.prepare(query);
   const params = sector && sector !== 'todos' 
-    ? [startOfDay, endOfDay, sector]
-    : [startOfDay, endOfDay];
+    ? [date, date, dayOfWeek, startOfDay, endOfDay, sector]
+    : [date, date, dayOfWeek, startOfDay, endOfDay];
   
-  return stmt.all(...params) as AttendanceRecord[];
+  const records = stmt.all(...params) as any[];
+  
+  return records.map(r => {
+    let llegadaTarde = false;
+    if (r.horaEsperada) {
+       const timePart = r.primeraFichada.split(' ')[1]; // "HH:MM:SS"
+       if (timePart.substring(0, 5) > r.horaEsperada) {
+         llegadaTarde = true;
+       }
+    }
+    return {
+      legajo: r.legajo,
+      nombre: r.nombre,
+      sector: r.sector,
+      cargo: r.cargo || 'Operario',
+      nivel_criticidad: r.nivel_criticidad || 1,
+      primeraFichada: r.primeraFichada,
+      llegadaTarde
+    };
+  });
 }
 
 /**
@@ -181,9 +222,12 @@ export function getAusentesByDate(date: string, sector?: string): AbsenceRecord[
     SELECT
       p.legajo,
       p.nombre,
-      s.descripcion as sector
+      s.descripcion as sector,
+      c.descripcion as cargo,
+      c.nivel_criticidad
     FROM personal p
     LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
+    LEFT JOIN cargos c ON p.cargo_id = c.id_cargo
     WHERE p.activo = 1
       AND CAST(p.legajo AS INTEGER) NOT IN (
         SELECT DISTINCT CAST(SUBSTR(f.legajo, 3) AS INTEGER)
@@ -319,10 +363,10 @@ export function insertPersonal(legajo: string, nombre: string, sectorPertenencia
   stmt.run(legajo, nombre, sectorPertenencia);
 }
 
-export function updatePersonal(legajo: string, nombre: string, sectorPertenencia: string, activo: number): void {
+export function updatePersonal(legajo: string, nombre: string, sectorPertenencia: string, activo: number, cargo_id: number): void {
   const db = getDb();
-  const stmt = db.prepare('UPDATE personal SET nombre = ?, sectorPertenencia = ?, activo = ? WHERE legajo = ?');
-  stmt.run(nombre, sectorPertenencia, activo, legajo);
+  const stmt = db.prepare('UPDATE personal SET nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ? WHERE legajo = ?');
+  stmt.run(nombre, sectorPertenencia, activo, cargo_id, legajo);
 }
 
 export function deletePersonal(legajo: string): void {
