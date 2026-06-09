@@ -137,7 +137,7 @@ export default function AdminTurnos() {
   // State Reglas (Formulario)
   const [tipoRegla, setTipoRegla] = useState<'general' | 'excepcion'>('general');
   const [selectedSector, setSelectedSector] = useState<string>('');
-  const [selectedCargo, setSelectedCargo] = useState<string>('');
+  const [selectedCargos, setSelectedCargos] = useState<string[]>([]);
   const [selectedTurno, setSelectedTurno] = useState<string>('');
   const [selectedDias, setSelectedDias] = useState<number[]>([]);
   const [horaEntrada, setHoraEntrada] = useState('');
@@ -191,24 +191,44 @@ export default function AdminTurnos() {
     if (!horaEntrada || !horaSalida) return toast.error('Debes ingresar hora de entrada y salida');
     
     if (tipoRegla === 'general') {
-      if (!selectedSector || !selectedCargo) return toast.error('Debes seleccionar sector y cargo');
+      if (!selectedSector || selectedCargos.length === 0) return toast.error('Debes seleccionar sector y al menos un cargo');
     } else {
       if (!selectedLegajo) return toast.error('Debes seleccionar un empleado');
     }
 
     try {
-      await addRegla.mutateAsync({
-        id_sector: tipoRegla === 'general' ? parseInt(selectedSector) : null,
-        id_cargo: tipoRegla === 'general' ? parseInt(selectedCargo) : null,
-        legajo: tipoRegla === 'excepcion' ? selectedLegajo : null,
-        id_turno: parseInt(selectedTurno),
-        dias: selectedDias,
-        hora_entrada: horaEntrada,
-        hora_salida: horaSalida
-      });
+      if (tipoRegla === 'general') {
+        // Multi-insert for each selected cargo
+        for (const cargo of selectedCargos) {
+          await addRegla.mutateAsync({
+            id_sector: parseInt(selectedSector),
+            id_cargo: parseInt(cargo),
+            legajo: null,
+            id_turno: parseInt(selectedTurno),
+            dias: selectedDias,
+            hora_entrada: horaEntrada,
+            hora_salida: horaSalida
+          });
+        }
+      } else {
+        await addRegla.mutateAsync({
+          id_sector: null,
+          id_cargo: null,
+          legajo: selectedLegajo,
+          id_turno: parseInt(selectedTurno),
+          dias: selectedDias,
+          hora_entrada: horaEntrada,
+          hora_salida: horaSalida
+        });
+      }
       toast.success('Regla(s) guardada(s) correctamente');
       trpcContext.admin.getHorariosReglas.invalidate();
-      // UX Pattern: Formulario Persistente (solo limpiamos días y horas opcionalmente, pero lo dejamos por comodidad)
+      
+      // UX Pattern: Formulario Persistente (dejamos los comboboxes fijos y limpiamos horarios por comodidad)
+      setSelectedDias([]);
+      setHoraEntrada('');
+      setHoraSalida('');
+      // No reseteamos los selectores como pidió el usuario.
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar la regla');
     }
@@ -388,16 +408,30 @@ export default function AdminTurnos() {
                   </div>
                   <div className="space-y-2.5">
                     <Label className="text-slate-700 font-semibold flex items-center gap-2">
-                      <Briefcase className="w-4 h-4 text-slate-400" /> Cargo
+                      <Briefcase className="w-4 h-4 text-slate-400" /> Cargos
                     </Label>
-                    <Select value={selectedCargo} onValueChange={setSelectedCargo}>
-                      <SelectTrigger className="bg-white shadow-sm border-slate-200"><SelectValue placeholder="Seleccionar cargo..." /></SelectTrigger>
-                      <SelectContent>
-                        {cargos?.map((c: any) => (
-                          <SelectItem key={c.id_cargo} value={c.id_cargo.toString()}>{c.descripcion}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="bg-white border border-slate-200 rounded-lg p-3 max-h-48 overflow-y-auto shadow-sm">
+                      {cargos?.map((c: any) => (
+                        <div key={c.id_cargo} className="flex items-center space-x-3 mb-2 last:mb-0">
+                          <input
+                            type="checkbox"
+                            id={`cargo-${c.id_cargo}`}
+                            checked={selectedCargos.includes(c.id_cargo.toString())}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedCargos([...selectedCargos, c.id_cargo.toString()]);
+                              } else {
+                                setSelectedCargos(selectedCargos.filter(id => id !== c.id_cargo.toString()));
+                              }
+                            }}
+                            className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                          />
+                          <Label htmlFor={`cargo-${c.id_cargo}`} className="text-sm font-medium text-slate-700 cursor-pointer">
+                            {c.descripcion}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </>
               ) : (
@@ -455,9 +489,20 @@ export default function AdminTurnos() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end p-6 bg-white rounded-xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]">
               <div className="lg:col-span-6 space-y-4">
-                <Label className="text-slate-700 font-semibold flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-slate-400" /> Días de la Semana
-                </Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-slate-700 font-semibold flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-slate-400" /> Días de la Semana
+                  </Label>
+                  {selectedDias.length > 0 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setSelectedDias([])}
+                      className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      (deseleccionar todo)
+                    </button>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-3">
                   {DAYS.map(dia => {
                     const isSelected = selectedDias.includes(dia.value);
