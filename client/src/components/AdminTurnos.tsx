@@ -225,6 +225,54 @@ export default function AdminTurnos() {
     }
   };
 
+  const handleRemoveBatch = async (ids: number[], levelName: string) => {
+    if (!confirm(`¿Eliminar las ${ids.length} reglas de ${levelName}?`)) return;
+    
+    const toastId = toast.loading(`Eliminando ${ids.length} reglas...`);
+    let successCount = 0;
+    
+    for (const id of ids) {
+      try {
+        await removeRegla.mutateAsync({ id_horario: id });
+        successCount++;
+      } catch (err: any) {
+        toast.error(`Error regla ID ${id}: ${err.message}`);
+      }
+    }
+    
+    if (successCount > 0) {
+      toast.success(`${successCount} reglas eliminadas de ${levelName}`, { id: toastId });
+      trpcContext.admin.getHorariosReglas.invalidate();
+    } else {
+      toast.dismiss(toastId);
+    }
+  };
+
+  const getAllIds = (node: any): number[] => {
+    if (Array.isArray(node)) return node.map(r => r.id_horario);
+    return Object.values(node).flatMap(getAllIds);
+  };
+
+  const renderBatchDelete = (nodeData: any, name: string) => {
+    const ids = getAllIds(nodeData);
+    if (ids.length === 0) return null;
+    return (
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        className="h-7 px-2 text-slate-400 hover:text-red-600 hover:bg-red-50"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleRemoveBatch(ids, name);
+        }}
+        title={`Eliminar las ${ids.length} reglas`}
+      >
+        <Trash2 className="w-3.5 h-3.5 mr-1" />
+        <span className="text-xs">Borrar Nivel ({ids.length})</span>
+      </Button>
+    );
+  };
+
   const getDiaName = (num: number) => {
     const map: any = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 0: 'Domingo' };
     return map[num];
@@ -491,11 +539,11 @@ export default function AdminTurnos() {
                     </div>
                   ) : (
                     Object.entries(groupedGeneral).map(([turno, sectores]) => (
-                      <TreeNode key={turno} title={turno} icon={Clock} defaultExpanded={true}>
+                      <TreeNode key={turno} title={turno} icon={Clock} defaultExpanded={true} rightContent={renderBatchDelete(sectores, `Turno ${turno}`)}>
                         {Object.entries(sectores as Record<string, any>).map(([sector, cargos]) => (
-                          <TreeNode key={sector} title={`Sector: ${sector}`} icon={Building} defaultExpanded={true}>
+                          <TreeNode key={sector} title={`Sector: ${sector}`} icon={Building} defaultExpanded={true} rightContent={renderBatchDelete(cargos, `Sector ${sector}`)}>
                             {Object.entries(cargos as Record<string, any>).map(([cargo, rules]) => (
-                              <TreeNode key={cargo} title={`Cargo: ${cargo}`} icon={Briefcase} defaultExpanded={true}>
+                              <TreeNode key={cargo} title={`Cargo: ${cargo}`} icon={Briefcase} defaultExpanded={true} rightContent={renderBatchDelete(rules, `Cargo ${cargo}`)}>
                                 <div className="py-2 pr-2 space-y-2.5">
                                   {(rules as any[]).map(r => (
                                     <div key={r.id_horario} className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-lg shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group">
@@ -544,12 +592,12 @@ export default function AdminTurnos() {
                     </div>
                   ) : (
                     Object.entries(groupedExceptions).map(([turno, legajos]) => (
-                      <TreeNode key={turno} title={turno} icon={Clock} isException defaultExpanded={true}>
+                      <TreeNode key={turno} title={turno} icon={Clock} isException defaultExpanded={true} rightContent={renderBatchDelete(legajos, `Turno ${turno}`)}>
                         {Object.entries(legajos as Record<string, any>).map(([legajo, rules]) => {
                           const person = personal?.find((p: any) => p.legajo === legajo);
                           const personName = person ? person.nombre : `Legajo ${legajo}`;
                           return (
-                            <TreeNode key={legajo} title={`${personName} (${legajo})`} icon={User} isException defaultExpanded={true}>
+                            <TreeNode key={legajo} title={`${personName} (${legajo})`} icon={User} isException defaultExpanded={true} rightContent={renderBatchDelete(rules, `Empleado ${personName}`)}>
                               <div className="py-2 pr-2 space-y-2.5">
                                 {(rules as any[]).map(r => (
                                   <div key={r.id_horario} className="flex items-center justify-between bg-white border border-amber-100 p-3 rounded-lg shadow-sm hover:border-amber-300 hover:shadow-md transition-all group">
