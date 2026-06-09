@@ -83,7 +83,7 @@ describe('AdminTurnos Component', () => {
   it('debe renderizar el componente y mostrar la tabla de matriz de horarios', () => {
     render(<AdminTurnos />);
     
-    expect(screen.getByText('Etiquetas de Turnos')).toBeInTheDocument();
+    expect(screen.getByText('Gestión de Turnos')).toBeInTheDocument();
     expect(screen.getAllByText(/Turno Mañana/i).length).toBeGreaterThan(0);
     
     // Verifica que se renderice la regla en la tabla
@@ -94,7 +94,7 @@ describe('AdminTurnos Component', () => {
   it('debe permitir crear un nuevo turno', async () => {
     render(<AdminTurnos />);
     
-    const inputTurno = screen.getAllByPlaceholderText('Ej: Turno Mañana')[0];
+    const inputTurno = screen.getAllByPlaceholderText('Ej: Turno Noche')[0];
     fireEvent.change(inputTurno, { target: { value: 'Turno Tarde' } });
     
     const form = inputTurno.closest('form');

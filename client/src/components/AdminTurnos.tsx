@@ -4,9 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
-  Trash2, Plus, Clock, Loader2, Check, ArrowUpDown, Search,
+  Trash2, Plus, Clock, Loader2, Check, Search,
   ChevronRight, Building, Briefcase, User, Calendar, AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -69,33 +68,7 @@ export default function AdminTurnos() {
   const addRegla = trpc.admin.addHorario.useMutation();
   const removeRegla = trpc.admin.removeHorario.useMutation();
 
-  // Sort & Filter Turnos
-  const [turnoSortConfig, setTurnoSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
-  const [turnoFilter, setTurnoFilter] = useState('');
 
-  const sortedAndFilteredTurnos = React.useMemo(() => {
-    let result = turnos ? [...turnos] : [];
-    if (turnoFilter) {
-      result = result.filter((t: any) => 
-        t.descripcion.toLowerCase().includes(turnoFilter.toLowerCase()) ||
-        t.id_turno.toString().includes(turnoFilter)
-      );
-    }
-    if (turnoSortConfig) {
-      result.sort((a: any, b: any) => {
-        if (a[turnoSortConfig.key] < b[turnoSortConfig.key]) return turnoSortConfig.direction === 'asc' ? -1 : 1;
-        if (a[turnoSortConfig.key] > b[turnoSortConfig.key]) return turnoSortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-    return result;
-  }, [turnos, turnoSortConfig, turnoFilter]);
-
-  const handleTurnoSort = (key: string) => {
-    let direction: 'asc' | 'desc' = 'asc';
-    if (turnoSortConfig && turnoSortConfig.key === key && turnoSortConfig.direction === 'asc') direction = 'desc';
-    setTurnoSortConfig({ key, direction });
-  };
 
   // Filter and Group Reglas
   const [reglaFilter, setReglaFilter] = useState('');
@@ -157,8 +130,9 @@ export default function AdminTurnos() {
     return { groupedGeneral: general, groupedExceptions: exceptions };
   }, [filteredReglas]);
 
-  // State Turnos (Etiquetas)
+  // State Turnos
   const [nuevoTurnoDesc, setNuevoTurnoDesc] = useState('');
+  const [selectedTurnoParaEliminar, setSelectedTurnoParaEliminar] = useState<string>('');
 
   // State Reglas (Formulario)
   const [tipoRegla, setTipoRegla] = useState<'general' | 'excepcion'>('general');
@@ -194,8 +168,8 @@ export default function AdminTurnos() {
       toast.success('Turno creado');
       setNuevoTurnoDesc('');
       trpcContext.admin.getTurnosHorarios.invalidate();
-    } catch (err) {
-      toast.error('Error al crear turno');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al crear turno');
     }
   };
 
@@ -235,8 +209,8 @@ export default function AdminTurnos() {
       toast.success('Regla(s) guardada(s) correctamente');
       trpcContext.admin.getHorariosReglas.invalidate();
       // UX Pattern: Formulario Persistente (solo limpiamos días y horas opcionalmente, pero lo dejamos por comodidad)
-    } catch (err) {
-      toast.error('Error al guardar la regla');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al guardar la regla');
     }
   };
 
@@ -257,106 +231,106 @@ export default function AdminTurnos() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
       
-      {/* Columna Izquierda: Formularios */}
-      <div className="lg:col-span-5 xl:col-span-4 space-y-6 sticky top-6">
-        {/* SECCIÓN 1: Etiquetas de Turno */}
-        <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Etiquetas de Turnos</CardTitle>
+      {/* SECCIÓN 1: Gestión de Turnos */}
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-4">
+          <CardTitle className="text-lg text-slate-800">Gestión de Turnos</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAddTurno} className="flex flex-col sm:flex-row gap-4 sm:items-end mb-6">
-            <div className="flex-1 w-full max-w-sm">
-              <Label>Nombre del Turno</Label>
-              <Input placeholder="Ej: Turno Mañana" value={nuevoTurnoDesc} onChange={e => setNuevoTurnoDesc(e.target.value)} required />
+        <CardContent className="pt-6">
+          <div className="flex flex-col md:flex-row gap-8 items-end">
+            <form onSubmit={handleAddTurno} className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-end w-full">
+              <div className="flex-1">
+                <Label className="text-slate-600 mb-2 block">Nombre del Nuevo Turno</Label>
+                <Input placeholder="Ej: Turno Noche" value={nuevoTurnoDesc} onChange={e => setNuevoTurnoDesc(e.target.value)} required className="border-slate-200" />
+              </div>
+              <Button type="submit" disabled={addTurno.isPending} className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800">
+                <Plus className="w-4 h-4 mr-2" /> Agregar
+              </Button>
+            </form>
+            
+            <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-end w-full">
+              <div className="flex-1">
+                <Label className="text-slate-600 mb-2 block">Turnos Existentes</Label>
+                <Select value={selectedTurnoParaEliminar} onValueChange={setSelectedTurnoParaEliminar}>
+                  <SelectTrigger className="border-slate-200"><SelectValue placeholder="Seleccionar turno para eliminar..." /></SelectTrigger>
+                  <SelectContent>
+                    {turnos?.map((t: any) => (
+                      <SelectItem key={t.id_turno} value={t.id_turno.toString()}>{t.descripcion}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                type="button"
+                variant="outline"
+                className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 w-full sm:w-auto transition-colors"
+                disabled={!selectedTurnoParaEliminar}
+                onClick={() => {
+                  if (selectedTurnoParaEliminar) {
+                    handleRemoveTurno(parseInt(selectedTurnoParaEliminar));
+                    setSelectedTurnoParaEliminar('');
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Eliminar
+              </Button>
             </div>
-            <Button type="submit" disabled={addTurno.isPending} className="w-full sm:w-auto">
-              <Plus className="w-4 h-4 mr-2" /> Agregar
-            </Button>
-          </form>
-          
-          <div className="mb-4 relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input 
-              placeholder="Buscar turno..." 
-              className="pl-9"
-              value={turnoFilter}
-              onChange={(e) => setTurnoFilter(e.target.value)}
-            />
           </div>
-
-          {isTurnosLoading ? <Loader2 className="animate-spin mx-auto text-indigo-600" /> : (
-            <div className="border rounded-md max-w-2xl">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50">
-                    <TableHead className="cursor-pointer hover:bg-slate-100" onClick={() => handleTurnoSort('id_turno')}>
-                      <div className="flex items-center gap-1 font-semibold text-slate-700">ID <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
-                    </TableHead>
-                    <TableHead className="cursor-pointer hover:bg-slate-100" onClick={() => handleTurnoSort('descripcion')}>
-                      <div className="flex items-center gap-1 font-semibold text-slate-700">Descripción <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
-                    </TableHead>
-                    <TableHead className="text-right font-semibold text-slate-700">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedAndFilteredTurnos.map((t: any) => (
-                    <TableRow key={t.id_turno}>
-                      <TableCell>{t.id_turno}</TableCell>
-                      <TableCell className="font-medium">{t.descripcion}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => handleRemoveTurno(t.id_turno)}>
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {sortedAndFilteredTurnos.length === 0 && (
-                    <TableRow><TableCell colSpan={3} className="text-center text-slate-500 py-4">No se encontraron turnos</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
         </CardContent>
       </Card>
 
       {/* SECCIÓN 2: Creador de Reglas */}
-      <Card className="border-indigo-200 shadow-md">
-        <CardHeader className="bg-indigo-50/50 border-b border-indigo-100">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-indigo-600" />
-            <CardTitle className="text-lg text-indigo-900">Creador Inteligente de Reglas</CardTitle>
+      <Card className="border-indigo-100 shadow-md overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-indigo-50 to-white border-b border-indigo-100 pb-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 rounded-lg shadow-sm">
+              <Clock className="w-5 h-5 text-indigo-700" />
+            </div>
+            <CardTitle className="text-xl text-indigo-950 font-bold tracking-tight">CREADOR DE REGLAS</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
-          <form onSubmit={handleAddRegla} className="space-y-6">
+          <form onSubmit={handleAddRegla} className="space-y-8">
             
             {/* Tipo de Regla */}
-            <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button type="button" variant={tipoRegla === 'general' ? 'default' : 'outline'} 
-                className={`flex-1 min-w-[140px] h-auto whitespace-normal py-2 ${tipoRegla === 'general' ? 'bg-indigo-600' : ''}`}
+                className={`flex-1 sm:max-w-xs h-auto py-2.5 transition-all duration-300 font-medium ${tipoRegla === 'general' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-md shadow-indigo-200 text-white' : 'text-slate-600 hover:text-indigo-600 border-slate-200 bg-white'}`}
                 onClick={() => setTipoRegla('general')}>
                 Regla General (Sector y Cargo)
               </Button>
               <Button type="button" variant={tipoRegla === 'excepcion' ? 'default' : 'outline'}
-                className={`flex-1 min-w-[140px] h-auto whitespace-normal py-2 ${tipoRegla === 'excepcion' ? 'bg-indigo-600' : ''}`}
+                className={`flex-1 sm:max-w-xs h-auto py-2.5 transition-all duration-300 font-medium ${tipoRegla === 'excepcion' ? 'bg-amber-600 hover:bg-amber-700 shadow-md shadow-amber-200 text-white' : 'text-slate-600 hover:text-amber-600 border-slate-200 bg-white'}`}
                 onClick={() => setTipoRegla('excepcion')}>
                 Excepción por Persona
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
-              
-              {/* Progressive Disclosure */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-slate-50/80 rounded-xl border border-slate-100 shadow-sm">
+              <div className="space-y-2.5">
+                <Label className="text-slate-700 font-semibold flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-400" /> Turno a Asignar
+                </Label>
+                <Select value={selectedTurno} onValueChange={setSelectedTurno}>
+                  <SelectTrigger className="bg-white shadow-sm border-slate-200"><SelectValue placeholder="Seleccionar turno..." /></SelectTrigger>
+                  <SelectContent>
+                    {turnos?.map((t: any) => (
+                      <SelectItem key={t.id_turno} value={t.id_turno.toString()}>{t.descripcion}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {tipoRegla === 'general' ? (
                 <>
-                  <div className="space-y-2">
-                    <Label>Sector</Label>
+                  <div className="space-y-2.5">
+                    <Label className="text-slate-700 font-semibold flex items-center gap-2">
+                      <Building className="w-4 h-4 text-slate-400" /> Sector
+                    </Label>
                     <Select value={selectedSector} onValueChange={setSelectedSector}>
-                      <SelectTrigger><SelectValue placeholder="Seleccionar sector..." /></SelectTrigger>
+                      <SelectTrigger className="bg-white shadow-sm border-slate-200"><SelectValue placeholder="Seleccionar sector..." /></SelectTrigger>
                       <SelectContent>
                         {sectores?.map((s: any) => (
                           <SelectItem key={s.idSector} value={s.idSector.toString()}>{s.idSector} - {s.descripcion}</SelectItem>
@@ -364,10 +338,12 @@ export default function AdminTurnos() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Cargo</Label>
+                  <div className="space-y-2.5">
+                    <Label className="text-slate-700 font-semibold flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-slate-400" /> Cargo
+                    </Label>
                     <Select value={selectedCargo} onValueChange={setSelectedCargo}>
-                      <SelectTrigger><SelectValue placeholder="Seleccionar cargo..." /></SelectTrigger>
+                      <SelectTrigger className="bg-white shadow-sm border-slate-200"><SelectValue placeholder="Seleccionar cargo..." /></SelectTrigger>
                       <SelectContent>
                         {cargos?.map((c: any) => (
                           <SelectItem key={c.id_cargo} value={c.id_cargo.toString()}>{c.descripcion}</SelectItem>
@@ -377,43 +353,49 @@ export default function AdminTurnos() {
                   </div>
                 </>
               ) : (
-                <div className="space-y-2 md:col-span-2 relative">
-                  <Label>Buscar Empleado (Excepción)</Label>
+                <div className="space-y-2.5 md:col-span-2 relative">
+                  <Label className="text-slate-700 font-semibold flex items-center gap-2">
+                    <User className="w-4 h-4 text-slate-400" /> Buscar Empleado (Excepción)
+                  </Label>
                   {selectedLegajo ? (
-                    <div className="flex items-center justify-between p-3 bg-white border border-emerald-200 rounded-md">
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-emerald-600" />
-                        <span className="font-medium text-emerald-800">
-                          {personal?.find((p: any) => p.legajo === selectedLegajo)?.nombre} ({selectedLegajo})
+                    <div className="flex items-center justify-between p-2.5 bg-white border border-emerald-200 rounded-lg shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-emerald-100 p-1.5 rounded-full">
+                          <Check className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <span className="font-medium text-emerald-900">
+                          {personal?.find((p: any) => p.legajo === selectedLegajo)?.nombre} <span className="text-emerald-600/70 text-sm">({selectedLegajo})</span>
                         </span>
                       </div>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedLegajo('')} className="h-8">Cambiar</Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedLegajo('')} className="h-8 hover:bg-emerald-50 text-emerald-700">Cambiar</Button>
                     </div>
                   ) : (
                     <div>
                       <Input 
                         placeholder="Escribe el nombre o legajo..." 
                         value={personalSearch} 
-                        onChange={e => setPersonalSearch(e.target.value)} 
+                        onChange={e => setPersonalSearch(e.target.value)}
+                        className="bg-white shadow-sm border-slate-200" 
                       />
                       {personalSearch.length > 1 && filteredPersonal && filteredPersonal.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        <div className="absolute z-20 w-full mt-2 bg-white border border-slate-200 rounded-lg shadow-xl max-h-56 overflow-y-auto">
                           {filteredPersonal.map((p: any) => (
                             <div 
                               key={p.legajo}
-                              className="px-4 py-2 hover:bg-slate-50 cursor-pointer text-sm"
+                              className="px-4 py-3 hover:bg-slate-50 cursor-pointer text-sm border-b border-slate-50 last:border-0 transition-colors"
                               onClick={() => {
                                 setSelectedLegajo(p.legajo);
                                 setPersonalSearch('');
                               }}
                             >
-                              <span className="font-medium">{p.nombre}</span> <span className="text-slate-500 text-xs ml-2">Legajo: {p.legajo}</span>
+                              <span className="font-semibold text-slate-800">{p.nombre}</span> 
+                              <span className="text-slate-500 text-xs ml-2 bg-slate-100 px-2 py-0.5 rounded-md">Legajo: {p.legajo}</span>
                             </div>
                           ))}
                         </div>
                       )}
                       {personalSearch.length > 1 && filteredPersonal?.length === 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-md p-3 text-sm text-slate-500">
+                        <div className="absolute z-10 w-full mt-2 bg-white border border-slate-200 rounded-lg p-4 text-sm text-center text-slate-500 shadow-xl">
                           No se encontraron resultados
                         </div>
                       )}
@@ -421,94 +403,91 @@ export default function AdminTurnos() {
                   )}
                 </div>
               )}
-
-              <div className="space-y-2 md:col-span-2">
-                <Label>Turno a Asignar</Label>
-                <Select value={selectedTurno} onValueChange={setSelectedTurno}>
-                  <SelectTrigger><SelectValue placeholder="Seleccionar turno..." /></SelectTrigger>
-                  <SelectContent>
-                    {turnos?.map((t: any) => (
-                      <SelectItem key={t.id_turno} value={t.id_turno.toString()}>{t.descripcion}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
             </div>
 
-            <div className="space-y-4">
-              <Label>Días de la Semana</Label>
-              <div className="flex flex-wrap gap-2">
-                {DAYS.map(dia => {
-                  const isSelected = selectedDias.includes(dia.value);
-                  return (
-                    <button
-                      key={dia.value}
-                      type="button"
-                      onClick={() => handleToggleDia(dia.value)}
-                      className={`w-10 h-10 sm:w-11 sm:h-11 rounded-full font-bold transition-all text-sm sm:text-base ${
-                        isSelected 
-                          ? 'bg-emerald-500 text-white shadow-md transform scale-105' 
-                          : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                      }`}
-                    >
-                      {dia.label}
-                    </button>
-                  );
-                })}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end p-6 bg-white rounded-xl border border-slate-100 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]">
+              <div className="lg:col-span-6 space-y-4">
+                <Label className="text-slate-700 font-semibold flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-slate-400" /> Días de la Semana
+                </Label>
+                <div className="flex flex-wrap gap-3">
+                  {DAYS.map(dia => {
+                    const isSelected = selectedDias.includes(dia.value);
+                    return (
+                      <button
+                        key={dia.value}
+                        type="button"
+                        onClick={() => handleToggleDia(dia.value)}
+                        className={`w-12 h-12 rounded-full font-bold transition-all duration-300 text-sm flex items-center justify-center ${
+                          isSelected 
+                            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-110 ring-2 ring-indigo-600 ring-offset-2' 
+                            : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 hover:scale-105'
+                        }`}
+                      >
+                        {dia.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="lg:col-span-4 grid grid-cols-2 gap-5">
+                <div className="space-y-2.5">
+                  <Label className="text-slate-700 font-semibold">Hora Entrada</Label>
+                  <Input type="time" value={horaEntrada} onChange={e => setHoraEntrada(e.target.value)} required className="bg-slate-50 border-slate-200" />
+                </div>
+                <div className="space-y-2.5">
+                  <Label className="text-slate-700 font-semibold">Hora Salida</Label>
+                  <Input type="time" value={horaSalida} onChange={e => setHoraSalida(e.target.value)} required className="bg-slate-50 border-slate-200" />
+                </div>
+              </div>
+
+              <div className="lg:col-span-2 flex justify-end">
+                <Button type="submit" size="lg" className="w-full bg-slate-900 hover:bg-slate-800 text-white shadow-md hover:shadow-lg transition-all h-[44px]" disabled={addRegla.isPending}>
+                  {addRegla.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-5 h-5 mr-2" />}
+                  Guardar
+                </Button>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-6 max-w-md">
-              <div className="space-y-2">
-                <Label>Hora Entrada</Label>
-                <Input type="time" value={horaEntrada} onChange={e => setHoraEntrada(e.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Hora Salida</Label>
-                <Input type="time" value={horaSalida} onChange={e => setHoraSalida(e.target.value)} required />
-              </div>
-            </div>
-
-            <Button type="submit" size="lg" className="bg-indigo-600 hover:bg-indigo-700 w-full md:w-auto" disabled={addRegla.isPending}>
-              {addRegla.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
-              Guardar Regla(s)
-            </Button>
           </form>
         </CardContent>
       </Card>
-      </div>
 
-      {/* Columna Derecha: Matriz */}
-      <div className="lg:col-span-7 xl:col-span-8">
       {/* SECCIÓN 3: Matriz Actual (Tree Schema) */}
-      <Card>
-        <CardHeader>
+      <Card className="border-slate-200 shadow-sm">
+        <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="text-lg">Matriz de Horarios Actual</CardTitle>
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <CardTitle className="text-xl text-slate-800">Matriz de Horarios</CardTitle>
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
               <Input 
-                placeholder="Buscar por turno, sector, cargo..." 
-                className="pl-9 h-9 text-sm"
+                placeholder="Buscar en la matriz..." 
+                className="pl-9 bg-white border-slate-200"
                 value={reglaFilter}
                 onChange={(e) => setReglaFilter(e.target.value)}
               />
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {isReglasLoading ? (
-            <div className="flex justify-center p-8"><Loader2 className="animate-spin text-indigo-600" /></div>
+            <div className="flex flex-col items-center justify-center p-12 text-slate-400">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
+              <p>Cargando matriz de horarios...</p>
+            </div>
           ) : (
-            <div className="space-y-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               {/* Reglas Generales */}
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 px-1">Reglas Generales</h3>
-                <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-4 w-1 bg-indigo-600 rounded-full"></div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">Reglas Generales</h3>
+                </div>
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                   {Object.keys(groupedGeneral).length === 0 ? (
-                    <div className="p-6 text-center text-sm text-slate-500 bg-slate-50/50">
-                      No hay reglas generales configuradas para tu búsqueda.
+                    <div className="p-8 text-center text-slate-500 bg-slate-50/50 flex flex-col items-center">
+                      <Clock className="w-8 h-8 text-slate-300 mb-3" />
+                      <p>No hay reglas generales configuradas.</p>
                     </div>
                   ) : (
                     Object.entries(groupedGeneral).map(([turno, sectores]) => (
@@ -517,24 +496,24 @@ export default function AdminTurnos() {
                           <TreeNode key={sector} title={`Sector: ${sector}`} icon={Building} defaultExpanded={true}>
                             {Object.entries(cargos as Record<string, any>).map(([cargo, rules]) => (
                               <TreeNode key={cargo} title={`Cargo: ${cargo}`} icon={Briefcase} defaultExpanded={true}>
-                                <div className="py-2 pr-2 space-y-2">
+                                <div className="py-2 pr-2 space-y-2.5">
                                   {(rules as any[]).map(r => (
-                                    <div key={r.id_horario} className="flex items-center justify-between bg-white border border-slate-100 p-2.5 rounded-md shadow-sm hover:border-indigo-100 transition-colors group">
+                                    <div key={r.id_horario} className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-lg shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group">
                                       <div className="flex items-center gap-4">
-                                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50">
+                                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-indigo-50/80">
                                           <Calendar className="w-4 h-4 text-indigo-600" />
                                         </div>
                                         <div>
-                                          <div className="font-semibold text-slate-700 text-sm">{getDiaName(r.dia_semana)}</div>
-                                          <div className="text-xs text-slate-500 font-medium">
-                                            <span className="text-emerald-600">{r.hora_entrada}</span>
-                                            <span className="mx-1 text-slate-400">a</span>
-                                            <span className="text-indigo-600">{r.hora_salida}</span>
+                                          <div className="font-bold text-slate-800 text-sm">{getDiaName(r.dia_semana)}</div>
+                                          <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
+                                            <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{r.hora_entrada}</span>
+                                            <span className="text-slate-300">→</span>
+                                            <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{r.hora_salida}</span>
                                           </div>
                                         </div>
                                       </div>
-                                      <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-slate-400 hover:bg-red-50 transition-colors">
-                                        <Trash2 className="w-4 h-4 text-red-500 hover:text-red-700" />
+                                      <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors">
+                                        <Trash2 className="w-4 h-4" />
                                       </Button>
                                     </div>
                                   ))}
@@ -550,14 +529,18 @@ export default function AdminTurnos() {
               </div>
 
               {/* Excepciones */}
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-600 mb-3 px-1 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" /> Excepciones por Persona
-                </h3>
-                <div className="bg-white rounded-lg border border-amber-200 overflow-hidden shadow-sm">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 px-1">
+                  <div className="h-4 w-1 bg-amber-500 rounded-full"></div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    Excepciones
+                  </h3>
+                </div>
+                <div className="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden">
                   {Object.keys(groupedExceptions).length === 0 ? (
-                    <div className="p-6 text-center text-sm text-amber-700/60 bg-amber-50/20">
-                      No hay excepciones configuradas para tu búsqueda.
+                    <div className="p-8 text-center text-amber-700/60 bg-amber-50/30 flex flex-col items-center">
+                      <AlertCircle className="w-8 h-8 text-amber-200 mb-3" />
+                      <p>No hay excepciones configuradas.</p>
                     </div>
                   ) : (
                     Object.entries(groupedExceptions).map(([turno, legajos]) => (
@@ -567,24 +550,24 @@ export default function AdminTurnos() {
                           const personName = person ? person.nombre : `Legajo ${legajo}`;
                           return (
                             <TreeNode key={legajo} title={`${personName} (${legajo})`} icon={User} isException defaultExpanded={true}>
-                              <div className="py-2 pr-2 space-y-2">
+                              <div className="py-2 pr-2 space-y-2.5">
                                 {(rules as any[]).map(r => (
-                                  <div key={r.id_horario} className="flex items-center justify-between bg-white border border-amber-100 p-2.5 rounded-md shadow-sm hover:border-amber-200 transition-colors group">
+                                  <div key={r.id_horario} className="flex items-center justify-between bg-white border border-amber-100 p-3 rounded-lg shadow-sm hover:border-amber-300 hover:shadow-md transition-all group">
                                     <div className="flex items-center gap-4">
-                                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100/50">
+                                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-50">
                                         <Calendar className="w-4 h-4 text-amber-600" />
                                       </div>
                                       <div>
-                                        <div className="font-semibold text-amber-900 text-sm">{getDiaName(r.dia_semana)}</div>
-                                        <div className="text-xs text-amber-700 font-medium">
-                                          <span className="text-amber-600">{r.hora_entrada}</span>
-                                          <span className="mx-1 text-amber-400">a</span>
-                                          <span className="text-amber-800">{r.hora_salida}</span>
+                                        <div className="font-bold text-amber-900 text-sm">{getDiaName(r.dia_semana)}</div>
+                                        <div className="text-xs text-amber-700 font-medium flex items-center gap-1.5 mt-0.5">
+                                          <span className="text-amber-700 bg-amber-100/50 px-1.5 py-0.5 rounded">{r.hora_entrada}</span>
+                                          <span className="text-amber-300">→</span>
+                                          <span className="text-amber-800 bg-amber-100/50 px-1.5 py-0.5 rounded">{r.hora_salida}</span>
                                         </div>
                                       </div>
                                     </div>
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-amber-600/50 hover:bg-red-50 transition-colors">
-                                      <Trash2 className="w-4 h-4 text-red-500 hover:text-red-700" />
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-amber-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                                      <Trash2 className="w-4 h-4" />
                                     </Button>
                                   </div>
                                 ))}
@@ -601,7 +584,6 @@ export default function AdminTurnos() {
           )}
         </CardContent>
       </Card>
-      </div>
 
     </div>
   );

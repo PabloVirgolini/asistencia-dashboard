@@ -1,6 +1,7 @@
 import { publicProcedure, router, protectedProcedure, adminProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as crypto from 'crypto';
+import { COOKIE_NAME } from '../shared/const';
 import {
   getSectors,
   getPresentesByDate,
@@ -55,7 +56,7 @@ export const appRouter = router({
         });
 
         // Set cookie
-        ctx.res.cookie('session_token', token, {
+        ctx.res.cookie(COOKIE_NAME, token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
@@ -83,7 +84,13 @@ export const appRouter = router({
       }),
 
     logout: publicProcedure.mutation(({ ctx }) => {
-      ctx.res.clearCookie('session_token');
+      ctx.res.clearCookie(COOKIE_NAME, {
+        maxAge: -1,
+        secure: true,
+        sameSite: 'none',
+        httpOnly: true,
+        path: '/',
+      });
       return { success: true };
     }),
   }),
@@ -141,8 +148,12 @@ export const appRouter = router({
     addTurnoHorario: adminProcedure
       .input(z.object({ descripcion: z.string().min(1) }))
       .mutation(({ input }) => {
-        addTurnoHorario(input.descripcion);
-        return { success: true };
+        try {
+          addTurnoHorario(input.descripcion);
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
       }),
       
     removeTurnoHorario: adminProcedure
@@ -171,16 +182,20 @@ export const appRouter = router({
         hora_salida: z.string()
       }))
       .mutation(({ input }) => {
-        addHorario(
-          input.id_sector, 
-          input.id_cargo, 
-          input.legajo, 
-          input.id_turno, 
-          input.dias, 
-          input.hora_entrada, 
-          input.hora_salida
-        );
-        return { success: true };
+        try {
+          addHorario(
+            input.id_sector, 
+            input.id_cargo, 
+            input.legajo, 
+            input.id_turno, 
+            input.dias, 
+            input.hora_entrada, 
+            input.hora_salida
+          );
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
       }),
       
     removeHorario: adminProcedure

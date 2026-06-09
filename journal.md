@@ -22,3 +22,11 @@ Se ha realizado una validación y creación de arneses de pruebas para la recien
    - Se validaron el renderizado correcto de las matrices y las interacciones de creación de turnos desde el cliente.
 
 *Nota: Todas las pruebas pueden correrse con `pnpm test`. Se sugiere que futuros desarrollos continúen usando la aproximación de mock de tRPC para frontend y mocking de `better-sqlite3` para las validaciones estrictas de dominio sin dañar `data2.db`.*
+
+## 2026-06-09 - Ampliación de Tests y Seguridad en Base de Datos
+Se identificaron brechas lógicas en la base de datos para la configuración de Reglas de Horarios, que se cubrieron con validaciones en cascada y transacciones seguras:
+1. **Anti-Duplicación de Etiquetas**: Bloqueo case-insensitive para prevenir creación de Turnos ("Turno Noche" vs "turno noche") duplicados.
+2. **Validación de Integridad Relacional**: Bloqueo al intentar eliminar etiquetas usadas por una Regla, o eliminar reglas si existen Empleados activos asociados (sea como Excepción o bajo Cargo/Sector).
+3. **Anti-Solapamiento Transaccional**: El servidor rechaza solapamientos exactos de día, turno y perfil.
+
+**Cobertura Total**: El ingeniero de QA expandió exitosamente la suite a **16 pruebas unitarias exhaustivas** en `server/attendance.rules.test.ts`. Asimismo, se fixearon pruebas adyacentes (`AdminTurnos.test.tsx` y `auth.logout.test.ts`) para garantizar que la suite global (`pnpm test`) esté al **100% pasando (30 tests)**.

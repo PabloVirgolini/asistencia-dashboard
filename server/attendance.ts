@@ -116,6 +116,12 @@ export function getTurnosHorarios(): { id_turno: number, descripcion: string }[]
 
 export function addTurnoHorario(descripcion: string): void {
   const db = getDb();
+  const checkStmt = db.prepare('SELECT COUNT(*) as c FROM turnos_horarios WHERE LOWER(descripcion) = LOWER(?)');
+  const result = checkStmt.get(descripcion) as { c: number };
+  if (result.c > 0) {
+    throw new Error('Ya existe un turno con este nombre.');
+  }
+
   const stmt = db.prepare('INSERT INTO turnos_horarios (descripcion) VALUES (?)');
   stmt.run(descripcion);
 }
@@ -156,25 +162,32 @@ export function addHorario(
   hora_salida: string
 ): void {
   const db = getDb();
+  
+  const checkStmt = db.prepare(`
+    SELECT COUNT(*) as c FROM horarios 
+    WHERE id_turno = ? 
+      AND dia_semana = ?
+      AND (
+        (legajo IS NOT NULL AND legajo = ?) OR 
+        (legajo IS NULL AND ? IS NULL AND id_sector = ? AND id_cargo = ?)
+      )
+  `);
+
   const insertStmt = db.prepare(`
     INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
-  
-  const deleteStmt = db.prepare(`
-    DELETE FROM horarios 
-    WHERE id_turno = ? AND dia_semana = ? AND 
-          (id_sector IS ? OR (id_sector IS NULL AND ? IS NULL)) AND 
-          (id_cargo IS ? OR (id_cargo IS NULL AND ? IS NULL)) AND 
-          (legajo IS ? OR (legajo IS NULL AND ? IS NULL))
-  `);
 
-  const tx = db.transaction((dias: number[]) => {
-    for (const dia of dias) {
-      deleteStmt.run(id_turno, dia, id_sector, id_sector, id_cargo, id_cargo, legajo, legajo);
+  const tx = db.transaction((diasArr: number[]) => {
+    for (const dia of diasArr) {
+      const isOverlap = checkStmt.get(id_turno, dia, legajo, legajo, id_sector, id_cargo) as { c: number };
+      if (isOverlap.c > 0) {
+        throw new Error('Ya existe una regla configurada para este mismo Turno, Día y Sector/Cargo/Legajo.');
+      }
       insertStmt.run(id_sector, id_cargo, id_turno, dia, hora_entrada, hora_salida, legajo);
     }
   });
+
   tx(dias);
 }
 

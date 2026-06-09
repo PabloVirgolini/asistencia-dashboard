@@ -27,8 +27,10 @@ vi.mock('better-sqlite3', () => {
 import { 
   getTurnosHorarios, 
   addTurnoHorario,
+  removeTurnoHorario,
   getHorariosReglas,
   addHorario,
+  removeHorario,
   getPresentesByDate
 } from './attendance';
 
@@ -37,6 +39,7 @@ describe('attendance.ts - Reglas y Turnos', () => {
     vi.clearAllMocks();
     mAll.mockReset();
     mGet.mockReset();
+    mGet.mockReturnValue({ c: 0 });
     mRun.mockReset();
     mPrepare.mockClear();
     mTransaction.mockClear();
@@ -57,6 +60,25 @@ describe('attendance.ts - Reglas y Turnos', () => {
     expect(mRun).toHaveBeenCalledWith('Tarde');
   });
 
+  it('addTurnoHorario - arroja error si el turno ya existe (case insensitive)', () => {
+    mGet.mockReturnValueOnce({ c: 1 });
+    expect(() => addTurnoHorario('Mañana')).toThrowError('Ya existe un turno con este nombre.');
+    expect(mRun).not.toHaveBeenCalled();
+  });
+
+  it('removeTurnoHorario - elimina un turno si no tiene reglas', () => {
+    mGet.mockReturnValueOnce({ c: 0 });
+    removeTurnoHorario(1);
+    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('DELETE FROM turnos_horarios'));
+    expect(mRun).toHaveBeenCalledWith(1);
+  });
+
+  it('removeTurnoHorario - arroja error si el turno tiene reglas asignadas', () => {
+    mGet.mockReturnValueOnce({ c: 1 });
+    expect(() => removeTurnoHorario(1)).toThrowError('No se puede eliminar el turno porque tiene reglas de horario asignadas.');
+    expect(mRun).not.toHaveBeenCalled();
+  });
+
   it('getHorariosReglas - devuelve reglas', () => {
     mAll.mockReturnValue([{ id_horario: 1, dia_semana: 1, hora_entrada: '08:00:00' }]);
     
@@ -66,15 +88,45 @@ describe('attendance.ts - Reglas y Turnos', () => {
     expect(reglas).toEqual([{ id_horario: 1, dia_semana: 1, hora_entrada: '08:00:00' }]);
   });
 
-  it('addHorario - usa transaccion para eliminar e insertar', () => {
-    // addHorario(id_sector, id_cargo, legajo, id_turno, dias, hora_entrada, hora_salida)
+  it('addHorario - usa transaccion para insertar sin solapamiento', () => {
     addHorario(1, 2, null, 10, [1, 2], '08:00', '17:00');
 
-    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('DELETE FROM horarios'));
     expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO horarios'));
     expect(mTransaction).toHaveBeenCalled();
     // Verify run calls for two days
-    expect(mRun).toHaveBeenCalledTimes(4); // 2 deletes + 2 inserts
+    expect(mRun).toHaveBeenCalledTimes(2); // 2 inserts
+  });
+
+  it('addHorario - arroja error si hay solapamiento (Sector/Cargo/Legajo en el mismo turno y día)', () => {
+    mGet.mockReturnValueOnce({ c: 1 }); // Simular solapamiento
+    
+    expect(() => addHorario(1, 2, null, 10, [1], '08:00', '17:00')).toThrowError('Ya existe una regla configurada para este mismo Turno, Día y Sector/Cargo/Legajo.');
+    expect(mRun).not.toHaveBeenCalled(); // No debe insertar
+  });
+
+  it('removeHorario - elimina regla correctamente', () => {
+    mGet.mockReturnValueOnce({ id_sector: 1, id_cargo: 2, legajo: null }) // select regla
+        .mockReturnValueOnce({ c: 0 }); // select personal
+    removeHorario(1);
+    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('DELETE FROM horarios'));
+    expect(mRun).toHaveBeenCalledWith(1);
+  });
+
+  it('removeHorario - arroja error si la regla no existe', () => {
+    mGet.mockReturnValueOnce(undefined);
+    expect(() => removeHorario(1)).toThrowError('La regla no existe.');
+  });
+
+  it('removeHorario - arroja error si la regla General tiene empleados activos', () => {
+    mGet.mockReturnValueOnce({ id_sector: 1, id_cargo: 2, legajo: null }) // select regla
+        .mockReturnValueOnce({ c: 3 }); // select personal (3 activos)
+    expect(() => removeHorario(1)).toThrowError('No se puede eliminar: hay 3 empleado(s) activo(s) con este sector y cargo.');
+  });
+
+  it('removeHorario - arroja error si la regla de Excepción tiene al empleado activo', () => {
+    mGet.mockReturnValueOnce({ id_sector: null, id_cargo: null, legajo: '123' }) // select regla
+        .mockReturnValueOnce({ c: 1 }); // select personal (1 activo)
+    expect(() => removeHorario(1)).toThrowError('No se puede eliminar: el empleado con legajo 123 está activo en el sistema.');
   });
 
   describe('getPresentesByDate - Prioridad de Reglas (LlegadaTarde)', () => {
