@@ -288,8 +288,8 @@ export default function AdminTurnos() {
         </CardHeader>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-8 items-end">
-            <form onSubmit={handleAddTurno} className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-end w-full">
-              <div className="flex-1">
+            <form onSubmit={handleAddTurno} className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-end w-full sm:justify-start">
+              <div className="w-full sm:w-64">
                 <Label className="text-slate-600 mb-2 block">Nombre del Nuevo Turno</Label>
                 <Input placeholder="Ej: Turno Noche" value={nuevoTurnoDesc} onChange={e => setNuevoTurnoDesc(e.target.value)} required className="border-slate-200" />
               </div>
@@ -298,8 +298,8 @@ export default function AdminTurnos() {
               </Button>
             </form>
             
-            <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-end w-full">
-              <div className="flex-1">
+            <div className="flex-1 flex flex-col sm:flex-row gap-4 sm:items-end w-full sm:justify-start">
+              <div className="w-full sm:w-64">
                 <Label className="text-slate-600 mb-2 block">Turnos Existentes</Label>
                 <Select value={selectedTurnoParaEliminar} onValueChange={setSelectedTurnoParaEliminar}>
                   <SelectTrigger className="border-slate-200"><SelectValue placeholder="Seleccionar turno para eliminar..." /></SelectTrigger>
