@@ -148,8 +148,12 @@ export const appRouter = router({
     removeTurnoHorario: adminProcedure
       .input(z.object({ id_turno: z.number() }))
       .mutation(({ input }) => {
-        removeTurnoHorario(input.id_turno);
-        return { success: true };
+        try {
+          removeTurnoHorario(input.id_turno);
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
       }),
       
     getHorariosReglas: adminProcedure.query(() => {
@@ -182,8 +186,12 @@ export const appRouter = router({
     removeHorario: adminProcedure
       .input(z.object({ id_horario: z.number() }))
       .mutation(({ input }) => {
-        removeHorario(input.id_horario);
-        return { success: true };
+        try {
+          removeHorario(input.id_horario);
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
       }),
   }),
 

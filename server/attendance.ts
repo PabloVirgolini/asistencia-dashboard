@@ -122,6 +122,12 @@ export function addTurnoHorario(descripcion: string): void {
 
 export function removeTurnoHorario(id_turno: number): void {
   const db = getDb();
+  const countStmt = db.prepare('SELECT COUNT(*) as c FROM horarios WHERE id_turno = ?');
+  const result = countStmt.get(id_turno) as { c: number };
+  if (result.c > 0) {
+    throw new Error('No se puede eliminar el turno porque tiene reglas de horario asignadas.');
+  }
+
   const stmt = db.prepare('DELETE FROM turnos_horarios WHERE id_turno = ?');
   stmt.run(id_turno);
 }
@@ -174,6 +180,28 @@ export function addHorario(
 
 export function removeHorario(id_horario: number): void {
   const db = getDb();
+  
+  const ruleStmt = db.prepare('SELECT id_sector, id_cargo, legajo FROM horarios WHERE id_horario = ?');
+  const rule = ruleStmt.get(id_horario) as { id_sector: number | null, id_cargo: number | null, legajo: string | null } | undefined;
+  
+  if (!rule) {
+    throw new Error('La regla no existe.');
+  }
+
+  if (rule.legajo) {
+    const pStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE legajo = ?');
+    const pResult = pStmt.get(rule.legajo) as { c: number };
+    if (pResult.c > 0) {
+      throw new Error(`No se puede eliminar: el empleado con legajo ${rule.legajo} está activo en el sistema.`);
+    }
+  } else if (rule.id_sector && rule.id_cargo) {
+    const pStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE idSector = ? AND id_cargo = ?');
+    const pResult = pStmt.get(rule.id_sector, rule.id_cargo) as { c: number };
+    if (pResult.c > 0) {
+      throw new Error(`No se puede eliminar: hay ${pResult.c} empleado(s) activo(s) con este sector y cargo.`);
+    }
+  }
+
   const stmt = db.prepare('DELETE FROM horarios WHERE id_horario = ?');
   stmt.run(id_horario);
 }

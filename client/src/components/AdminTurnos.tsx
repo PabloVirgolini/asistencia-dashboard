@@ -205,8 +205,8 @@ export default function AdminTurnos() {
       await removeTurno.mutateAsync({ id_turno: id });
       toast.success('Turno eliminado');
       trpcContext.admin.getTurnosHorarios.invalidate();
-    } catch (err) {
-      toast.error('Error al eliminar turno');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al eliminar turno');
     }
   };
 
@@ -246,8 +246,8 @@ export default function AdminTurnos() {
       await removeRegla.mutateAsync({ id_horario: id });
       toast.success('Regla eliminada');
       trpcContext.admin.getHorariosReglas.invalidate();
-    } catch (err) {
-      toast.error('Error al eliminar regla');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al eliminar regla');
     }
   };
 
@@ -533,8 +533,8 @@ export default function AdminTurnos() {
                                           </div>
                                         </div>
                                       </div>
-                                      <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
+                                      <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-slate-400 hover:bg-red-50 transition-colors">
+                                        <Trash2 className="w-4 h-4 text-red-500 hover:text-red-700" />
                                       </Button>
                                     </div>
                                   ))}
@@ -583,8 +583,8 @@ export default function AdminTurnos() {
                                         </div>
                                       </div>
                                     </div>
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <Trash2 className="w-4 h-4 text-red-400 hover:text-red-600" />
+                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-amber-600/50 hover:bg-red-50 transition-colors">
+                                      <Trash2 className="w-4 h-4 text-red-500 hover:text-red-700" />
                                     </Button>
                                   </div>
                                 ))}
