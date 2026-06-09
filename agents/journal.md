@@ -43,3 +43,11 @@ Este archivo es un bitácora para documentar todos los avances, diagnósticos, s
 - **Problema:** El selector de fechas del Dashboard (`SelectorFecha.tsx`) parecía "trabarse" y no dejaba avanzar a la fecha actual (ej. 9/6/2026), mostrando erróneamente el día anterior (8/6/2026).
 - **Diagnóstico:** Se descubrió que al usar `new Date("YYYY-MM-DD")` en JavaScript, el motor asume automáticamente que la hora es `00:00:00 UTC`. Al aplicar la zona horaria local de Argentina (GMT-3), el horario retrocedía 3 horas, cayendo en las `21:00:00` del día anterior. Esto causaba un desajuste visual (el render mostraba el día 8) y un desajuste lógico (la validación creía que la variable ya estaba en el día 9).
 - **Solución:** Se reemplazó el parseo de string directo por la construcción explícita `new Date(year, month - 1, day)`, la cual instruye al motor de JS a utilizar el huso horario local desde el momento de la instanciación de la fecha.
+
+### [2026-06-09] - Consolidación de Matriz de Turnos y UX "Tree Schema"
+- **Avance:** Se simplificó radicalmente la base de datos eliminando tablas obsoletas heredadas del diseño viejo (`horario_franja`, `horario_excepcion`) para converger en una Súper-Tabla única (`horarios`) de formato "Matriz".
+- **Detalle Arquitectónico y UX:**
+  1. Se implementó un algoritmo robusto en el backend (Node.js) que evalúa las prioridades de los turnos en memoria. Las "Excepciones por Persona" siempre pisan y sobreescriben a las "Reglas Generales de Sector+Cargo".
+  2. Bajo directriz del Agente UX, se rediseñó la "Matriz Actual" en el Panel de Administración. Se abandonó el modelo de tabla plana en favor de un formato "Tree Schema / Crumble" que agrupa visualmente las reglas en ramas colapsables (`Turno > Sector > Cargo > Franjas Horarias`), reduciendo la carga cognitiva.
+  3. Se instauró una nueva norma de diseño obligatoria: "Tablas Interactivas". A partir de ahora, todo grid de datos incorpora automáticamente buscadores en tiempo real (barras de texto) y ordenamiento interactivo (flechas up/down) en sus cabeceras.
+  4. El Agente QA desarrolló en paralelo pruebas unitarias usando `vitest` que blindan el cálculo de prioridades matemáticas y las validaciones de llegadas tardes, mockeando la base de datos `better-sqlite3`. Se solucionaron problemas de tipado agregando `@testing-library/jest-dom`.

@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Trash2, Edit2, LogOut } from 'lucide-react';
+import { Loader2, Plus, Trash2, Edit2, LogOut, ArrowUpDown, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
+import AdminTurnos from '@/components/AdminTurnos';
 
 export default function AdminPanel() {
   const [, navigate] = useLocation();
@@ -48,6 +49,81 @@ export default function AdminPanel() {
   const [personaSector, setPersonaSector] = useState('');
   const [personaCargo, setPersonaCargo] = useState('1');
   const [editingPerson, setEditingPerson] = useState<string | null>(null);
+
+  // Estados para ordenar y filtrar la tabla de personal
+  const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
+  const [filterText, setFilterText] = useState('');
+
+  const sortedAndFilteredPersonal = React.useMemo(() => {
+    let result = personal ? [...personal] : [];
+    
+    if (filterText) {
+      const lowerFilter = filterText.toLowerCase();
+      result = result.filter((p: any) => 
+        p.legajo.toLowerCase().includes(lowerFilter) ||
+        p.nombre.toLowerCase().includes(lowerFilter) ||
+        p.sectorPertenencia.toString().toLowerCase().includes(lowerFilter)
+      );
+    }
+    
+    if (sortConfig) {
+      result.sort((a: any, b: any) => {
+        const aVal = a[sortConfig.key];
+        const bVal = b[sortConfig.key];
+        
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    
+    return result;
+  }, [personal, sortConfig, filterText]);
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Estados para ordenar y filtrar Sectores
+  const [sectorSortConfig, setSectorSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
+  const [sectorFilterText, setSectorFilterText] = useState('');
+
+  const sortedAndFilteredSectores = React.useMemo(() => {
+    let result = sectores ? [...sectores] : [];
+    
+    if (sectorFilterText) {
+      const lowerFilter = sectorFilterText.toLowerCase();
+      result = result.filter((s: any) => 
+        s.idSector.toString().includes(lowerFilter) ||
+        s.descripcion.toLowerCase().includes(lowerFilter)
+      );
+    }
+    
+    if (sectorSortConfig) {
+      result.sort((a: any, b: any) => {
+        const aVal = a[sectorSortConfig.key];
+        const bVal = b[sectorSortConfig.key];
+        
+        if (aVal < bVal) return sectorSortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sectorSortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    
+    return result;
+  }, [sectores, sectorSortConfig, sectorFilterText]);
+
+  const handleSectorSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sectorSortConfig && sectorSortConfig.key === key && sectorSortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSectorSortConfig({ key, direction });
+  };
 
   React.useEffect(() => {
     if (!isUserLoading && !user) {
@@ -172,9 +248,10 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="personal" className="w-full">
-          <TabsList className="grid w-[400px] grid-cols-2">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
             <TabsTrigger value="personal">Personal</TabsTrigger>
             <TabsTrigger value="sectores">Sectores</TabsTrigger>
+            <TabsTrigger value="turnos">Reglas de Turnos</TabsTrigger>
           </TabsList>
 
           {/* TAB: PERSONAL */}
@@ -209,7 +286,7 @@ export default function AdminPanel() {
                           </SelectTrigger>
                           <SelectContent>
                             {sectores?.map((s: any) => (
-                              <SelectItem key={s.idSector} value={s.idSector.toString()}>{s.descripcion}</SelectItem>
+                              <SelectItem key={s.idSector} value={s.idSector.toString()}>{s.idSector} - {s.descripcion}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
@@ -237,18 +314,34 @@ export default function AdminPanel() {
                 </Dialog>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 relative max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input 
+                    placeholder="Buscar por nombre, legajo o sector..." 
+                    className="pl-9"
+                    value={filterText}
+                    onChange={(e) => setFilterText(e.target.value)}
+                  />
+                </div>
                 {isPersonalLoading ? <Loader2 className="animate-spin mx-auto my-8 text-indigo-600" /> : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Legajo</TableHead>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Sector</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {personal?.map((p: any) => (
+                  <div className="border rounded-md">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50">
+                          <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('legajo')}>
+                            <div className="flex items-center gap-1 font-semibold text-slate-700">Legajo <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
+                          </TableHead>
+                          <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('nombre')}>
+                            <div className="flex items-center gap-1 font-semibold text-slate-700">Nombre <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
+                          </TableHead>
+                          <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('sectorPertenencia')}>
+                            <div className="flex items-center gap-1 font-semibold text-slate-700">Sector <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
+                          </TableHead>
+                          <TableHead className="text-right font-semibold text-slate-700">Acciones</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {sortedAndFilteredPersonal.map((p: any) => (
                         <TableRow key={p.legajo}>
                           <TableCell className="font-medium">{p.legajo}</TableCell>
                           <TableCell>{p.nombre} {p.cargo_id && p.cargo_id > 1 ? <span className="text-xs font-bold text-indigo-600 ml-2">(E)</span> : null}</TableCell>
@@ -263,8 +356,16 @@ export default function AdminPanel() {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {sortedAndFilteredPersonal.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-slate-500 py-6">
+                            No se encontraron empleados
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -300,17 +401,31 @@ export default function AdminPanel() {
                 </Dialog>
               </CardHeader>
               <CardContent>
+                <div className="mb-4 relative max-w-sm">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input 
+                    placeholder="Buscar por descripción o ID..." 
+                    className="pl-9"
+                    value={sectorFilterText}
+                    onChange={(e) => setSectorFilterText(e.target.value)}
+                  />
+                </div>
                 {isSectoresLoading ? <Loader2 className="animate-spin mx-auto my-8 text-indigo-600" /> : (
+                  <div className="border rounded-md">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Descripción</TableHead>
-                        <TableHead className="text-right">Acciones</TableHead>
+                      <TableRow className="bg-slate-50">
+                        <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSectorSort('idSector')}>
+                          <div className="flex items-center gap-1 font-semibold text-slate-700">ID <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
+                        </TableHead>
+                        <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSectorSort('descripcion')}>
+                          <div className="flex items-center gap-1 font-semibold text-slate-700">Descripción <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
+                        </TableHead>
+                        <TableHead className="text-right font-semibold text-slate-700">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {sectores?.map((s: any) => (
+                      {sortedAndFilteredSectores.map((s: any) => (
                         <TableRow key={s.idSector}>
                           <TableCell className="font-medium">{s.idSector}</TableCell>
                           <TableCell>{s.descripcion}</TableCell>
@@ -321,11 +436,24 @@ export default function AdminPanel() {
                           </TableCell>
                         </TableRow>
                       ))}
+                      {sortedAndFilteredSectores.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center text-slate-500 py-6">
+                            No se encontraron sectores
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* TAB: TURNOS Y REGLAS */}
+          <TabsContent value="turnos" className="mt-6">
+            <AdminTurnos />
           </TabsContent>
         </Tabs>
       </div>

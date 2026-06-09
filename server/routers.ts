@@ -16,7 +16,13 @@ import {
   updatePersonal,
   deletePersonal,
   getActivePersonal,
-  getCargos
+  getCargos,
+  getTurnosHorarios,
+  addTurnoHorario,
+  removeTurnoHorario,
+  getHorariosReglas,
+  addHorario,
+  removeHorario
 } from "./attendance";
 import { signToken } from "./jwt";
 
@@ -115,9 +121,9 @@ export const appRouter = router({
       }),
 
     editPerson: adminProcedure
-      .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), activo: z.number(), cargo_id: z.number() }))
+      .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), activo: z.number(), cargo_id: z.number().nullable().optional() }))
       .mutation(({ input }) => {
-        updatePersonal(input.legajo, input.nombre, input.sector, input.activo, input.cargo_id);
+        updatePersonal(input.legajo, input.nombre, input.sector, input.activo, input.cargo_id || 1);
         return { success: true };
       }),
 
@@ -125,6 +131,58 @@ export const appRouter = router({
       .input(z.object({ legajo: z.string() }))
       .mutation(({ input }) => {
         deletePersonal(input.legajo);
+        return { success: true };
+      }),
+
+    getTurnosHorarios: adminProcedure.query(() => {
+      return getTurnosHorarios();
+    }),
+    
+    addTurnoHorario: adminProcedure
+      .input(z.object({ descripcion: z.string().min(1) }))
+      .mutation(({ input }) => {
+        addTurnoHorario(input.descripcion);
+        return { success: true };
+      }),
+      
+    removeTurnoHorario: adminProcedure
+      .input(z.object({ id_turno: z.number() }))
+      .mutation(({ input }) => {
+        removeTurnoHorario(input.id_turno);
+        return { success: true };
+      }),
+      
+    getHorariosReglas: adminProcedure.query(() => {
+      return getHorariosReglas();
+    }),
+    
+    addHorario: adminProcedure
+      .input(z.object({
+        id_sector: z.number().nullable(),
+        id_cargo: z.number().nullable(),
+        legajo: z.string().nullable(),
+        id_turno: z.number(),
+        dias: z.array(z.number()),
+        hora_entrada: z.string(),
+        hora_salida: z.string()
+      }))
+      .mutation(({ input }) => {
+        addHorario(
+          input.id_sector, 
+          input.id_cargo, 
+          input.legajo, 
+          input.id_turno, 
+          input.dias, 
+          input.hora_entrada, 
+          input.hora_salida
+        );
+        return { success: true };
+      }),
+      
+    removeHorario: adminProcedure
+      .input(z.object({ id_horario: z.number() }))
+      .mutation(({ input }) => {
+        removeHorario(input.id_horario);
         return { success: true };
       }),
   }),

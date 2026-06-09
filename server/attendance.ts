@@ -108,6 +108,76 @@ export function getCargos(): { id_cargo: number, descripcion: string }[] {
   return stmt.all() as { id_cargo: number, descripcion: string }[];
 }
 
+export function getTurnosHorarios(): { id_turno: number, descripcion: string }[] {
+  const db = getDb();
+  const stmt = db.prepare('SELECT id_turno, descripcion FROM turnos_horarios ORDER BY id_turno ASC');
+  return stmt.all() as { id_turno: number, descripcion: string }[];
+}
+
+export function addTurnoHorario(descripcion: string): void {
+  const db = getDb();
+  const stmt = db.prepare('INSERT INTO turnos_horarios (descripcion) VALUES (?)');
+  stmt.run(descripcion);
+}
+
+export function removeTurnoHorario(id_turno: number): void {
+  const db = getDb();
+  const stmt = db.prepare('DELETE FROM turnos_horarios WHERE id_turno = ?');
+  stmt.run(id_turno);
+}
+
+export function getHorariosReglas(): any[] {
+  const db = getDb();
+  const stmt = db.prepare(`
+    SELECT h.id_horario, h.dia_semana, h.hora_entrada, h.hora_salida, h.legajo,
+           t.descripcion as turno, s.descripcion as sector, c.descripcion as cargo
+    FROM horarios h
+    LEFT JOIN turnos_horarios t ON h.id_turno = t.id_turno
+    LEFT JOIN sectores s ON h.id_sector = s.idSector
+    LEFT JOIN cargos c ON h.id_cargo = c.id_cargo
+    ORDER BY h.id_turno ASC, h.dia_semana ASC
+  `);
+  return stmt.all();
+}
+
+export function addHorario(
+  id_sector: number | null, 
+  id_cargo: number | null, 
+  legajo: string | null, 
+  id_turno: number, 
+  dias: number[], 
+  hora_entrada: string, 
+  hora_salida: string
+): void {
+  const db = getDb();
+  const insertStmt = db.prepare(`
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+  
+  const deleteStmt = db.prepare(`
+    DELETE FROM horarios 
+    WHERE id_turno = ? AND dia_semana = ? AND 
+          (id_sector IS ? OR (id_sector IS NULL AND ? IS NULL)) AND 
+          (id_cargo IS ? OR (id_cargo IS NULL AND ? IS NULL)) AND 
+          (legajo IS ? OR (legajo IS NULL AND ? IS NULL))
+  `);
+
+  const tx = db.transaction((dias: number[]) => {
+    for (const dia of dias) {
+      deleteStmt.run(id_turno, dia, id_sector, id_sector, id_cargo, id_cargo, legajo, legajo);
+      insertStmt.run(id_sector, id_cargo, id_turno, dia, hora_entrada, hora_salida, legajo);
+    }
+  });
+  tx(dias);
+}
+
+export function removeHorario(id_horario: number): void {
+  const db = getDb();
+  const stmt = db.prepare('DELETE FROM horarios WHERE id_horario = ?');
+  stmt.run(id_horario);
+}
+
 /**
  * Obtiene el personal activo, opcionalmente filtrado por sector
  */
@@ -156,29 +226,27 @@ export function getPresentesByDate(date: string, sector?: string): AttendanceRec
   const db = getDb();
   
   let query = `
-    SELECT DISTINCT
+    SELECT
       p.legajo,
       p.nombre,
       s.descripcion as sector,
       c.descripcion as cargo,
       c.nivel_criticidad,
-      MIN(f.hora) as primeraFichada,
-      h.hora_entrada as horaEsperada
+      p.sectorPertenencia,
+      p.cargo_id,
+      ht.id_turno,
+      MIN(f.hora) as primeraFichada
     FROM personal p
     INNER JOIN fichadas f ON CAST(p.legajo AS INTEGER) = CAST(SUBSTR(f.legajo, 3) AS INTEGER)
     LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
     LEFT JOIN cargos c ON p.cargo_id = c.id_cargo
     LEFT JOIN historial_turnos ht ON ht.legajo = p.legajo AND ht.fecha_inicio <= ? AND (ht.fecha_fin IS NULL OR ht.fecha_fin >= ?)
-    LEFT JOIN horarios h ON h.id_cargo = p.cargo_id AND h.id_turno = ht.id_turno AND h.id_sector = p.sectorPertenencia AND h.dia_semana = ?
-    WHERE p.activo = 1
-      AND f.hora >= ? AND f.hora < ?
-  `;
-  
-  if (sector && sector !== 'todos') {
-    query += ' AND p.sectorPertenencia = ?';
-  }
-  
-  query += ' GROUP BY p.legajo, p.nombre, s.descripcion, c.descripcion, c.nivel_criticidad, h.hora_entrada ORDER BY primeraFichada ASC';
+    WHERE p.activo = 1 
+      AND f.hora >= ? 
+      AND f.hora < ?
+      ${sector && sector !== 'todos' ? 'AND p.sectorPertenencia = ?' : ''}
+    GROUP BY p.legajo, p.nombre, s.descripcion, c.descripcion, c.nivel_criticidad, p.sectorPertenencia, p.cargo_id, ht.id_turno
+    ORDER BY primeraFichada ASC`;
   
   const startOfDay = `${date} 00:00:00`;
   const endOfDay = `${date} 23:59:59`;
@@ -186,17 +254,40 @@ export function getPresentesByDate(date: string, sector?: string): AttendanceRec
   const dayOfWeek = jsDate.getDay(); // 0 a 6
   
   const stmt = db.prepare(query);
-  const params = sector && sector !== 'todos' 
-    ? [date, date, dayOfWeek, startOfDay, endOfDay, sector]
-    : [date, date, dayOfWeek, startOfDay, endOfDay];
-  
-  const records = stmt.all(...params) as any[];
-  
+  const queryParams = [date, date, startOfDay, endOfDay];
+  if (sector && sector !== 'todos') {
+    queryParams.push(sector);
+  }
+
+  const records = stmt.all(...queryParams) as any[];
+
+  // Traer todos los horarios del día actual para evaluarlos en JS
+  const horariosStmt = db.prepare('SELECT id_sector, id_cargo, legajo, id_turno, hora_entrada FROM horarios WHERE dia_semana = ?');
+  const horariosDelDia = horariosStmt.all(dayOfWeek) as any[];
+
   return records.map(r => {
     let llegadaTarde = false;
-    if (r.horaEsperada) {
+    let horaEsperada = null;
+
+    if (r.id_turno) {
+      const matchingHorarios = horariosDelDia.filter((h: any) => h.id_turno === r.id_turno);
+      
+      // 1. Prioridad: Excepción por Legajo
+      const exceptionRule = matchingHorarios.find((h: any) => h.legajo === r.legajo);
+      if (exceptionRule) {
+        horaEsperada = exceptionRule.hora_entrada;
+      } else {
+        // 2. Prioridad: Regla General Sector+Cargo
+        const generalRule = matchingHorarios.find((h: any) => h.id_sector === r.sectorPertenencia && h.id_cargo === r.cargo_id);
+        if (generalRule) {
+          horaEsperada = generalRule.hora_entrada;
+        }
+      }
+    }
+
+    if (horaEsperada) {
        const timePart = r.primeraFichada.split(' ')[1]; // "HH:MM:SS"
-       if (timePart.substring(0, 5) > r.horaEsperada) {
+       if (timePart.substring(0, 5) > horaEsperada) {
          llegadaTarde = true;
        }
     }
