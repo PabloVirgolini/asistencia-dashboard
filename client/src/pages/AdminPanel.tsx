@@ -202,7 +202,7 @@ export default function AdminPanel() {
                           </SelectTrigger>
                           <SelectContent>
                             {sectores?.map((s: any) => (
-                              <SelectItem key={s.idSector} value={s.descripcion}>{s.descripcion}</SelectItem>
+                              <SelectItem key={s.idSector} value={s.idSector.toString()}>{s.descripcion}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

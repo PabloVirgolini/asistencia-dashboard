@@ -155,7 +155,7 @@ export default function AttendanceDashboard() {
                 {sectorsQuery.data?.map((sector) => (
                   <SelectItem
                     key={sector.idSector}
-                    value={sector.descripcion}
+                    value={sector.idSector.toString()}
                   >
                     {sector.descripcion}
                   </SelectItem>

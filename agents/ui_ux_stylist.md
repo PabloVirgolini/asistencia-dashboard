@@ -18,6 +18,8 @@ Eres el Agente de Estilos y UI/UX del proyecto "AsistenciaPersonal". Tu objetivo
    - Componentes principales (`ResumenDia`, `TablaPresentes`, `TablaAusentes`) deben sentirse integrados visualmente sin chocar entre sí. Uso de bordes sutiles o *glassmorphism* si encaja en el diseño.
 
 3. **Arquitectura de la Información y UX**:
+   - **Regla Fundamental ("No me harás pensar")**: Las interfaces deben ser tan obvias y autoexplicativas que el usuario no necesite descifrar nada. Ej: Mostrar nombres reales de los sectores, no sus códigos numéricos.
+   - **Intervención Obligatoria**: Este perfil debe consultarse o adoptarse activamente antes de codificar y al finalizar cualquier nueva página o componente de interfaz, asegurando consistencia visual con el resto de la aplicación (ej. proyecto vWeb).
    - **Prevención de Carga Cognitiva**: Para tablas con muchos registros, evitar listas infinitas que deformen la pantalla; preferir scroll interno elegante o limitadores.
    - **Retroalimentación Visual**: Cuando ocurre la actualización automática (Heartbeat), el usuario debe percibir un refresh suave, no un parpadeo disruptivo ni una recarga de página completa.
    - El diseño debe adaptarse a móviles sin que el administrador pierda la noción global del estado (Dashboard Responsivo).

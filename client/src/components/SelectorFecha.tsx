@@ -41,23 +41,32 @@ export default function SelectorFecha({
 
   const handlePreviousDay = () => {
     if (selectedDate) {
-      const date = new Date(selectedDate);
+      const [year, month, day] = selectedDate.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
       date.setDate(date.getDate() - 1);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      onDateChange(`${year}-${month}-${day}`);
+      const newYear = date.getFullYear();
+      const newMonth = String(date.getMonth() + 1).padStart(2, "0");
+      const newDay = String(date.getDate()).padStart(2, "0");
+      onDateChange(`${newYear}-${newMonth}-${newDay}`);
     }
   };
 
   const handleNextDay = () => {
     if (selectedDate) {
-      const date = new Date(selectedDate);
-      date.setDate(date.getDate() + 1);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      onDateChange(`${year}-${month}-${day}`);
+      const [year, month, day] = selectedDate.split("-").map(Number);
+      const date = new Date(year, month - 1, day);
+      
+      // Evitar ir hacia el futuro
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const nextDate = new Date(year, month - 1, day + 1);
+      
+      if (nextDate <= today) {
+        const newYear = nextDate.getFullYear();
+        const newMonth = String(nextDate.getMonth() + 1).padStart(2, "0");
+        const newDay = String(nextDate.getDate()).padStart(2, "0");
+        onDateChange(`${newYear}-${newMonth}-${newDay}`);
+      }
     }
   };
 

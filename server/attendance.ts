@@ -102,10 +102,17 @@ export function getSectors(): SectorRecord[] {
  */
 export function getActivePersonal(sector?: string): PersonalRecord[] {
   const db = getDb();
-  let query = 'SELECT id, legajo, nombre, activo, enCapacitacion, sectorPertenencia FROM personal WHERE activo = 1';
+  let query = `
+    SELECT 
+      p.id, p.legajo, p.nombre, p.activo, p.enCapacitacion, 
+      s.descripcion as sectorPertenencia 
+    FROM personal p
+    LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
+    WHERE p.activo = 1
+  `;
   
   if (sector && sector !== 'todos') {
-    query += " AND sectorPertenencia = ?";
+    query += " AND p.sectorPertenencia = ?";
     const stmt = db.prepare(query);
     return stmt.all(sector) as PersonalRecord[];
   }
@@ -138,10 +145,11 @@ export function getPresentesByDate(date: string, sector?: string): AttendanceRec
     SELECT DISTINCT
       p.legajo,
       p.nombre,
-      p.sectorPertenencia as sector,
+      s.descripcion as sector,
       MIN(f.hora) as primeraFichada
     FROM personal p
-    INNER JOIN fichadas f ON p.legajo = f.legajo
+    INNER JOIN fichadas f ON CAST(p.legajo AS INTEGER) = CAST(SUBSTR(f.legajo, 3) AS INTEGER)
+    LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
     WHERE p.activo = 1
       AND f.hora >= ? AND f.hora < ?
   `;
@@ -150,7 +158,7 @@ export function getPresentesByDate(date: string, sector?: string): AttendanceRec
     query += ' AND p.sectorPertenencia = ?';
   }
   
-  query += ' GROUP BY p.legajo, p.nombre, p.sectorPertenencia ORDER BY primeraFichada ASC';
+  query += ' GROUP BY p.legajo, p.nombre, s.descripcion ORDER BY primeraFichada ASC';
   
   const startOfDay = `${date} 00:00:00`;
   const endOfDay = `${date} 23:59:59`;
@@ -173,11 +181,12 @@ export function getAusentesByDate(date: string, sector?: string): AbsenceRecord[
     SELECT
       p.legajo,
       p.nombre,
-      p.sectorPertenencia as sector
+      s.descripcion as sector
     FROM personal p
+    LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
     WHERE p.activo = 1
-      AND p.legajo NOT IN (
-        SELECT DISTINCT f.legajo
+      AND CAST(p.legajo AS INTEGER) NOT IN (
+        SELECT DISTINCT CAST(SUBSTR(f.legajo, 3) AS INTEGER)
         FROM fichadas f
         WHERE f.hora >= ? AND f.hora < ?
       )

@@ -40,8 +40,8 @@ Para mantener la calidad y el enfoque, el conocimiento del sistema se ha fragmen
 
 ### 5. 🎨 Agente de Estilos y UI/UX (UI/UX Stylist)
 - **Perfil:** `agents/ui_ux_stylist.md`
-- **Cuándo usarlo:** Al diseñar nuevos componentes React, o cuando se detecte que la interfaz está perdiendo el estándar de calidad visual requerido por el proyecto.
-- **Rol:** Garantizar que el dashboard se mantenga sumamente estético, intuitivo y responsivo ("Premium"). Vigila el uso de la paleta (Verde/Rojo para presentes/ausentes) y la implementación de micro-animaciones elegantes.
+- **Cuándo usarlo:** De forma **obligatoria** cuando se diseñan nuevas pantallas (rutas), componentes visuales, o se apliquen cambios de interfaz de usuario.
+- **Rol:** Garantizar que el dashboard se mantenga sumamente estético, intuitivo y responsivo ("Premium"). Vigila la usabilidad bajo el principio de "No me harás pensar", el uso de la paleta (Verde/Rojo para presentes/ausentes) y la implementación de micro-animaciones elegantes.
 
 ---
 
