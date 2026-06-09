@@ -30,3 +30,7 @@ Se identificaron brechas lógicas en la base de datos para la configuración de 
 3. **Anti-Solapamiento Transaccional**: El servidor rechaza solapamientos exactos de día, turno y perfil.
 
 **Cobertura Total**: El ingeniero de QA expandió exitosamente la suite a **16 pruebas unitarias exhaustivas** en `server/attendance.rules.test.ts`. Asimismo, se fixearon pruebas adyacentes (`AdminTurnos.test.tsx` y `auth.logout.test.ts`) para garantizar que la suite global (`pnpm test`) esté al **100% pasando (30 tests)**.
+
+## Premisas de Diseño y UX (Core Principles)
+- **Leyes de Gestalt**: Al elaborar o refactorizar cualquier página, aplicar rigurosamente principios de Gestalt (como la *Ley de Proximidad*). Los controles que afectan a un elemento visual deben estar inmediatamente adyacentes a dicho elemento, no flotando en encabezados globales aislados.
+- **Estética Premium**: Las interfaces deben contar con tipografía moderna, paletas armoniosas, glassmorphism sutil y micro-interacciones. Nada de componentes MVP sin estilizar.

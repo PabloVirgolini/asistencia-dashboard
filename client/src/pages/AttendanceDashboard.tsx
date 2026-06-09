@@ -165,10 +165,7 @@ export default function AttendanceDashboard() {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center space-x-2 bg-white px-4 rounded-md border border-slate-200">
-              <Switch id="show-encargados" checked={showEncargados} onCheckedChange={setShowEncargados} />
-              <Label htmlFor="show-encargados" className="text-slate-600 font-medium">Resaltar Encargados</Label>
-            </div>
+
           </div>
         </div>
 
@@ -201,7 +198,13 @@ export default function AttendanceDashboard() {
             />
 
             {/* Tablas de asistencia */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+            <div className="flex items-center justify-end mb-4">
+              <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-md border border-slate-200 shadow-sm">
+                <Switch id="show-encargados" checked={showEncargados} onCheckedChange={setShowEncargados} />
+                <Label htmlFor="show-encargados" className="text-slate-600 font-medium cursor-pointer">Resaltar Encargados</Label>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <TablaPresentes presentes={attendanceQuery.data.presentes} showEncargados={showEncargados} />
               <TablaAusentes ausentes={attendanceQuery.data.ausentes} showEncargados={showEncargados} />
             </div>

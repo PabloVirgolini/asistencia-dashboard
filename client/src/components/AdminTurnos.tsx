@@ -331,12 +331,12 @@ export default function AdminTurnos() {
 
       {/* SECCIÓN 2: Creador de Reglas */}
       <Card className="border-indigo-100 shadow-md overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-indigo-50 to-white border-b border-indigo-100 pb-5">
+        <CardHeader className="bg-gradient-to-r from-indigo-50 to-white border-b border-indigo-100 py-5 px-6">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 rounded-lg shadow-sm">
+            <div className="flex items-center justify-center p-2 bg-indigo-100 rounded-lg shadow-sm">
               <Clock className="w-5 h-5 text-indigo-700" />
             </div>
-            <CardTitle className="text-xl text-indigo-950 font-bold tracking-tight">CREADOR DE REGLAS</CardTitle>
+            <CardTitle className="text-xl text-indigo-950 font-bold tracking-tight m-0 leading-none flex items-center h-full pt-1">CREADOR DE REGLAS</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="pt-6">

@@ -202,13 +202,13 @@ export function removeHorario(id_horario: number): void {
   }
 
   if (rule.legajo) {
-    const pStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE legajo = ?');
+    const pStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE legajo = ? AND activo = 1');
     const pResult = pStmt.get(rule.legajo) as { c: number };
     if (pResult.c > 0) {
       throw new Error(`No se puede eliminar: el empleado con legajo ${rule.legajo} está activo en el sistema.`);
     }
   } else if (rule.id_sector && rule.id_cargo) {
-    const pStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE idSector = ? AND id_cargo = ?');
+    const pStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE sectorPertenencia = ? AND cargo_id = ? AND activo = 1');
     const pResult = pStmt.get(rule.id_sector, rule.id_cargo) as { c: number };
     if (pResult.c > 0) {
       throw new Error(`No se puede eliminar: hay ${pResult.c} empleado(s) activo(s) con este sector y cargo.`);

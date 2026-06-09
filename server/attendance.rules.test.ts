@@ -121,12 +121,14 @@ describe('attendance.ts - Reglas y Turnos', () => {
     mGet.mockReturnValueOnce({ id_sector: 1, id_cargo: 2, legajo: null }) // select regla
         .mockReturnValueOnce({ c: 3 }); // select personal (3 activos)
     expect(() => removeHorario(1)).toThrowError('No se puede eliminar: hay 3 empleado(s) activo(s) con este sector y cargo.');
+    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('sectorPertenencia = ? AND cargo_id = ? AND activo = 1'));
   });
 
   it('removeHorario - arroja error si la regla de Excepción tiene al empleado activo', () => {
     mGet.mockReturnValueOnce({ id_sector: null, id_cargo: null, legajo: '123' }) // select regla
         .mockReturnValueOnce({ c: 1 }); // select personal (1 activo)
     expect(() => removeHorario(1)).toThrowError('No se puede eliminar: el empleado con legajo 123 está activo en el sistema.');
+    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('legajo = ? AND activo = 1'));
   });
 
   describe('getPresentesByDate - Prioridad de Reglas (LlegadaTarde)', () => {
