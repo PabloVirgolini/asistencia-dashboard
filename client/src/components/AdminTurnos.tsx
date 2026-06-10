@@ -70,7 +70,7 @@ export default function AdminTurnos() {
   const { data: reglas, isLoading: isReglasLoading } = trpc.admin.getHorariosReglas.useQuery();
   const { data: sectores } = trpc.attendance.getSectors.useQuery();
   const { data: sectoresCargos } = trpc.admin.getSectoresCargos.useQuery();
-  const { data: cargos } = trpc.admin.getCargos.useQuery();
+  const { data: cargosData } = trpc.admin.getCargos.useQuery();
   const { data: personal } = trpc.admin.getPersonal.useQuery();
 
   // Mutations
@@ -509,7 +509,7 @@ export default function AdminTurnos() {
                       {!selectedSector ? (
                         <p className="text-sm text-slate-400">Selecciona un sector primero</p>
                       ) : (
-                        cargos
+                        cargosData
                           ?.filter((c: any) => {
                             if (!sectoresCargos) return false;
                             const mapped = sectoresCargos.find((sc: any) => sc.id_sector.toString() === selectedSector && sc.id_cargo === c.id_cargo);
