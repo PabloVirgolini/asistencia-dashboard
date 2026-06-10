@@ -265,7 +265,7 @@ export default function AdminPanel() {
       const currentConfig = sectoresCargos?.filter((sc: any) => sc.id_sector === sectorId) || [];
       const newConfig = currentConfig
         .filter((sc: any) => sc.id_cargo !== cargoId)
-        .map((sc: any) => ({ cargo_id: sc.id_cargo, nivel_criticidad: sc.nivel_criticidad }));
+        .map((sc: any) => ({ id_cargo: sc.id_cargo, nivel_criticidad: sc.nivel_criticidad }));
         
       await updateSectorCargosMutation.mutateAsync({ idSector: sectorId, cargosParams: newConfig });
       trpcContext.admin.getSectoresCargos.invalidate();
@@ -278,8 +278,8 @@ export default function AdminPanel() {
   const handleAddCargoToSector = async (sectorId: number, cargoId: number) => {
     try {
       const currentConfig = sectoresCargos?.filter((sc: any) => sc.id_sector === sectorId) || [];
-      const newConfig = currentConfig.map((sc: any) => ({ cargo_id: sc.id_cargo, nivel_criticidad: sc.nivel_criticidad }));
-      newConfig.push({ cargo_id: cargoId, nivel_criticidad: 0 }); // Añadir con criticidad 0 por defecto
+      const newConfig = currentConfig.map((sc: any) => ({ id_cargo: sc.id_cargo, nivel_criticidad: sc.nivel_criticidad }));
+      newConfig.push({ id_cargo: cargoId, nivel_criticidad: 0 }); // Añadir con criticidad 0 por defecto
       
       await updateSectorCargosMutation.mutateAsync({ idSector: sectorId, cargosParams: newConfig });
       trpcContext.admin.getSectoresCargos.invalidate();
