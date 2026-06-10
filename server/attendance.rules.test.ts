@@ -92,7 +92,7 @@ describe('attendance.ts - Reglas y Turnos', () => {
   });
 
   it('addHorario - usa transaccion para insertar sin solapamiento', () => {
-    addHorario(1, 2, null, 10, [1, 2], '08:00', '17:00');
+    addHorario(1, 2, null, 10, [1, 2], '08:00', '17:00', 'Sistema');
 
     expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO horarios'));
     expect(mTransaction).toHaveBeenCalled();
@@ -103,14 +103,14 @@ describe('attendance.ts - Reglas y Turnos', () => {
   it('addHorario - arroja error si hay solapamiento (Sector/Cargo/Legajo en el mismo turno y día)', () => {
     mGet.mockReturnValueOnce({ c: 1 }); // Simular solapamiento
     
-    expect(() => addHorario(1, 2, null, 10, [1], '08:00', '17:00')).toThrowError('Ya existe una regla de horario para el día 1 con estos parámetros.');
+    expect(() => addHorario(1, 2, null, 10, [1], '08:00', '17:00', 'Sistema')).toThrowError('Ya existe una regla de horario para el día 1 con estos parámetros.');
     expect(mRun).not.toHaveBeenCalled(); // No debe insertar
   });
 
   it('updateHorario - actualiza correctamente un horario existente', () => {
     mGet.mockReturnValueOnce({ c: 1 }); // Simular que la regla existe
     
-    updateHorario(1, '09:00', '18:00');
+    updateHorario(1, '09:00', '18:00', 'Sistema');
     
     expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?'));
     expect(mRun).toHaveBeenCalledWith('09:00', '18:00', 'Sistema', 1);
@@ -119,7 +119,7 @@ describe('attendance.ts - Reglas y Turnos', () => {
   it('updateHorario - arroja error si el horario a actualizar no existe', () => {
     mGet.mockReturnValueOnce({ c: 0 }); // Simular que la regla no existe
     
-    expect(() => updateHorario(99, '09:00', '18:00')).toThrowError('La regla de horario no existe.');
+    expect(() => updateHorario(99, '09:00', '18:00', 'Sistema')).toThrowError('La regla de horario no existe.');
     expect(mRun).not.toHaveBeenCalled();
   });
 

@@ -45,7 +45,7 @@ export function getHorariosReglas(): any[] {
   return stmt.all();
 }
 
-export function duplicateSectorRules(id_turno: number, sourceSectorId: number, targetSectorId: number, adminName: string = 'Sistema'): void {
+export function duplicateSectorRules(id_turno: number, sourceSectorId: number, targetSectorId: number, adminName: string): void {
   const db = getDb();
   
   const stmt = db.prepare(`
@@ -104,7 +104,7 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
   transaction(rulesToCopy);
 }
 
-export function duplicateCargoRules(id_turno: number, id_sector: number, source_cargo: number, target_cargo: number, adminName: string = 'Sistema'): void {
+export function duplicateCargoRules(id_turno: number, id_sector: number, source_cargo: number, target_cargo: number, adminName: string): void {
   const db = getDb();
   
   const stmt = db.prepare(`
@@ -149,7 +149,7 @@ export function addHorario(
   dias: number[], 
   hora_entrada: string, 
   hora_salida: string,
-  adminName: string = 'Sistema'
+  adminName: string
 ): void {
   const db = getDb();
   
@@ -209,7 +209,7 @@ export function removeHorario(id_horario: number): void {
   deleteStmt.run(id_horario);
 }
 
-export function updateHorario(id_horario: number, hora_entrada: string, hora_salida: string, adminName: string = 'Sistema'): void {
+export function updateHorario(id_horario: number, hora_entrada: string, hora_salida: string, adminName: string): void {
   const db = getDb();
   
   const checkStmt = db.prepare('SELECT COUNT(*) as c FROM horarios WHERE id_horario = ?');
@@ -223,7 +223,7 @@ export function updateHorario(id_horario: number, hora_entrada: string, hora_sal
   updateStmt.run(hora_entrada, hora_salida, adminName, id_horario);
 }
 
-export function batchUpdateHorarios(id_horarios: number[], hora_entrada: string, hora_salida: string, adminName: string = 'Sistema'): void {
+export function batchUpdateHorarios(id_horarios: number[], hora_entrada: string, hora_salida: string, adminName: string): void {
   const db = getDb();
   
   const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?');

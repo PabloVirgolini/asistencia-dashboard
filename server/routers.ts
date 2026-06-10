@@ -227,7 +227,7 @@ export const appRouter = router({
       }))
       .mutation(({ input, ctx }) => {
         try {
-          duplicateSectorRules(input.id_turno, input.source_sector, input.target_sector, ctx.user?.name);
+          duplicateSectorRules(input.id_turno, input.source_sector, input.target_sector, ctx.user?.name || 'Administrador');
           return { success: true };
         } catch (e: any) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
@@ -243,7 +243,7 @@ export const appRouter = router({
       }))
       .mutation(({ input, ctx }) => {
         try {
-          duplicateCargoRules(input.id_turno, input.id_sector, input.source_cargo, input.target_cargo, ctx.user?.name);
+          duplicateCargoRules(input.id_turno, input.id_sector, input.source_cargo, input.target_cargo, ctx.user?.name || 'Administrador');
           return { success: true };
         } catch (e: any) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
@@ -270,7 +270,7 @@ export const appRouter = router({
             input.dias, 
             input.hora_entrada, 
             input.hora_salida,
-            ctx.user?.name
+            ctx.user?.name || 'Administrador'
           );
           return { success: true };
         } catch (e: any) {
@@ -297,7 +297,7 @@ export const appRouter = router({
       }))
       .mutation(({ input, ctx }) => {
         try {
-          updateHorario(input.id_horario, input.hora_entrada, input.hora_salida, ctx.user?.name);
+          updateHorario(input.id_horario, input.hora_entrada, input.hora_salida, ctx.user?.name || 'Administrador');
           return { success: true };
         } catch (e: any) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
@@ -312,7 +312,7 @@ export const appRouter = router({
       }))
       .mutation(({ input, ctx }) => {
         try {
-          batchUpdateHorarios(input.id_horarios, input.hora_entrada, input.hora_salida, ctx.user?.name);
+          batchUpdateHorarios(input.id_horarios, input.hora_entrada, input.hora_salida, ctx.user?.name || 'Administrador');
           return { success: true };
         } catch (e: any) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
