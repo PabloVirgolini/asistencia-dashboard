@@ -25,8 +25,14 @@ const DAYS = [
   { label: 'D', value: 0 }
 ];
 
-const TreeNode = ({ title, icon: Icon, children, defaultExpanded = false, isException = false, rightContent = null }: any) => {
+const TreeNode = ({ title, icon: Icon, children, defaultExpanded = false, isException = false, rightContent = null, collapseToken = 0 }: any) => {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  
+  React.useEffect(() => {
+    if (collapseToken > 0) {
+      setExpanded(false);
+    }
+  }, [collapseToken]);
   
   return (
     <div className="flex flex-col">
@@ -79,6 +85,7 @@ export default function AdminTurnos() {
   // Filter and Group Reglas
   const [reglaFilter, setReglaFilter] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
+  const [collapseToken, setCollapseToken] = useState(0);
 
   const filteredReglas = React.useMemo(() => {
     let result = reglas ? [...reglas] : [];
@@ -636,9 +643,16 @@ export default function AdminTurnos() {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               {/* Reglas Generales */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                  <div className="h-4 w-1 bg-indigo-600 rounded-full"></div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">Reglas Generales</h3>
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-1 bg-indigo-600 rounded-full"></div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">Reglas Generales</h3>
+                  </div>
+                  {viewMode === 'list' && (
+                    <Button variant="ghost" size="sm" onClick={() => setCollapseToken(c => c + 1)} className="h-7 text-xs text-slate-500 hover:text-slate-700">
+                      Colapsar todo
+                    </Button>
+                  )}
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                   {Object.keys(groupedGeneral).length === 0 ? (
@@ -648,13 +662,13 @@ export default function AdminTurnos() {
                     </div>
                   ) : (
                     Object.entries(groupedGeneral).map(([turno, sectores]) => (
-                      <TreeNode key={turno} title={turno} icon={Clock} defaultExpanded={true} rightContent={renderBatchDelete(sectores, `Turno ${turno}`)}>
+                      <TreeNode collapseToken={collapseToken} key={turno} title={turno} icon={Clock} defaultExpanded={true} rightContent={renderBatchDelete(sectores, `Turno ${turno}`)}>
                         {Object.entries(sectores as Record<string, any>).map(([sector, cargos]) => {
                           const sampleRule = Object.values(cargos as Record<string, any[]>)[0]?.[0];
                           const id_turno = sampleRule?.id_turno;
                           const id_sector = sampleRule?.id_sector;
                           return (
-                            <TreeNode 
+                            <TreeNode collapseToken={collapseToken} 
                               key={sector} 
                               title={`Sector: ${sector}`} 
                               icon={Building} 
@@ -680,7 +694,7 @@ export default function AdminTurnos() {
                               }
                             >
                               {Object.entries(cargos as Record<string, any>).map(([cargo, rules]) => (
-                                <TreeNode key={cargo} title={`Cargo: ${cargo}`} icon={Briefcase} defaultExpanded={true} rightContent={renderBatchDelete(rules, `Cargo ${cargo}`)}>
+                                <TreeNode collapseToken={collapseToken} key={cargo} title={`Cargo: ${cargo}`} icon={Briefcase} defaultExpanded={true} rightContent={renderBatchDelete(rules, `Cargo ${cargo}`)}>
                                 <div className="py-2 pr-2 space-y-2.5">
                                   {(rules as any[]).map(r => (
                                     <div key={r.id_horario} className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-lg shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group">
@@ -742,11 +756,18 @@ export default function AdminTurnos() {
 
               {/* Excepciones */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                  <div className="h-4 w-1 bg-amber-500 rounded-full"></div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                    Excepciones
-                  </h3>
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-1 bg-amber-500 rounded-full"></div>
+                    <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                      Excepciones
+                    </h3>
+                  </div>
+                  {viewMode === 'list' && (
+                    <Button variant="ghost" size="sm" onClick={() => setCollapseToken(c => c + 1)} className="h-7 text-xs text-slate-500 hover:text-slate-700">
+                      Colapsar todo
+                    </Button>
+                  )}
                 </div>
                 <div className="bg-white rounded-xl border border-amber-200 shadow-sm overflow-hidden">
                   {Object.keys(groupedExceptions).length === 0 ? (
@@ -756,12 +777,12 @@ export default function AdminTurnos() {
                     </div>
                   ) : (
                     Object.entries(groupedExceptions).map(([turno, legajos]) => (
-                      <TreeNode key={turno} title={turno} icon={Clock} isException defaultExpanded={true} rightContent={renderBatchDelete(legajos, `Turno ${turno}`)}>
+                      <TreeNode collapseToken={collapseToken} key={turno} title={turno} icon={Clock} isException defaultExpanded={true} rightContent={renderBatchDelete(legajos, `Turno ${turno}`)}>
                         {Object.entries(legajos as Record<string, any>).map(([legajo, rules]) => {
                           const person = personal?.find((p: any) => p.legajo === legajo);
                           const personName = person ? person.nombre : `Legajo ${legajo}`;
                           return (
-                            <TreeNode key={legajo} title={`${personName} (${legajo})`} icon={User} isException defaultExpanded={true} rightContent={renderBatchDelete(rules, `Empleado ${personName}`)}>
+                            <TreeNode collapseToken={collapseToken} key={legajo} title={`${personName} (${legajo})`} icon={User} isException defaultExpanded={true} rightContent={renderBatchDelete(rules, `Empleado ${personName}`)}>
                               <div className="py-2 pr-2 space-y-2.5">
                                 {(rules as any[]).map(r => (
                                     <div key={r.id_horario} className="flex items-center justify-between bg-white border border-amber-100 p-3 rounded-lg shadow-sm hover:border-amber-300 hover:shadow-md transition-all group">
