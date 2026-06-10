@@ -27,14 +27,14 @@ const DAYS = [
   { label: 'Dom', value: 0 }
 ];
 
-const COLORS = [
-  'bg-blue-500/80 hover:bg-blue-500 border-blue-600',
-  'bg-emerald-500/80 hover:bg-emerald-500 border-emerald-600',
-  'bg-violet-500/80 hover:bg-violet-500 border-violet-600',
-  'bg-amber-500/80 hover:bg-amber-500 border-amber-600',
-  'bg-pink-500/80 hover:bg-pink-500 border-pink-600',
-  'bg-cyan-500/80 hover:bg-cyan-500 border-cyan-600',
-  'bg-rose-500/80 hover:bg-rose-500 border-rose-600'
+const COLOR_PALETTES = [
+  { 400: 'bg-blue-400/80 hover:bg-blue-400 border-blue-500', 500: 'bg-blue-500/80 hover:bg-blue-500 border-blue-600', 600: 'bg-blue-600/80 hover:bg-blue-600 border-blue-700', 700: 'bg-blue-700/80 hover:bg-blue-700 border-blue-800' },
+  { 400: 'bg-emerald-400/80 hover:bg-emerald-400 border-emerald-500', 500: 'bg-emerald-500/80 hover:bg-emerald-500 border-emerald-600', 600: 'bg-emerald-600/80 hover:bg-emerald-600 border-emerald-700', 700: 'bg-emerald-700/80 hover:bg-emerald-700 border-emerald-800' },
+  { 400: 'bg-violet-400/80 hover:bg-violet-400 border-violet-500', 500: 'bg-violet-500/80 hover:bg-violet-500 border-violet-600', 600: 'bg-violet-600/80 hover:bg-violet-600 border-violet-700', 700: 'bg-violet-700/80 hover:bg-violet-700 border-violet-800' },
+  { 400: 'bg-amber-400/80 hover:bg-amber-400 border-amber-500', 500: 'bg-amber-500/80 hover:bg-amber-500 border-amber-600', 600: 'bg-amber-600/80 hover:bg-amber-600 border-amber-700', 700: 'bg-amber-700/80 hover:bg-amber-700 border-amber-800' },
+  { 400: 'bg-pink-400/80 hover:bg-pink-400 border-pink-500', 500: 'bg-pink-500/80 hover:bg-pink-500 border-pink-600', 600: 'bg-pink-600/80 hover:bg-pink-600 border-pink-700', 700: 'bg-pink-700/80 hover:bg-pink-700 border-pink-800' },
+  { 400: 'bg-cyan-400/80 hover:bg-cyan-400 border-cyan-500', 500: 'bg-cyan-500/80 hover:bg-cyan-500 border-cyan-600', 600: 'bg-cyan-600/80 hover:bg-cyan-600 border-cyan-700', 700: 'bg-cyan-700/80 hover:bg-cyan-700 border-cyan-800' },
+  { 400: 'bg-rose-400/80 hover:bg-rose-400 border-rose-500', 500: 'bg-rose-500/80 hover:bg-rose-500 border-rose-600', 600: 'bg-rose-600/80 hover:bg-rose-600 border-rose-700', 700: 'bg-rose-700/80 hover:bg-rose-700 border-rose-800' }
 ];
 
 export default function WeeklyCalendar({ reglas }: WeeklyCalendarProps) {
@@ -45,14 +45,27 @@ export default function WeeklyCalendar({ reglas }: WeeklyCalendarProps) {
     return ((h * 60 + m) / (24 * 60)) * 100;
   };
 
-  // Assign a consistent color to each sector
-  const getSectorColor = (sectorName?: string) => {
-    if (!sectorName) return COLORS[0];
-    let hash = 0;
+  // Assign a consistent color to each sector, with shades based on cargo
+  const getSectorColor = (sectorName?: string, cargoName?: string) => {
+    if (!sectorName) return COLOR_PALETTES[0][500];
+    
+    let sectorHash = 0;
     for (let i = 0; i < sectorName.length; i++) {
-      hash = sectorName.charCodeAt(i) + ((hash << 5) - hash);
+      sectorHash = sectorName.charCodeAt(i) + ((sectorHash << 5) - sectorHash);
     }
-    return COLORS[Math.abs(hash) % COLORS.length];
+    const palette = COLOR_PALETTES[Math.abs(sectorHash) % COLOR_PALETTES.length];
+    
+    if (!cargoName) return palette[500];
+    
+    let cargoHash = 0;
+    for (let i = 0; i < cargoName.length; i++) {
+      cargoHash = cargoName.charCodeAt(i) + ((cargoHash << 5) - cargoHash);
+    }
+    
+    const shades = [400, 500, 600, 700] as const;
+    const shade = shades[Math.abs(cargoHash) % shades.length];
+    
+    return palette[shade];
   };
 
   // Normalize shifts (handle cross-midnight)
@@ -62,35 +75,36 @@ export default function WeeklyCalendar({ reglas }: WeeklyCalendarProps) {
     reglas.forEach(r => {
       if (!r.hora_entrada || !r.hora_salida) return;
       
-      const startPct = timeToPercent(r.hora_entrada);
-      const endPct = timeToPercent(r.hora_salida);
+      const startPercent = timeToPercent(r.hora_entrada);
+      const endPercent = timeToPercent(r.hora_salida);
       
-      if (endPct > startPct) {
-        // Normal shift within the same day
+      if (endPercent > startPercent) {
         blocks.push({
           ...r,
-          top: startPct,
-          height: endPct - startPct,
-          color: getSectorColor(r.sector)
+          top: startPercent,
+          height: endPercent - startPercent,
+          color: getSectorColor(r.sector, r.cargo),
+          isContinued: false
         });
       } else {
-        // Shift crosses midnight, split in two blocks
-        // 1. From start to midnight
+        const firstDayDuration = 100 - startPercent;
+        const secondDayDuration = endPercent;
+        const nextDay = (r.dia_semana + 1) % 7;
+        
         blocks.push({
           ...r,
-          top: startPct,
-          height: 100 - startPct,
-          color: getSectorColor(r.sector)
+          top: startPercent,
+          height: firstDayDuration,
+          color: getSectorColor(r.sector, r.cargo),
+          isContinued: false
         });
         
-        // 2. From midnight to end on the NEXT day
-        const nextDay = (r.dia_semana + 1) % 7;
         blocks.push({
           ...r,
           dia_semana: nextDay,
           top: 0,
-          height: endPct,
-          color: getSectorColor(r.sector),
+          height: secondDayDuration,
+          color: getSectorColor(r.sector, r.cargo),
           isContinued: true
         });
       }

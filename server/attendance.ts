@@ -181,7 +181,7 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
   // 1.5 Validate that the target sector actually has employees with the required cargos
   // Filter the rules array to only include valid cargos.
   const targetPersonalStmt = db.prepare('SELECT cargo_id FROM personal WHERE sectorPertenencia = ? AND activo = 1');
-  const targetPersonal = targetPersonalStmt.all(targetSectorId) as {cargo_id: number}[];
+  const targetPersonal = targetPersonalStmt.all(targetSectorId.toString()) as {cargo_id: number}[];
   
   const rulesToCopy = rules.filter(r => {
     if (r.id_cargo === null) return true;
@@ -244,7 +244,7 @@ export function duplicateCargoRules(id_turno: number, id_sector: number, source_
 
   // Verificar que el target_cargo exista en el personal activo del sector
   const targetPersonalStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE sectorPertenencia = ? AND cargo_id = ? AND activo = 1');
-  const targetPersonal = targetPersonalStmt.get(id_sector, target_cargo) as {c: number};
+  const targetPersonal = targetPersonalStmt.get(id_sector.toString(), target_cargo) as {c: number};
   
   if (targetPersonal.c === 0 && rules.some(r => r.legajo === null)) {
     // Si no hay empleados con este cargo en el sector, y estamos copiando reglas generales, fallamos
