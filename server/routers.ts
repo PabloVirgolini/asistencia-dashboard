@@ -28,6 +28,7 @@ import {
   updateHorario,
   batchUpdateHorarios,
   duplicateSectorRules,
+  duplicateCargoRules,
   updateSector,
   getSectoresCargos,
   updateSectorCargos,
@@ -240,9 +241,25 @@ export const appRouter = router({
         source_sector: z.number(),
         target_sector: z.number()
       }))
-      .mutation(({ input }) => {
+      .mutation(({ input, ctx }) => {
         try {
-          duplicateSectorRules(input.id_turno, input.source_sector, input.target_sector);
+          duplicateSectorRules(input.id_turno, input.source_sector, input.target_sector, ctx.user?.name);
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
+      }),
+      
+    duplicateCargoRules: adminProcedure
+      .input(z.object({
+        id_turno: z.number(),
+        id_sector: z.number(),
+        source_cargo: z.number(),
+        target_cargo: z.number()
+      }))
+      .mutation(({ input, ctx }) => {
+        try {
+          duplicateCargoRules(input.id_turno, input.id_sector, input.source_cargo, input.target_cargo, ctx.user?.name);
           return { success: true };
         } catch (e: any) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
@@ -259,7 +276,7 @@ export const appRouter = router({
         hora_entrada: z.string(),
         hora_salida: z.string()
       }))
-      .mutation(({ input }) => {
+      .mutation(({ input, ctx }) => {
         try {
           addHorario(
             input.id_sector, 
@@ -268,7 +285,8 @@ export const appRouter = router({
             input.id_turno, 
             input.dias, 
             input.hora_entrada, 
-            input.hora_salida
+            input.hora_salida,
+            ctx.user?.name
           );
           return { success: true };
         } catch (e: any) {
@@ -293,9 +311,9 @@ export const appRouter = router({
         hora_entrada: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato inválido (HH:mm)"),
         hora_salida: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato inválido (HH:mm)")
       }))
-      .mutation(({ input }) => {
+      .mutation(({ input, ctx }) => {
         try {
-          updateHorario(input.id_horario, input.hora_entrada, input.hora_salida);
+          updateHorario(input.id_horario, input.hora_entrada, input.hora_salida, ctx.user?.name);
           return { success: true };
         } catch (e: any) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
@@ -308,9 +326,9 @@ export const appRouter = router({
         hora_entrada: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato inválido (HH:mm)"),
         hora_salida: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato inválido (HH:mm)")
       }))
-      .mutation(({ input }) => {
+      .mutation(({ input, ctx }) => {
         try {
-          batchUpdateHorarios(input.id_horarios, input.hora_entrada, input.hora_salida);
+          batchUpdateHorarios(input.id_horarios, input.hora_entrada, input.hora_salida, ctx.user?.name);
           return { success: true };
         } catch (e: any) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });

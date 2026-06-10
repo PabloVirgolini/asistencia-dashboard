@@ -41,6 +41,15 @@ function getDb() {
         password TEXT NOT NULL
       )
     `);
+
+    // Migraciones automáticas (Auditoría Changelog)
+    try {
+      db.exec(`ALTER TABLE horarios ADD COLUMN updated_at DATETIME`);
+    } catch (e) { /* Columna ya existe */ }
+    
+    try {
+      db.exec(`ALTER TABLE horarios ADD COLUMN updated_by TEXT`);
+    } catch (e) { /* Columna ya existe */ }
   }
   return db;
 }
@@ -142,7 +151,7 @@ export function getHorariosReglas(): any[] {
   const db = getDb();
   const stmt = db.prepare(`
     SELECT h.id_horario, h.dia_semana, h.hora_entrada, h.hora_salida, h.legajo,
-           h.id_turno, h.id_sector, h.id_cargo,
+           h.id_turno, h.id_sector, h.id_cargo, h.updated_at, h.updated_by,
            t.descripcion as turno, s.descripcion as sector, c.descripcion as cargo
     FROM horarios h
     LEFT JOIN turnos_horarios t ON h.id_turno = t.id_turno
@@ -153,7 +162,7 @@ export function getHorariosReglas(): any[] {
   return stmt.all();
 }
 
-export function duplicateSectorRules(id_turno: number, sourceSectorId: number, targetSectorId: number): void {
+export function duplicateSectorRules(id_turno: number, sourceSectorId: number, targetSectorId: number, adminName: string = 'Sistema'): void {
   const db = getDb();
   
   // 1. Fetch all rules from the source sector under the specific turno
@@ -186,14 +195,9 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
     throw new Error('Ninguno de los cargos de estas reglas existe en el sector destino. No se copió nada.');
   }
 
-  // 2. We could just delete existing rules in the target if we wanted to OVERWRITE,  
-  // but usually "duplicar" implies adding to what's there or just cloning.
-  // We'll just clone them. Overlaps will be caught by a check or we can just ignore overlaps here.
-  // Actually, to avoid crashing halfway, we will use a transaction.
-  
   const insertStmt = db.prepare(`
-    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)
   `);
 
   const transaction = db.transaction((rulesToInsert: any[]) => {
@@ -213,13 +217,60 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
           rule.dia_semana, 
           rule.hora_entrada, 
           rule.hora_salida, 
-          rule.legajo
+          rule.legajo,
+          adminName
         );
       }
     }
   });
 
   transaction(rulesToCopy);
+}
+
+export function duplicateCargoRules(id_turno: number, id_sector: number, source_cargo: number, target_cargo: number, adminName: string = 'Sistema'): void {
+  const db = getDb();
+  
+  const stmt = db.prepare(`
+    SELECT dia_semana, hora_entrada, hora_salida, legajo
+    FROM horarios
+    WHERE id_turno = ? AND id_sector = ? AND id_cargo = ?
+  `);
+  
+  const rules = stmt.all(id_turno, id_sector, source_cargo) as any[];
+  
+  if (rules.length === 0) {
+    throw new Error('No hay reglas para copiar en este cargo, sector y turno.');
+  }
+
+  // Verificar que el target_cargo exista en el personal activo del sector
+  const targetPersonalStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE sectorPertenencia = ? AND cargo_id = ? AND activo = 1');
+  const targetPersonal = targetPersonalStmt.get(id_sector, target_cargo) as {c: number};
+  
+  if (targetPersonal.c === 0 && rules.some(r => r.legajo === null)) {
+    // Si no hay empleados con este cargo en el sector, y estamos copiando reglas generales, fallamos
+    throw new Error('El sector destino no tiene personal activo asignado a ese cargo.');
+  }
+
+  const insertStmt = db.prepare(`
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)
+  `);
+
+  const transaction = db.transaction((rulesToInsert: any[]) => {
+    for (const rule of rulesToInsert) {
+      const checkStmt = db.prepare(`
+        SELECT COUNT(*) as c FROM horarios 
+        WHERE id_turno = ? AND dia_semana = ? AND id_sector = ? AND id_cargo = ? AND (legajo IS NULL OR legajo = ?)
+      `);
+      const res = checkStmt.get(id_turno, rule.dia_semana, id_sector, target_cargo, rule.legajo) as { c: number };
+      
+      if (res.c === 0) {
+        insertStmt.run(id_sector, target_cargo, id_turno, rule.dia_semana, rule.hora_entrada, rule.hora_salida, rule.legajo, adminName);
+      }
+    }
+  });
+
+  transaction(rules);
 }
 
 export function addHorario(
@@ -229,7 +280,8 @@ export function addHorario(
   id_turno: number, 
   dias: number[], 
   hora_entrada: string, 
-  hora_salida: string
+  hora_salida: string,
+  adminName: string = 'Sistema'
 ): void {
   const db = getDb();
   
@@ -244,21 +296,21 @@ export function addHorario(
   `);
 
   const insertStmt = db.prepare(`
-    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)
   `);
 
-  const tx = db.transaction((diasArr: number[]) => {
+  const transaction = db.transaction((diasArr: number[]) => {
     for (const dia of diasArr) {
-      const isOverlap = checkStmt.get(id_turno, dia, legajo, legajo, id_sector, id_cargo) as { c: number };
-      if (isOverlap.c > 0) {
-        throw new Error('Ya existe una regla configurada para este mismo Turno, Día y Sector/Cargo/Legajo.');
+      const res = checkStmt.get(id_turno, dia, legajo, legajo, id_sector, id_cargo) as { c: number };
+      if (res.c > 0) {
+        throw new Error(`Ya existe una regla de horario para el día ${dia} con estos parámetros.`);
       }
-      insertStmt.run(id_sector, id_cargo, id_turno, dia, hora_entrada, hora_salida, legajo);
+      insertStmt.run(id_sector, id_cargo, id_turno, dia, hora_entrada, hora_salida, legajo, adminName);
     }
   });
 
-  tx(dias);
+  transaction(dias);
 }
 
 export function removeHorario(id_horario: number): void {
@@ -289,7 +341,7 @@ export function removeHorario(id_horario: number): void {
   deleteStmt.run(id_horario);
 }
 
-export function updateHorario(id_horario: number, hora_entrada: string, hora_salida: string): void {
+export function updateHorario(id_horario: number, hora_entrada: string, hora_salida: string, adminName: string = 'Sistema'): void {
   const db = getDb();
   
   const checkStmt = db.prepare('SELECT COUNT(*) as c FROM horarios WHERE id_horario = ?');
@@ -299,18 +351,18 @@ export function updateHorario(id_horario: number, hora_entrada: string, hora_sal
     throw new Error('La regla de horario no existe.');
   }
 
-  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ? WHERE id_horario = ?');
-  updateStmt.run(hora_entrada, hora_salida, id_horario);
+  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?');
+  updateStmt.run(hora_entrada, hora_salida, adminName, id_horario);
 }
 
-export function batchUpdateHorarios(id_horarios: number[], hora_entrada: string, hora_salida: string): void {
+export function batchUpdateHorarios(id_horarios: number[], hora_entrada: string, hora_salida: string, adminName: string = 'Sistema'): void {
   const db = getDb();
   
-  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ? WHERE id_horario = ?');
+  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?');
   
   const transaction = db.transaction((ids: number[]) => {
     for (const id of ids) {
-      updateStmt.run(hora_entrada, hora_salida, id);
+      updateStmt.run(hora_entrada, hora_salida, adminName, id);
     }
   });
   

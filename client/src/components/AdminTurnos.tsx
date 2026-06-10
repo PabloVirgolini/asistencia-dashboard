@@ -37,7 +37,7 @@ const TreeNode = ({ title, icon: Icon, children, defaultExpanded = false, isExce
   return (
     <div className="flex flex-col">
       <div 
-        className={`flex items-center justify-between p-3 cursor-pointer transition-all duration-200 border-b last:border-b-0 ${
+        className={`group flex items-center justify-between p-3 cursor-pointer transition-all duration-200 border-b last:border-b-0 ${
           isException 
             ? 'border-amber-200/50 hover:bg-amber-100/50 text-amber-900 bg-amber-50/30' 
             : 'border-slate-100 hover:bg-slate-50 text-slate-800'
@@ -51,7 +51,7 @@ const TreeNode = ({ title, icon: Icon, children, defaultExpanded = false, isExce
           {Icon && <Icon className={`w-4 h-4 ${isException ? 'text-amber-600' : 'text-slate-500'}`} />}
           <span className="font-medium text-sm">{title}</span>
         </div>
-        {rightContent && <div onClick={e => e.stopPropagation()}>{rightContent}</div>}
+        {rightContent && <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>{rightContent}</div>}
       </div>
       {expanded && (
         <div className={`ml-5 pl-4 border-l-2 my-1 ${isException ? 'border-amber-200' : 'border-slate-100'}`}>
@@ -80,6 +80,7 @@ export default function AdminTurnos() {
   const removeRegla = trpc.admin.removeHorario.useMutation();
   const batchUpdate = trpc.admin.batchUpdateHorarios.useMutation();
   const duplicateSector = trpc.admin.duplicateSectorRules.useMutation();
+  const duplicateCargo = trpc.admin.duplicateCargoRules.useMutation();
 
   // Batch Edit State
   const [isBatchMode, setIsBatchMode] = useState(false);
@@ -191,6 +192,10 @@ export default function AdminTurnos() {
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
   const [duplicateSource, setDuplicateSource] = useState<{ id_turno: number, id_sector: number, nombreSector: string } | null>(null);
   const [duplicateTargetSector, setDuplicateTargetSector] = useState<string>('');
+
+  const [duplicateCargoModalOpen, setDuplicateCargoModalOpen] = useState(false);
+  const [duplicateCargoSource, setDuplicateCargoSource] = useState<{ id_turno: number, id_sector: number, id_cargo: number, nombreCargo: string } | null>(null);
+  const [duplicateCargoTarget, setDuplicateCargoTarget] = useState<string>('');
 
   const [editingRuleId, setEditingRuleId] = useState<number | null>(null);
   const [editHoraEntrada, setEditHoraEntrada] = useState("");
@@ -338,13 +343,28 @@ export default function AdminTurnos() {
         source_sector: duplicateSource.id_sector,
         target_sector: parseInt(duplicateTargetSector)
       });
-      toast.success('Sector duplicado correctamente');
+      toast.success('Reglas replicadas con éxito');
       setDuplicateModalOpen(false);
-      setDuplicateTargetSector('');
-      setDuplicateSource(null);
       trpcContext.admin.getHorariosReglas.invalidate();
     } catch (err: any) {
-      toast.error(err.message || 'Error al duplicar el sector');
+      toast.error(err.message || 'Error al replicar reglas');
+    }
+  };
+
+  const handleDuplicateCargo = async () => {
+    if (!duplicateCargoSource || !duplicateCargoTarget) return;
+    try {
+      await duplicateCargo.mutateAsync({
+        id_turno: duplicateCargoSource.id_turno,
+        id_sector: duplicateCargoSource.id_sector,
+        source_cargo: duplicateCargoSource.id_cargo,
+        target_cargo: parseInt(duplicateCargoTarget)
+      });
+      toast.success('Reglas de cargo replicadas con éxito');
+      setDuplicateCargoModalOpen(false);
+      trpcContext.admin.getHorariosReglas.invalidate();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al replicar reglas de cargo');
     }
   };
 
@@ -731,8 +751,36 @@ export default function AdminTurnos() {
                                 </div>
                               }
                             >
-                              {Object.entries(cargos as Record<string, any>).map(([cargo, rules]) => (
-                                <TreeNode collapseToken={collapseToken} key={cargo} title={`Cargo: ${cargo}`} icon={Briefcase} defaultExpanded={true} rightContent={renderBatchDelete(rules, `Cargo ${cargo}`)}>
+                              {Object.entries(cargos as Record<string, any>).map(([cargoName, rules]) => {
+                                const cargoObj = cargosData?.find((c: any) => c.descripcion === cargoName);
+                                return (
+                                <TreeNode 
+                                  collapseToken={collapseToken} 
+                                  key={cargoName} 
+                                  title={`Cargo: ${cargoName}`} 
+                                  icon={Briefcase} 
+                                  defaultExpanded={true} 
+                                  rightContent={
+                                    <div className="flex items-center gap-1">
+                                      {id_turno && id_sector && cargoObj && (
+                                        <Button 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDuplicateCargoSource({ id_turno, id_sector, id_cargo: cargoObj.id_cargo, nombreCargo: cargoName });
+                                            setDuplicateCargoTarget('');
+                                            setDuplicateCargoModalOpen(true);
+                                          }}
+                                        >
+                                          <Copy className="w-4 h-4 mr-1" /> Replicar
+                                        </Button>
+                                      )}
+                                      {renderBatchDelete(rules, `Cargo ${cargoName}`)}
+                                    </div>
+                                  }
+                                >
                                 <div className="py-2 pr-2 space-y-2.5">
                                   {(rules as any[]).map(r => (
                                     <div key={r.id_horario} className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-lg shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group">
@@ -769,6 +817,11 @@ export default function AdminTurnos() {
                                               <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{r.hora_salida}</span>
                                             </div>
                                           )}
+                                          {(r.updated_at || r.updated_by) && (
+                                            <div className="text-[10px] text-slate-400 font-normal mt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]" title={`Modificado: ${r.updated_at} por ${r.updated_by}`}>
+                                              {r.updated_at ? `Última modif: ${r.updated_at?.split(' ')[0]} por ${r.updated_by}` : ''}
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -796,8 +849,9 @@ export default function AdminTurnos() {
                                   ))}
                                 </div>
                               </TreeNode>
-                            ))}
-                          </TreeNode>
+                                );
+                              })}
+                            </TreeNode>
                         );
                       })}
                       </TreeNode>
@@ -869,6 +923,11 @@ export default function AdminTurnos() {
                                               <span className="text-amber-700 bg-amber-100/50 px-1.5 py-0.5 rounded">{r.hora_entrada}</span>
                                               <span className="text-amber-300">→</span>
                                               <span className="text-amber-800 bg-amber-100/50 px-1.5 py-0.5 rounded">{r.hora_salida}</span>
+                                            </div>
+                                          )}
+                                          {(r.updated_at || r.updated_by) && (
+                                            <div className="text-[10px] text-amber-600/70 font-normal mt-1 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]" title={`Modificado: ${r.updated_at} por ${r.updated_by}`}>
+                                              {r.updated_at ? `Última modif: ${r.updated_at?.split(' ')[0]} por ${r.updated_by}` : ''}
                                             </div>
                                           )}
                                         </div>
@@ -1005,10 +1064,53 @@ export default function AdminTurnos() {
             <Button 
               className="bg-indigo-600 hover:bg-indigo-700 text-white" 
               onClick={handleDuplicateSector} 
-              disabled={!duplicateTargetSector || duplicateSector.isLoading}
+              disabled={!duplicateTargetSector || duplicateSector.isPending}
             >
-              {duplicateSector.isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
+              {duplicateSector.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
               Replicar Reglas
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={duplicateCargoModalOpen} onOpenChange={setDuplicateCargoModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Replicar Reglas de Cargo</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-slate-600">
+              Estás a punto de copiar todas las reglas de <strong>{duplicateCargoSource?.nombreCargo}</strong> hacia otro cargo en el mismo sector.
+            </p>
+            <div className="space-y-2">
+              <Label>Selecciona el Cargo Destino</Label>
+              <Select value={duplicateCargoTarget} onValueChange={setDuplicateCargoTarget}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Elegir cargo..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {cargosData?.map((c: any) => {
+                    const sectorCargo = sectoresCargos?.find((sc: any) => sc.id_sector === duplicateCargoSource?.id_sector && sc.id_cargo === c.id_cargo);
+                    if (!sectorCargo || c.id_cargo === duplicateCargoSource?.id_cargo) return null;
+                    return (
+                      <SelectItem key={c.id_cargo} value={c.id_cargo.toString()}>
+                        {c.descripcion} (Criticidad: {sectorCargo.nivel_criticidad})
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDuplicateCargoModalOpen(false)}>Cancelar</Button>
+            <Button 
+              className="bg-indigo-600 hover:bg-indigo-700 text-white" 
+              onClick={handleDuplicateCargo} 
+              disabled={!duplicateCargoTarget || duplicateCargo.isPending}
+            >
+              {duplicateCargo.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
+              Replicar Cargo
             </Button>
           </DialogFooter>
         </DialogContent>

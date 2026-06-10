@@ -1,7 +1,7 @@
 import React from 'react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Building, Briefcase } from 'lucide-react';
+import { Clock, Building, Briefcase, Pencil } from 'lucide-react';
 
 interface ReglaHorario {
   id_horario: number;
@@ -189,6 +189,14 @@ export default function WeeklyCalendar({ reglas }: WeeklyCalendarProps) {
                          <div className="text-[10px] text-slate-400 italic mt-1 pt-1 border-t border-dashed">
                            Continuación del día anterior
                          </div>
+                      )}
+                      {(block.updated_at || block.updated_by) && (
+                        <div className="text-[10px] text-slate-400 font-normal mt-2 pt-2 border-t border-slate-100 flex items-center gap-1.5" title={`Modificado: ${block.updated_at} por ${block.updated_by}`}>
+                          <Pencil className="w-3 h-3 opacity-70" />
+                          <span className="truncate">
+                            {block.updated_at ? `Modif. ${block.updated_at?.split(' ')[0]} por ${block.updated_by}` : 'Creado por Sistema'}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </HoverCardContent>

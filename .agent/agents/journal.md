@@ -96,3 +96,11 @@ Este archivo es un bitácora para documentar todos los avances, diagnósticos, s
   1. Se habilitó un modo de "Edición Múltiple" en la barra de herramientas del Creador de Reglas.
   2. La UX utiliza una **Barra de Acción Flotante** (Floating Action Bar) para que el usuario visualice la cantidad de reglas seleccionadas y lance el modal de edición, manteniendo el panel despejado el resto del tiempo.
   3. En el backend Node.js (`server/attendance.ts`), se introdujo un nuevo endpoint `batchUpdateHorarios` que envuelve las mutaciones en una **transacción de base de datos** (`db.transaction()`). Esto garantiza seguridad y atomicidad. Si una regla fallara al guardarse, se revierten todas las anteriores de ese lote automáticamente.
+
+### [2026-06-10] - Mejoras UX y Funcionalidades Premium de Matriz (Changelog y Replicación)
+- **Avance:** Se implementó una de las propuestas premium de mejora continua enfocada en la trazabilidad (Auditoría) y la agilización extrema (Replicación de Cargos).
+- **Detalle Arquitectónico y UX:**
+  1. **Auditoría Transparente (Changelog en DB):** Se alteró la estructura de la tabla `horarios` en caliente usando SQLite `ALTER TABLE` controlados por bloques `try...catch` en `db.ts` para agregar columnas `updated_at` y `updated_by`. Todo cambio masivo o unitario registra silenciosamente qué administrador (mediante lectura JWT en tRPC ctx) modificó esa regla.
+  2. **Micro-Interacciones de Auditoría (UX):** Se inyectaron bloques informativos de tamaño diminuto (textos en escala `text-[10px]`) que aparecen con `group-hover` en el árbol y en el HoverCard del Calendario Semanal, manteniendo la estética limpia mientras se entrega la trazabilidad.
+  3. **Replicación Inteligente de Cargos:** Expandiendo el botón "Replicar Sector", se instauró la misma lógica transaccional a nivel "Cargo". El backend `duplicateCargoRules` chequea obligatoriamente la tabla `personal` para prevenir la clonación ciega hacia cargos deshabilitados o sin miembros en el destino.
+  4. **Ocultamiento Contextual:** Se estipuló por regla de diseño que los botones "Borrar Nivel" y "Replicar" queden invisibles por defecto, emergiendo (`opacity-0 group-hover:opacity-100`) para evitar ruidos cognitivos ante la inmensidad de reglas del Dashboard.
