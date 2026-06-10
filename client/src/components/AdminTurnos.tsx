@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
+import WeeklyCalendar from './WeeklyCalendar';
 
 const DAYS = [
   { label: 'L', value: 1 },
@@ -77,6 +78,7 @@ export default function AdminTurnos() {
 
   // Filter and Group Reglas
   const [reglaFilter, setReglaFilter] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
 
   const filteredReglas = React.useMemo(() => {
     let result = reglas ? [...reglas] : [];
@@ -594,16 +596,34 @@ export default function AdminTurnos() {
       <Card className="border-slate-200 shadow-sm">
         <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-5">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle className="text-xl text-slate-800">Matriz de Horarios</CardTitle>
-            <div className="relative w-full md:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-              <Input 
-                placeholder="Buscar en la matriz..." 
-                className="pl-9 bg-white border-slate-200"
-                value={reglaFilter}
-                onChange={(e) => setReglaFilter(e.target.value)}
-              />
+            <div className="flex items-center gap-4">
+              <CardTitle className="text-xl text-slate-800">Matriz de Horarios</CardTitle>
+              <div className="flex bg-slate-200/50 p-1 rounded-lg ml-4">
+                <button 
+                  onClick={() => setViewMode('list')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'list' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  Lista
+                </button>
+                <button 
+                  onClick={() => setViewMode('calendar')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-2 ${viewMode === 'calendar' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  <Calendar className="w-4 h-4" /> Calendario
+                </button>
+              </div>
             </div>
+            {viewMode === 'list' && (
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input 
+                  placeholder="Buscar en la matriz..." 
+                  className="pl-9 bg-white border-slate-200"
+                  value={reglaFilter}
+                  onChange={(e) => setReglaFilter(e.target.value)}
+                />
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent className="pt-6">
