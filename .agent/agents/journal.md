@@ -89,3 +89,10 @@ Este archivo es un bitácora para documentar todos los avances, diagnósticos, s
   2. **Inteligencia Computacional de Superposiciones:** Los horarios que cruzan la medianoche se particionan automáticamente y se extienden al día siguiente (manteniendo la integridad). Los solapamientos simultáneos (ej. dos empleados en guardia en el mismo lugar) no arrojan error, sino que conviven armónicamente ajustando sus márgenes para mostrarse empalmados.
   3. **Filtros Inteligentes de Contexto:** Se insertó un Toggle List/Calendar. Además, en vez de obligar al usuario a usar únicamente la barra de texto libre, se implementaron listas desplegables Select (`Turno`, `Sector`, `Cargo`). Estas listas son dinámicas y se retroalimentan del pull de `reglas` activas (solo listan opciones con datos).
   4. **Mejora de UX (Colapsables):** Como petición paralela a la larga "Matriz de Árbol", se instalaron botones de `Colapsar todo` que, mediante un uso ingenioso de React `useEffect` en conjunción con tokens numéricos desde el componente padre, permite esconder todas las ramas del árbol al unísono, aliviando la carga visual instantáneamente.
+
+### [2026-06-10] - Edición Masiva de Horarios (Batch Edit)
+- **Avance:** Se implementó la capacidad de seleccionar y modificar dinámicamente el horario de múltiples días/reglas al mismo tiempo.
+- **Detalle Arquitectónico y UX:**
+  1. Se habilitó un modo de "Edición Múltiple" en la barra de herramientas del Creador de Reglas.
+  2. La UX utiliza una **Barra de Acción Flotante** (Floating Action Bar) para que el usuario visualice la cantidad de reglas seleccionadas y lance el modal de edición, manteniendo el panel despejado el resto del tiempo.
+  3. En el backend Node.js (`server/attendance.ts`), se introdujo un nuevo endpoint `batchUpdateHorarios` que envuelve las mutaciones en una **transacción de base de datos** (`db.transaction()`). Esto garantiza seguridad y atomicidad. Si una regla fallara al guardarse, se revierten todas las anteriores de ese lote automáticamente.
