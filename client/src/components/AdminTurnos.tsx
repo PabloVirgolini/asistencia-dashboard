@@ -87,6 +87,15 @@ export default function AdminTurnos() {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
   const [collapseToken, setCollapseToken] = useState(0);
 
+  // Suggested Filters for Calendar
+  const [activeTurno, setActiveTurno] = useState<string>('todos');
+  const [activeSector, setActiveSector] = useState<string>('todos');
+  const [activeCargo, setActiveCargo] = useState<string>('todos');
+
+  const uniqueTurnos = React.useMemo(() => Array.from(new Set(reglas?.map(r => r.turno).filter(Boolean))), [reglas]);
+  const uniqueSectores = React.useMemo(() => Array.from(new Set(reglas?.map(r => r.sector).filter(Boolean))), [reglas]);
+  const uniqueCargos = React.useMemo(() => Array.from(new Set(reglas?.map(r => r.cargo).filter(Boolean))), [reglas]);
+
   const filteredReglas = React.useMemo(() => {
     let result = reglas ? [...reglas] : [];
     if (reglaFilter) {
@@ -98,8 +107,20 @@ export default function AdminTurnos() {
         r.legajo?.toLowerCase().includes(lf)
       );
     }
+    
+    // Apply suggested filters
+    if (activeTurno && activeTurno !== 'todos') {
+      result = result.filter((r: any) => r.turno === activeTurno);
+    }
+    if (activeSector && activeSector !== 'todos') {
+      result = result.filter((r: any) => r.sector === activeSector);
+    }
+    if (activeCargo && activeCargo !== 'todos') {
+      result = result.filter((r: any) => r.cargo === activeCargo);
+    }
+    
     return result;
-  }, [reglas, reglaFilter]);
+  }, [reglas, reglaFilter, activeTurno, activeSector, activeCargo]);
 
   const { groupedGeneral, groupedExceptions } = React.useMemo(() => {
     const general: Record<string, any> = {};
@@ -839,7 +860,64 @@ export default function AdminTurnos() {
               </div>
             </div>
           ) : (
-            <div className="mt-2">
+            <div className="flex flex-col gap-4 mt-2">
+              <div className="flex flex-wrap gap-4 items-center p-3 bg-slate-50/50 rounded-xl border border-slate-100">
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-2">Filtros:</div>
+                <div className="w-40">
+                  <Select value={activeTurno} onValueChange={setActiveTurno}>
+                    <SelectTrigger className="h-8 text-xs bg-white">
+                      <SelectValue placeholder="Turno" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos los Turnos</SelectItem>
+                      {uniqueTurnos.map(t => (
+                        <SelectItem key={t as string} value={t as string}>{t as string}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-40">
+                  <Select value={activeSector} onValueChange={setActiveSector}>
+                    <SelectTrigger className="h-8 text-xs bg-white">
+                      <SelectValue placeholder="Sector" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos los Sectores</SelectItem>
+                      {uniqueSectores.map(s => (
+                        <SelectItem key={s as string} value={s as string}>{s as string}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-40">
+                  <Select value={activeCargo} onValueChange={setActiveCargo}>
+                    <SelectTrigger className="h-8 text-xs bg-white">
+                      <SelectValue placeholder="Cargo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">Todos los Cargos</SelectItem>
+                      {uniqueCargos.map(c => (
+                        <SelectItem key={c as string} value={c as string}>{c as string}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {(activeTurno !== 'todos' || activeSector !== 'todos' || activeCargo !== 'todos') && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 text-xs text-indigo-600 hover:bg-indigo-50"
+                    onClick={() => {
+                      setActiveTurno('todos');
+                      setActiveSector('todos');
+                      setActiveCargo('todos');
+                    }}
+                  >
+                    Limpiar
+                  </Button>
+                )}
+              </div>
               <WeeklyCalendar reglas={filteredReglas} />
             </div>
           )}
