@@ -170,17 +170,20 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
   }
 
   // 1.5 Validate that the target sector actually has employees with the required cargos
-  const uniqueCargos = [...new Set(rules.map(r => r.id_cargo))];
-  for (const cargoId of uniqueCargos) {
-    if (cargoId === null) continue;
-    const checkCargoStmt = db.prepare(`
-      SELECT COUNT(*) as c FROM personal 
-      WHERE sectorPertenencia = ? AND cargo_id = ? AND activo = 1
-    `);
-    const res = checkCargoStmt.get(targetSectorId, cargoId) as { c: number };
-    if (res.c === 0) {
-      throw new Error(`El sector destino no tiene personal activo con el cargo ID ${cargoId}. No se puede duplicar.`);
-    }
+  // Filter the rules array to only include valid cargos.
+  const targetPersonalStmt = db.prepare('SELECT cargo_id FROM personal WHERE sectorPertenencia = ? AND activo = 1');
+  const targetPersonal = targetPersonalStmt.all(targetSectorId) as {cargo_id: number}[];
+  
+  const rulesToCopy = rules.filter(r => {
+    if (r.id_cargo === null) return true;
+    // Si el sector destino no tiene ningún empleado todavía, le permitimos copiar todas las reglas (fallback)
+    if (targetPersonal.length === 0) return true; 
+    // Si tiene empleados, solo copiamos las reglas de los cargos que realmente existen en ese sector
+    return targetPersonal.some(p => p.cargo_id === r.id_cargo);
+  });
+
+  if (rulesToCopy.length === 0) {
+    throw new Error('Ninguno de los cargos de estas reglas existe en el sector destino. No se copió nada.');
   }
 
   // 2. We could just delete existing rules in the target if we wanted to OVERWRITE,  
@@ -193,8 +196,8 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
-  const transaction = db.transaction((rulesToCopy: any[]) => {
-    for (const rule of rulesToCopy) {
+  const transaction = db.transaction((rulesToInsert: any[]) => {
+    for (const rule of rulesToInsert) {
       // Basic check to avoid EXACT duplicates in target
       const checkStmt = db.prepare(`
         SELECT COUNT(*) as c FROM horarios 
@@ -216,7 +219,7 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
     }
   });
 
-  transaction(rules);
+  transaction(rulesToCopy);
 }
 
 export function addHorario(
