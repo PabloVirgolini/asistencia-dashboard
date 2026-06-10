@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import WeeklyCalendar from './WeeklyCalendar';
+import { filtrarReglas, agruparReglas, ReglaHorario } from '../utils/horariosFormatter';
 
 const DAYS = [
   { label: 'L', value: 1 },
@@ -25,42 +26,7 @@ const DAYS = [
   { label: 'D', value: 0 }
 ];
 
-const TreeNode = ({ title, icon: Icon, children, defaultExpanded = false, isException = false, rightContent = null, collapseToken = 0 }: any) => {
-  const [expanded, setExpanded] = useState(defaultExpanded);
-  
-  React.useEffect(() => {
-    if (collapseToken > 0) {
-      setExpanded(false);
-    }
-  }, [collapseToken]);
-  
-  return (
-    <div className="flex flex-col">
-      <div 
-        className={`group flex items-center justify-between p-3 cursor-pointer transition-all duration-200 border-b last:border-b-0 ${
-          isException 
-            ? 'border-amber-200/50 hover:bg-amber-100/50 text-amber-900 bg-amber-50/30' 
-            : 'border-slate-100 hover:bg-slate-50 text-slate-800'
-        }`}
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="flex items-center gap-3">
-          <button className={`transition-transform duration-200 ${expanded ? 'rotate-90' : ''} ${isException ? 'text-amber-600' : 'text-slate-400 hover:text-indigo-600'}`}>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          {Icon && <Icon className={`w-4 h-4 ${isException ? 'text-amber-600' : 'text-slate-500'}`} />}
-          <span className="font-medium text-sm">{title}</span>
-        </div>
-        {rightContent && <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={e => e.stopPropagation()}>{rightContent}</div>}
-      </div>
-      {expanded && (
-        <div className={`ml-5 pl-4 border-l-2 my-1 ${isException ? 'border-amber-200' : 'border-slate-100'}`}>
-          {children}
-        </div>
-      )}
-    </div>
-  );
-};
+import { TreeNode } from './TreeNode';
 
 export default function AdminTurnos() {
   const trpcContext = trpc.useContext();
@@ -104,72 +70,16 @@ export default function AdminTurnos() {
   const uniqueCargos = React.useMemo(() => Array.from(new Set(reglas?.map(r => r.cargo).filter(Boolean))), [reglas]);
 
   const filteredReglas = React.useMemo(() => {
-    let result = reglas ? [...reglas] : [];
-    if (reglaFilter) {
-      const lf = reglaFilter.toLowerCase();
-      result = result.filter((r: any) => 
-        r.turno?.toLowerCase().includes(lf) ||
-        r.sector?.toLowerCase().includes(lf) ||
-        r.cargo?.toLowerCase().includes(lf) ||
-        r.legajo?.toLowerCase().includes(lf)
-      );
-    }
-    
-    // Apply suggested filters
-    if (activeTurno && activeTurno !== 'todos') {
-      result = result.filter((r: any) => r.turno === activeTurno);
-    }
-    if (activeSector && activeSector !== 'todos') {
-      result = result.filter((r: any) => r.sector === activeSector);
-    }
-    if (activeCargo && activeCargo !== 'todos') {
-      result = result.filter((r: any) => r.cargo === activeCargo);
-    }
-    
-    return result;
+    return filtrarReglas(reglas as ReglaHorario[], {
+      texto: reglaFilter,
+      turno: activeTurno,
+      sector: activeSector,
+      cargo: activeCargo
+    });
   }, [reglas, reglaFilter, activeTurno, activeSector, activeCargo]);
 
   const { groupedGeneral, groupedExceptions } = React.useMemo(() => {
-    const general: Record<string, any> = {};
-    const exceptions: Record<string, any> = {};
-    
-    filteredReglas.forEach((r: any) => {
-      const turnoName = r.turno || 'Sin Turno';
-      if (!r.legajo) {
-        if (!general[turnoName]) general[turnoName] = {};
-        const sectorName = r.sector || 'Sin Sector';
-        if (!general[turnoName][sectorName]) general[turnoName][sectorName] = {};
-        const cargoName = r.cargo || 'Sin Cargo';
-        if (!general[turnoName][sectorName][cargoName]) general[turnoName][sectorName][cargoName] = [];
-        general[turnoName][sectorName][cargoName].push(r);
-      } else {
-        if (!exceptions[turnoName]) exceptions[turnoName] = {};
-        if (!exceptions[turnoName][r.legajo]) exceptions[turnoName][r.legajo] = [];
-        exceptions[turnoName][r.legajo].push(r);
-      }
-    });
-    
-    const sortByDay = (a: any, b: any) => {
-      const dayA = a.dia_semana === 0 ? 7 : a.dia_semana;
-      const dayB = b.dia_semana === 0 ? 7 : b.dia_semana;
-      return dayA - dayB;
-    };
-    
-    Object.values(general).forEach((sectores: any) => {
-      Object.values(sectores).forEach((cargos: any) => {
-        Object.values(cargos).forEach((rules: any) => {
-          rules.sort(sortByDay);
-        });
-      });
-    });
-
-    Object.values(exceptions).forEach((legajos: any) => {
-      Object.values(legajos).forEach((rules: any) => {
-        rules.sort(sortByDay);
-      });
-    });
-    
-    return { groupedGeneral: general, groupedExceptions: exceptions };
+    return agruparReglas(filteredReglas as ReglaHorario[]);
   }, [filteredReglas]);
 
   // State Turnos

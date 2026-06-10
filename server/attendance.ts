@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { calcularLlegadaTarde } from './utils/calculadoraTardanzas';
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -453,38 +454,21 @@ export function getPresentesByDate(date: string, sector?: string, toleranciaMinu
 
   return records.map(r => {
     let llegadaTarde = false;
-    let horaEsperada = null;
-
     if (r.id_turno) {
       const matchingHorarios = horariosDelDia.filter((h: any) => h.id_turno === r.id_turno);
-      
-      // 1. Prioridad: Excepción por Legajo
-      const exceptionRule = matchingHorarios.find((h: any) => h.legajo === r.legajo);
-      if (exceptionRule) {
-        horaEsperada = exceptionRule.hora_entrada;
-      } else {
-        // 2. Prioridad: Regla General Sector+Cargo
-        const generalRule = matchingHorarios.find((h: any) => h.id_sector === r.sectorPertenencia && h.id_cargo === r.cargo_id);
-        if (generalRule) {
-          horaEsperada = generalRule.hora_entrada;
-        }
+      if (r.primeraFichada) {
+        llegadaTarde = calcularLlegadaTarde(
+          {
+            legajo: r.legajo,
+            sectorPertenencia: r.sectorPertenencia,
+            cargo_id: r.cargo_id,
+            primeraFichada: r.primeraFichada
+          },
+          matchingHorarios as any[],
+          new Date(jsDate),
+          toleranciaMinutos
+        );
       }
-    }
-
-    if (horaEsperada) {
-       const timePart = r.primeraFichada.split(' ')[1]; // "HH:MM:SS"
-       
-       const [expectedH, expectedM] = horaEsperada.split(':').map(Number);
-       const expectedDate = new Date(jsDate);
-       expectedDate.setHours(expectedH, expectedM + toleranciaMinutos, 0, 0);
-
-       const actualDate = new Date(jsDate);
-       const [ah, am, as] = timePart.split(':').map(Number);
-       actualDate.setHours(ah, am, as || 0, 0);
-
-       if (actualDate > expectedDate) {
-         llegadaTarde = true;
-       }
     }
     return {
       legajo: r.legajo,

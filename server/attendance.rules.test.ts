@@ -101,7 +101,7 @@ describe('attendance.ts - Reglas y Turnos', () => {
   it('addHorario - arroja error si hay solapamiento (Sector/Cargo/Legajo en el mismo turno y día)', () => {
     mGet.mockReturnValueOnce({ c: 1 }); // Simular solapamiento
     
-    expect(() => addHorario(1, 2, null, 10, [1], '08:00', '17:00')).toThrowError('Ya existe una regla configurada para este mismo Turno, Día y Sector/Cargo/Legajo.');
+    expect(() => addHorario(1, 2, null, 10, [1], '08:00', '17:00')).toThrowError('Ya existe una regla de horario para el día 1 con estos parámetros.');
     expect(mRun).not.toHaveBeenCalled(); // No debe insertar
   });
 
@@ -110,8 +110,8 @@ describe('attendance.ts - Reglas y Turnos', () => {
     
     updateHorario(1, '09:00', '18:00');
     
-    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE horarios SET hora_entrada = ?, hora_salida = ? WHERE id_horario = ?'));
-    expect(mRun).toHaveBeenCalledWith('09:00', '18:00', 1);
+    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?'));
+    expect(mRun).toHaveBeenCalledWith('09:00', '18:00', 'Sistema', 1);
   });
 
   it('updateHorario - arroja error si el horario a actualizar no existe', () => {
