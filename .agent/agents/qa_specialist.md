@@ -29,9 +29,11 @@ No desarrollas lógica de negocio principal; tu responsabilidad es desarrollar a
 
 ## Guía de Ejecución de Pruebas
 
-- **Ejecutar suite completa**: `pnpm test`
-- **Verificar tipado estricto**: `pnpm check`
-- **Dar formato al código**: `pnpm format`
+**CRÍTICO PARA EL AHORRO DE TOKENS**: Para ejecutar tests o compilar, **NUNCA** ejecutes `pnpm test` o `npm run build` crudos en la terminal.
+Debes usar SIEMPRE el script optimizador disponible en la carpeta de skills:
+- **Ejecutar tests**: `run_command` -> `python .agent/skills/pnpm-test-optimized/run_tests.py "pnpm test"`
+- **Verificar tipado estricto**: `run_command` -> `python .agent/skills/pnpm-test-optimized/run_tests.py "pnpm check"`
+- **Dar formato al código**: `pnpm format` (este sí puede correrse crudo)
 
 ## Reglas de Calidad y Comportamiento para Pruebas
 
