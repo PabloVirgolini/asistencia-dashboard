@@ -45,7 +45,7 @@ export const appRouter = router({
     me: publicProcedure.query(opts => opts.ctx.user),
     
     login: publicProcedure
-      .input(z.object({ email: z.string().email(), password: z.string() }))
+      .input(z.object({ email: z.string().trim().toLowerCase().email(), password: z.string() }))
       .mutation(async ({ input, ctx }) => {
         const admin = getAdminByEmail(input.email);
         if (!admin || !admin.password) {
@@ -76,7 +76,7 @@ export const appRouter = router({
       }),
 
     register: publicProcedure
-      .input(z.object({ name: z.string(), email: z.string().email(), password: z.string().min(6) }))
+      .input(z.object({ name: z.string().trim(), email: z.string().trim().toLowerCase().email(), password: z.string().min(6) }))
       .mutation(async ({ input, ctx }) => {
         // En un caso real, validaríamos que solo se pueda registrar si no hay admins o usando un invite code.
         // Aquí permitiremos el registro del primer admin libremente por simplicidad inicial.
