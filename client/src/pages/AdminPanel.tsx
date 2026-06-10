@@ -936,6 +936,10 @@ export default function AdminPanel() {
             <AdminTurnos />
           </TabsContent>
         </Tabs>
+        
+        <div className="pt-8 pb-4 text-center text-xs text-slate-400 font-mono">
+          v0.1
+        </div>
       </div>
     </div>
   );
