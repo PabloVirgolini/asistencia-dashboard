@@ -1,5 +1,6 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import { parse } from "cookie";
+import { COOKIE_NAME } from "../../shared/const";
 import { verifyToken, type JwtPayload } from "../jwt";
 
 export type TrpcContext = {
@@ -16,7 +17,7 @@ export async function createContext(
   try {
     // Leer cookie de sesión local
     const cookies = opts.req.headers.cookie ? parse(opts.req.headers.cookie) : {};
-    const token = cookies['session_token'];
+    const token = cookies[COOKIE_NAME];
     
     if (token) {
       user = await verifyToken(token);
