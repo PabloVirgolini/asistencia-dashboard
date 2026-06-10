@@ -10,6 +10,11 @@ Este plan refleja el estado estabilizado del proyecto (Junio 2026) tras la recup
 
 ## 🗺️ Hoja de Ruta (Nuevas Fases)
 
+### Fase 0: Refactorización Arquitectónica Urgente (Prioridad Alta)
+- **Frontend (`AdminTurnos.tsx`):** Desacoplar el componente de 1200 líneas en sub-componentes UI (`GestionTurnos`, `CreadorReglasForm`, `MatrizHorarios`) e inyectar la carga de datos vía Custom Hooks.
+- **Backend (`server/attendance.ts`):** Migrar el archivo monolítico a un Patrón de Servicios por Dominio (`personal.service`, `horarios.service`, `asistencia.service`).
+- **Pruebas Unitarias (TDD):** Desarrollar Unit Tests obligatorios (`Vitest`) para cada función pura extraída de la lógica de negocio (ej. `horariosFormatter.test.ts`, `llegadasTarde.test.ts`) como garantía del Principio de Responsabilidad Única.
+
 ### Fase 1: Estabilización de Autenticación
 - Configurar y sanear la variable `OAUTH_SERVER_URL` detectada como faltante en los logs del servidor.
 - Validar el flujo completo de autenticación y sesiones de administrador.
