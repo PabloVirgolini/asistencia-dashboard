@@ -1,19 +1,17 @@
 # Registro de Agentes - AsistenciaPersonal
 
-Este documento sirve como el directorio central (Knowledge Base) de todos los agentes especialistas disponibles para el proyecto "AsistenciaPersonal", definiendo sus capacidades y en qué etapa del flujo de trabajo deben invocarse.
-Para mantener la calidad y el enfoque, el conocimiento del sistema se ha fragmentado en instrucciones para agentes especializados en la carpeta `agents/`. Cualquier IA que colabore en este proyecto debe leer estas guías antes de realizar cambios profundos:
+Este documento es la **Base de Conocimiento Central** de las IAs. Su lectura es **OBLIGATORIA** y rige sobre cualquier instrucción de agentes individuales. Todo el conocimiento se organiza en `.agent/agents/`.
 
-**Regla de Continuidad Breve**: Cada vez que se realice un cambio relevante de lógica de negocio, agregar una entrada corta en `agents/journal.md`. Las modificaciones en tests, diario, sugerencias o estados no requieren una nueva entrada ni se consideran cambios de negocio.
+## 🔴 REGLAS MAESTRAS DE COMPORTAMIENTO (INELUDIBLES)
 
-**Regla de Aprendizaje Continuo**: Cada vez que una IA resuelva un problema técnico particular, descubra un "quirk" arquitectónico o aprenda una nueva regla estricta sobre una tecnología, debe actualizar el archivo del agente correspondiente para que el conocimiento quede documentado de manera permanente. Esto solo aplica al finalizar cambios mayores de código de negocio, no tras simples consultas.
+1. **NO AUTO-PLANIFICARÁS (Control del Usuario)**: **NO DEBES** leer, revisar ni proponer acciones basadas en el `master_implementation_plan.md` al finalizar tu tarea de forma proactiva. Tú terminas la tarea, informas y te detienes. El usuario es quien dictará cuándo y cómo avanzar al siguiente punto del backlog.
+2. **NO PUSHEARÁS (Control de Versiones)**: **NUNCA** ejecutes `git push`. Las subidas al repositorio remoto son acción exclusiva del usuario. Limítate a `git add` y `git commit` locales si corresponde.
+3. **NO ITERARÁS INFINITAMENTE (Anti-Bucles e Interacciones)**: No te autoejecutes en bucles de revisión de QA o Seguridad de forma repetitiva (máximo 1 revisión al finalizar código). Ante preguntas informativas del usuario, responde directamente de forma concisa sin disparar flujos completos ni actualizar bitácoras.
+4. **DOCUMENTARÁS TUS PASOS (Sostenibilidad y Aprendizaje)**: 
+   - Si realizas un cambio de *lógica de negocio*, agrega una entrada corta en `.agent/agents/journal.md`.
+   - Si descubres un *"quirk"* técnico importante o una regla de diseño, actualiza permanentemente el archivo del agente correspondiente en la carpeta `.agent/agents/`.
 
-**Regla de Sostenibilidad y Colaboración**: Mantener actualizados los documentos agents.md y project_journal.md con las decisiones de diseño, cambios arquitectónicos y lecciones aprendidas. Esto es crucial para la sostenibilidad del proyecto y la colaboración efectiva.
-
-**Regla de Planificación y Control del Usuario (MODIFICADA)**: El agente **NO DEBE** revisar, leer ni sugerir próximos pasos basados en el `master_implementation_plan.md` de forma proactiva al finalizar una tarea. Solo debe consultarlo **cuando el usuario se lo indique explícitamente**. El usuario mantiene el control absoluto sobre cuándo avanzar en el backlog.
-
-**Regla Anti-Bucles e Interacciones Puntuales (CRÍTICA)**:
-1. **Consultas Puntuales e Investigativas**: Si el usuario realiza una pregunta informativa (ej. cómo funciona algo, consultar el estado de una tarea, o preguntas directas puntuales), la IA **debe responder directamente** de forma concisa. **No** debe iniciar revisiones de seguridad, ni ejecutar análisis de QA, ni actualizar el diario de proyectos o estados.
-2. **Prevención de Bucles de Auto-Revisión**:  Los agentes **no deben autoejecutarse de forma repetitiva ni en bucles demasiado extendidos** (entiéndase 3 bucles) sin retroalimentación por parte del usuario. La actualización de archivos de bitácora (`security_suggestions.md`, `journal.md`, `security_qa_state.json`) **nunca** debe considerarse un cambio que dispare una nueva revisión automática. Las revisiones de QA y de seguridad solo se corren ante cambios reales, un máximo de una vez al finalizar el trabajo y antes de devolver el control al usuario, o bien cuando el usuario lo solicite expresamente.
+*(Nota: Las reglas de Sostenibilidad y Prevención de Bucles rigen a todos los agentes desde este archivo central, anulando cualquier instrucción redundante en sus perfiles individuales).*
 
 
 ## Directorio de Agentes

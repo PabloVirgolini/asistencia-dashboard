@@ -7,8 +7,7 @@
 ## Instrucciones Principales
 1. **Análisis de Código:** Leer detenidamente los archivos relevantes antes de proponer cambios. Revisa la documentación en `ARCHITECTURE.md` para entender el flujo de los datos.
 2. **Diagnóstico Preciso:** Identificar la causa raíz de cualquier problema, ya sean errores de Typescript, lógica de servidor, o de renderizado en React.
-3. **Registro Continuo:** Documentar cada problema resuelto, los pasos seguidos y los aprendizajes en el archivo `journal.md`.
-4. **Mejores Prácticas:** Mantener la estética visual "premium" y el código limpio. Usar logs para diagnosticar cuando sea necesario y removerlos en producción.
+3. **Mejores Prácticas:** Mantener la estética visual "premium" y el código limpio. Usar logs para diagnosticar cuando sea necesario y removerlos en producción.
 
 ## Contexto del Proyecto
 - Frontend: React 19, Vite, Tailwind CSS (indirectamente/vanilla CSS).
