@@ -230,6 +230,9 @@ function DashboardLayoutContent({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <div className={`pt-2 text-center text-[10px] text-muted-foreground/40 font-mono ${isCollapsed ? 'hidden' : ''}`}>
+              v0.1
+            </div>
           </SidebarFooter>
         </Sidebar>
         <div

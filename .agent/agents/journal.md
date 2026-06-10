@@ -114,6 +114,13 @@ Este archivo es un bitácora para documentar todos los avances, diagnósticos, s
 - **Avance:** Se refinó la paleta de colores dinámicos del `WeeklyCalendar`.
 - **Detalle:** Originalmente, todos los cargos de un mismo sector usaban exactamente el mismo color de Tailwind (ej. `bg-emerald-500`). Se migró la paleta `COLORS` a un `COLOR_PALETTES` que contiene múltiples matices por familia de color (`400`, `500`, `600`, `700`). El color principal (la familia) sigue siendo asignado según el hashing del *Sector*, mientras que la saturación/brillo (el matiz) es calculado en base al hashing del *Cargo*. Así, un sector conserva su identidad de color, pero permite diferenciar sutilmente los distintos cargos visualmente.
 
+### [2026-06-10] - Auditoría QA: Refactorización Arquitectónica de Backend
+- **Avance:** Se validó la exitosa separación del monolito `server/attendance.ts` en la arquitectura de servicios distribuidos (`admin.service.ts`, `asistencia.service.ts`, `horarios.service.ts`, `personal.service.ts`).
+- **Detalle Arquitectónico y QA:**
+  1. **Bajo Acoplamiento y SRP:** Se comprobó que cada nuevo servicio tiene una responsabilidad única y clara. La lógica de negocio pesada fue correctamente extraída de los routers tRPC.
+  2. **Cobertura de Unit Tests:** Los archivos `server/attendance.test.ts` y `server/attendance.rules.test.ts` fueron analizados confirmando que mockean correctamente la base de datos (`better-sqlite3`) y validan de manera robusta casos comunes, solapamientos, flujos negativos y reglas de prioridad entre excepciones de legajo y reglas generales, manteniendo una alta cobertura.
+  3. **Directivas Cumplidas:** Se han cumplido rigurosamente las Reglas Maestras de Arquitectura establecidas en el sprint anterior, blindando la aplicación contra el anti-patrón "God Class".
+
 ---
 
 ## 🏛️ DIRECTIVAS ARQUITECTÓNICAS OBLIGATORIAS (NUEVO ESTÁNDAR)
