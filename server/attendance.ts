@@ -303,6 +303,20 @@ export function updateHorario(id_horario: number, hora_entrada: string, hora_sal
   updateStmt.run(hora_entrada, hora_salida, id_horario);
 }
 
+export function batchUpdateHorarios(id_horarios: number[], hora_entrada: string, hora_salida: string): void {
+  const db = getDb();
+  
+  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ? WHERE id_horario = ?');
+  
+  const transaction = db.transaction((ids: number[]) => {
+    for (const id of ids) {
+      updateStmt.run(hora_entrada, hora_salida, id);
+    }
+  });
+  
+  transaction(id_horarios);
+}
+
 /**
  * Obtiene el personal activo, opcionalmente filtrado por sector
  */

@@ -26,6 +26,7 @@ import {
   addHorario,
   removeHorario,
   updateHorario,
+  batchUpdateHorarios,
   duplicateSectorRules,
   updateSector,
   getSectoresCargos,
@@ -295,6 +296,21 @@ export const appRouter = router({
       .mutation(({ input }) => {
         try {
           updateHorario(input.id_horario, input.hora_entrada, input.hora_salida);
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
+      }),
+
+    batchUpdateHorarios: adminProcedure
+      .input(z.object({
+        id_horarios: z.array(z.number()),
+        hora_entrada: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato inválido (HH:mm)"),
+        hora_salida: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato inválido (HH:mm)")
+      }))
+      .mutation(({ input }) => {
+        try {
+          batchUpdateHorarios(input.id_horarios, input.hora_entrada, input.hora_salida);
           return { success: true };
         } catch (e: any) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });

@@ -78,9 +78,15 @@ export default function AdminTurnos() {
   const removeTurno = trpc.admin.removeTurnoHorario.useMutation();
   const addRegla = trpc.admin.addHorario.useMutation();
   const removeRegla = trpc.admin.removeHorario.useMutation();
+  const batchUpdate = trpc.admin.batchUpdateHorarios.useMutation();
   const duplicateSector = trpc.admin.duplicateSectorRules.useMutation();
 
-
+  // Batch Edit State
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [selectedRules, setSelectedRules] = useState<number[]>([]);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchHoraEntrada, setBatchHoraEntrada] = useState('');
+  const [batchHoraSalida, setBatchHoraSalida] = useState('');
 
   // Filter and Group Reglas
   const [reglaFilter, setReglaFilter] = useState('');
@@ -668,9 +674,22 @@ export default function AdminTurnos() {
                     <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">Reglas Generales</h3>
                   </div>
                   {viewMode === 'list' && (
-                    <Button variant="ghost" size="sm" onClick={() => setCollapseToken(c => c + 1)} className="h-7 text-xs text-slate-500 hover:text-slate-700">
-                      Colapsar todo
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant={isBatchMode ? "default" : "outline"} 
+                        size="sm" 
+                        onClick={() => {
+                          setIsBatchMode(!isBatchMode);
+                          if (isBatchMode) setSelectedRules([]); // Limpiar al apagar
+                        }} 
+                        className={`h-7 text-xs ${isBatchMode ? 'bg-indigo-600 hover:bg-indigo-700' : 'text-slate-500'}`}
+                      >
+                        {isBatchMode ? "Desactivar Múltiple" : "Edición Múltiple"}
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setCollapseToken(c => c + 1)} className="h-7 text-xs text-slate-500 hover:text-slate-700">
+                        Colapsar todo
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -718,6 +737,20 @@ export default function AdminTurnos() {
                                   {(rules as any[]).map(r => (
                                     <div key={r.id_horario} className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-lg shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group">
                                       <div className="flex items-center gap-4">
+                                        {isBatchMode && (
+                                          <input 
+                                            type="checkbox" 
+                                            className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                                            checked={selectedRules.includes(r.id_horario)}
+                                            onChange={(e) => {
+                                              if (e.target.checked) {
+                                                setSelectedRules(prev => [...prev, r.id_horario]);
+                                              } else {
+                                                setSelectedRules(prev => prev.filter(id => id !== r.id_horario));
+                                              }
+                                            }}
+                                          />
+                                        )}
                                         <div className="flex items-center justify-center w-10 h-10 rounded-full bg-indigo-50/80">
                                           <Calendar className="w-4 h-4 text-indigo-600" />
                                         </div>
@@ -806,6 +839,20 @@ export default function AdminTurnos() {
                                 {(rules as any[]).map(r => (
                                     <div key={r.id_horario} className="flex items-center justify-between bg-white border border-amber-100 p-3 rounded-lg shadow-sm hover:border-amber-300 hover:shadow-md transition-all group">
                                       <div className="flex items-center gap-4">
+                                        {isBatchMode && (
+                                          <input 
+                                            type="checkbox" 
+                                            className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                                            checked={selectedRules.includes(r.id_horario)}
+                                            onChange={(e) => {
+                                              if (e.target.checked) {
+                                                setSelectedRules(prev => [...prev, r.id_horario]);
+                                              } else {
+                                                setSelectedRules(prev => prev.filter(id => id !== r.id_horario));
+                                              }
+                                            }}
+                                          />
+                                        )}
                                         <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-50">
                                           <Calendar className="w-4 h-4 text-amber-600" />
                                         </div>
@@ -962,6 +1009,83 @@ export default function AdminTurnos() {
             >
               {duplicateSector.isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
               Replicar Reglas
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Floating Action Bar para Edición en Lote */}
+      {isBatchMode && selectedRules.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-6 z-50 animate-in slide-in-from-bottom-10 fade-in duration-300">
+          <div className="text-sm font-medium">
+            <span className="bg-indigo-500 text-white px-2 py-0.5 rounded-full mr-2">{selectedRules.length}</span>
+            Reglas seleccionadas
+          </div>
+          <div className="flex items-center gap-2 border-l border-slate-700 pl-6">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-slate-300 hover:text-white hover:bg-slate-800"
+              onClick={() => setSelectedRules([])}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              size="sm" 
+              className="bg-indigo-500 hover:bg-indigo-600 text-white shadow-sm"
+              onClick={() => setBatchModalOpen(true)}
+            >
+              <Pencil className="w-4 h-4 mr-2" /> Editar Horarios
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edición Múltiple */}
+      <Dialog open={batchModalOpen} onOpenChange={setBatchModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edición Masiva de Horarios</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 space-y-6">
+            <p className="text-sm text-slate-500">
+              Estás a punto de modificar el horario de entrada y salida para <strong>{selectedRules.length} reglas</strong> simultáneamente.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Hora Entrada</Label>
+                <Input type="time" value={batchHoraEntrada} onChange={e => setBatchHoraEntrada(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Hora Salida</Label>
+                <Input type="time" value={batchHoraSalida} onChange={e => setBatchHoraSalida(e.target.value)} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBatchModalOpen(false)}>Cancelar</Button>
+            <Button 
+              className="bg-indigo-600 hover:bg-indigo-700 text-white" 
+              disabled={!batchHoraEntrada || !batchHoraSalida || batchUpdate.isPending}
+              onClick={() => {
+                batchUpdate.mutate({
+                  id_horarios: selectedRules,
+                  hora_entrada: batchHoraEntrada,
+                  hora_salida: batchHoraSalida
+                }, {
+                  onSuccess: () => {
+                    toast.success('Horarios actualizados masivamente con éxito');
+                    setBatchModalOpen(false);
+                    setSelectedRules([]);
+                    setBatchHoraEntrada('');
+                    setBatchHoraSalida('');
+                    trpcContext.admin.getHorariosReglas.invalidate();
+                  }
+                });
+              }}
+            >
+              {batchUpdate.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-4 h-4 mr-2" />}
+              Guardar Cambios
             </Button>
           </DialogFooter>
         </DialogContent>
