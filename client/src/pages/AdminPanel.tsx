@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Loader2, Plus, Trash2, Edit2, LogOut, ArrowUpDown, Search, Settings, Pencil, Check, X, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
@@ -125,7 +126,8 @@ export default function AdminPanel() {
       result = result.filter((p: any) => 
         p.legajo.toLowerCase().includes(lowerFilter) ||
         p.nombre.toLowerCase().includes(lowerFilter) ||
-        p.sectorPertenencia.toString().toLowerCase().includes(lowerFilter)
+        (p.sectorPertenencia && p.sectorPertenencia.toString().toLowerCase().includes(lowerFilter)) ||
+        (p.cargo && p.cargo.toString().toLowerCase().includes(lowerFilter))
       );
     }
     
@@ -258,6 +260,35 @@ export default function AdminPanel() {
     }
   };
 
+  const handleRemoveCargoFromSector = async (sectorId: number, cargoId: number) => {
+    try {
+      const currentConfig = sectoresCargos?.filter((sc: any) => sc.id_sector === sectorId) || [];
+      const newConfig = currentConfig
+        .filter((sc: any) => sc.id_cargo !== cargoId)
+        .map((sc: any) => ({ cargo_id: sc.id_cargo, nivel_criticidad: sc.nivel_criticidad }));
+        
+      await updateSectorCargosMutation.mutateAsync({ idSector: sectorId, cargosParams: newConfig });
+      trpcContext.admin.getSectoresCargos.invalidate();
+      toast.success('Cargo retirado del sector');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al retirar cargo');
+    }
+  };
+
+  const handleAddCargoToSector = async (sectorId: number, cargoId: number) => {
+    try {
+      const currentConfig = sectoresCargos?.filter((sc: any) => sc.id_sector === sectorId) || [];
+      const newConfig = currentConfig.map((sc: any) => ({ cargo_id: sc.id_cargo, nivel_criticidad: sc.nivel_criticidad }));
+      newConfig.push({ cargo_id: cargoId, nivel_criticidad: 0 }); // Añadir con criticidad 0 por defecto
+      
+      await updateSectorCargosMutation.mutateAsync({ idSector: sectorId, cargosParams: newConfig });
+      trpcContext.admin.getSectoresCargos.invalidate();
+      toast.success('Cargo asignado al sector');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al añadir cargo');
+    }
+  };
+
   const handleAddCargo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -338,7 +369,15 @@ export default function AdminPanel() {
     setEditingPerson(p.legajo);
     setLegajo(p.legajo);
     setNombre(p.nombre);
-    setPersonaSector(p.sectorPertenencia);
+    
+    // sectorPertenencia es la descripción, necesitamos el ID para el Select
+    if (sectores) {
+      const s = sectores.find((s: any) => s.descripcion === p.sectorPertenencia);
+      setPersonaSector(s ? s.idSector.toString() : '');
+    } else {
+      setPersonaSector('');
+    }
+    
     setPersonaCargo(p.cargo_id?.toString() || '1');
     setIsPersonModalOpen(true);
   };
@@ -489,6 +528,9 @@ export default function AdminPanel() {
                           <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('sectorPertenencia')}>
                             <div className="flex items-center gap-1 font-semibold text-slate-700">Sector <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
                           </TableHead>
+                          <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('cargo')}>
+                            <div className="flex items-center gap-1 font-semibold text-slate-700">Cargo / Función <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
+                          </TableHead>
                           <TableHead className="text-right font-semibold text-slate-700">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -496,8 +538,17 @@ export default function AdminPanel() {
                         {sortedAndFilteredPersonal.map((p: any) => (
                         <TableRow key={p.legajo}>
                           <TableCell className="font-medium">{p.legajo}</TableCell>
-                          <TableCell>{p.nombre} {p.cargo_id && p.cargo_id > 1 ? <span className="text-xs font-bold text-indigo-600 ml-2">(E)</span> : null}</TableCell>
-                          <TableCell>{p.sectorPertenencia}</TableCell>
+                          <TableCell>{p.nombre}</TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800">
+                              {p.sectorPertenencia}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${p.cargo_id && p.cargo_id > 1 ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-100 text-gray-800'}`}>
+                              {p.cargo || 'Operario'}
+                            </span>
+                          </TableCell>
                           <TableCell className="text-right space-x-2">
                             <Button variant="ghost" size="icon" onClick={() => openEditPerson(p)}>
                               <Edit2 className="w-4 h-4 text-blue-600" />
@@ -593,7 +644,56 @@ export default function AdminPanel() {
                                 }}
                               />
                             ) : (
-                              s.descripcion
+                              <div className="flex flex-col gap-2">
+                                <span className="font-semibold text-slate-800">{s.descripcion}</span>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {sectoresCargos?.filter((sc: any) => sc.id_sector === s.idSector).map((sc: any) => {
+                                    const c = cargos?.find((c: any) => c.id_cargo === sc.id_cargo);
+                                    if (!c) return null;
+                                    return (
+                                      <span key={c.id_cargo} className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-[11px] font-medium bg-white border shadow-sm text-slate-700">
+                                        {c.descripcion} 
+                                        <button 
+                                          onClick={() => handleRemoveCargoFromSector(s.idSector, c.id_cargo)} 
+                                          className="hover:bg-red-100 hover:text-red-600 rounded-full p-0.5 transition-colors"
+                                          title="Retirar cargo"
+                                        >
+                                          <X className="w-3 h-3" />
+                                        </button>
+                                      </span>
+                                    );
+                                  })}
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors border border-slate-200 shadow-sm" title="Añadir cargo rápidamente">
+                                        <Plus className="w-3 h-3" />
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-56 p-2" align="start">
+                                      <div className="space-y-2">
+                                        <h4 className="font-medium text-xs text-slate-500 uppercase tracking-wider">Añadir a {s.descripcion}</h4>
+                                        <div className="grid gap-1">
+                                          {cargos?.filter((c:any) => !sectoresCargos?.some((sc:any) => sc.id_sector === s.idSector && sc.id_cargo === c.id_cargo)).map((c:any) => (
+                                            <Button 
+                                              key={c.id_cargo} 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="justify-start h-8 px-2 text-xs font-normal" 
+                                              onClick={() => handleAddCargoToSector(s.idSector, c.id_cargo)}
+                                            >
+                                              <Plus className="w-3 h-3 mr-2 text-slate-400" />
+                                              {c.descripcion}
+                                            </Button>
+                                          ))}
+                                          {cargos?.filter((c:any) => !sectoresCargos?.some((sc:any) => sc.id_sector === s.idSector && sc.id_cargo === c.id_cargo)).length === 0 && (
+                                            <span className="text-xs text-slate-500 p-2 text-center block">Todos los cargos asignados.</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                </div>
+                              </div>
                             )}
                           </TableCell>
                           <TableCell className="text-right space-x-2">
