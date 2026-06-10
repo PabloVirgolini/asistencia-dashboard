@@ -23,3 +23,11 @@
 - **Quirk del Servidor de Desarrollo (Vite)**: `tsx watch` junto con la inicialización de `createViteServer` puede quedarse "mudo" en consola por 10-15 segundos durante la primera ejecución. No abortar ni asumir falla sin antes revisar si responde el puerto 3000.
 - **Quirk de Autenticación tRPC y Cookies**: Si un usuario tiene un inicio de sesión exitoso ("Success") pero es inmediatamente redirigido de vuelta al login por "Acceso Denegado", la causa raíz siempre suele ser un desajuste entre el nombre de la cookie en la función que lo emite (`res.cookie` en routers) y la función que lo extrae del request (`parse(req.headers.cookie)` en la creación del contexto).
 - **Quirk de SQLite UNIQUE**: SQLite es *case-sensitive* por defecto en sus strings. En los esquemas de Zod para endpoints de registro y login, asegurarse siempre de forzar `.trim().toLowerCase()` en emails, de lo contrario SQLite no encontrará coincidencias entre `PABLO@...` y `pablo@...`, lanzando errores confusos de "Credenciales inválidas" pese a que el usuario recién lo haya tipeado.
+
+---
+## 🔴 REGLAS MAESTRAS DE ARQUITECTURA Y CALIDAD (INELUDIBLES)
+A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones deben respetar rigurosamente:
+1. **Bajo Acoplamiento (Low Coupling):** Los componentes de UI (React) NO deben contener lógica de negocio densa ni mezclar responsabilidades de estado, fetching y renderizado complejo.
+2. **Principio de Responsabilidad Única (SRP):** Cada archivo, función y componente debe cumplir con UN único objetivo claramente definido. Si una función hace dos o más cosas, DEBE ser dividida.
+3. **Cobertura con Unit Tests:** TODO objetivo principal (función pura o regla de negocio) debe estar respaldado por un Unit Test robusto (Vitest). Queda estrictamente prohibido programar lógica sin su respectivo arnés de prueba.
+4. **Cero God Classes:** Prohibido crear o expandir componentes React masivos o archivos backend monolíticos. Emplear siempre Patrón Repositorio / Servicios y delegar responsabilidades en hooks o utilidades puras.

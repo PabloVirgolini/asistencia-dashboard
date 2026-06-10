@@ -40,3 +40,11 @@ Debes usar SIEMPRE el script optimizador disponible en la carpeta de skills:
 - **Flujos Negativos y Edge Cases**: Cada test suite debe dedicar una buena porción de casos a probar validaciones fallidas, IDs inexistentes, fechas mal formateadas o datos incompletos en la base de datos.
 - **Nomenclatura**: Los archivos de prueba deben ubicarse junto al módulo que prueban y llevar la extensión `.test.ts` o `.test.tsx`.
 - **Aislamiento**: En pruebas puramente unitarias, mockea las dependencias externas.
+
+---
+## 🔴 REGLAS MAESTRAS DE ARQUITECTURA Y CALIDAD (INELUDIBLES)
+A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones deben respetar rigurosamente:
+1. **Bajo Acoplamiento (Low Coupling):** Los componentes de UI (React) NO deben contener lógica de negocio densa ni mezclar responsabilidades de estado, fetching y renderizado complejo.
+2. **Principio de Responsabilidad Única (SRP):** Cada archivo, función y componente debe cumplir con UN único objetivo claramente definido. Si una función hace dos o más cosas, DEBE ser dividida.
+3. **Cobertura con Unit Tests:** TODO objetivo principal (función pura o regla de negocio) debe estar respaldado por un Unit Test robusto (Vitest). Queda estrictamente prohibido programar lógica sin su respectivo arnés de prueba.
+4. **Cero God Classes:** Prohibido crear o expandir componentes React masivos o archivos backend monolíticos. Emplear siempre Patrón Repositorio / Servicios y delegar responsabilidades en hooks o utilidades puras.

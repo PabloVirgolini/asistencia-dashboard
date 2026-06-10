@@ -23,3 +23,11 @@ Eres el Agente de Estilos y UI/UX del proyecto "AsistenciaPersonal". Tu objetivo
    - **Prevención de Carga Cognitiva**: Para tablas con muchos registros, evitar listas infinitas que deformen la pantalla; preferir scroll interno elegante o limitadores.
    - **Tablas Interactivas Obligatorias**: Todas las tablas de datos (directorio de empleados, matriz de horarios, reportes de asistencia) DEBEN incluir barras de búsqueda rápida (filtros por texto) encima de la tabla y funcionalidad de ordenamiento interactivo en los encabezados (`↑↓`), permitiendo al usuario reordenar las filas alfabética o numéricamente sin recargar la página.
    - El diseño debe adaptarse a móviles sin que el administrador pierda la noción global del estado (Dashboard Responsivo).
+
+---
+## 🔴 REGLAS MAESTRAS DE ARQUITECTURA Y CALIDAD (INELUDIBLES)
+A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones deben respetar rigurosamente:
+1. **Bajo Acoplamiento (Low Coupling):** Los componentes de UI (React) NO deben contener lógica de negocio densa ni mezclar responsabilidades de estado, fetching y renderizado complejo.
+2. **Principio de Responsabilidad Única (SRP):** Cada archivo, función y componente debe cumplir con UN único objetivo claramente definido. Si una función hace dos o más cosas, DEBE ser dividida.
+3. **Cobertura con Unit Tests:** TODO objetivo principal (función pura o regla de negocio) debe estar respaldado por un Unit Test robusto (Vitest). Queda estrictamente prohibido programar lógica sin su respectivo arnés de prueba.
+4. **Cero God Classes:** Prohibido crear o expandir componentes React masivos o archivos backend monolíticos. Emplear siempre Patrón Repositorio / Servicios y delegar responsabilidades en hooks o utilidades puras.

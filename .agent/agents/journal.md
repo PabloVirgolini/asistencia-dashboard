@@ -113,3 +113,14 @@ Este archivo es un bitácora para documentar todos los avances, diagnósticos, s
 ### [2026-06-10] - Tweak UX: Tonalidades de Cargos en Calendario Semanal
 - **Avance:** Se refinó la paleta de colores dinámicos del `WeeklyCalendar`.
 - **Detalle:** Originalmente, todos los cargos de un mismo sector usaban exactamente el mismo color de Tailwind (ej. `bg-emerald-500`). Se migró la paleta `COLORS` a un `COLOR_PALETTES` que contiene múltiples matices por familia de color (`400`, `500`, `600`, `700`). El color principal (la familia) sigue siendo asignado según el hashing del *Sector*, mientras que la saturación/brillo (el matiz) es calculado en base al hashing del *Cargo*. Así, un sector conserva su identidad de color, pero permite diferenciar sutilmente los distintos cargos visualmente.
+
+---
+
+## 🏛️ DIRECTIVAS ARQUITECTÓNICAS OBLIGATORIAS (NUEVO ESTÁNDAR)
+
+A partir de este punto del desarrollo (Tras la auditoría de QA en `AdminTurnos.tsx` y `attendance.ts`), **TODOS LOS AGENTES** deben regirse bajo los siguientes principios innegociables:
+
+1. **Bajo Acoplamiento (Low Coupling):** Los componentes de UI no deben contener lógica de negocio densa ni cálculos de base de datos.
+2. **Principio de Responsabilidad Única (SRP):** Cada archivo, función y componente debe cumplir con UN único objetivo claramente definido. Si una función hace dos cosas, debe ser dividida.
+3. **Cobertura con Unit Tests:** Todo objetivo principal (regla de negocio extraída) debe estar respaldado por un Unit Test con `Vitest`. Queda estrictamente prohibido programar lógica compleja sin su arnés de prueba.
+4. **No más "God Classes":** Prohibido crear componentes React de más de 300-400 líneas o archivos de backend monolíticos. Siempre aplicar Patrón Repositorio / Servicios.

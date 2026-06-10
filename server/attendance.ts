@@ -242,14 +242,8 @@ export function duplicateCargoRules(id_turno: number, id_sector: number, source_
     throw new Error('No hay reglas para copiar en este cargo, sector y turno.');
   }
 
-  // Verificar que el target_cargo exista en el personal activo del sector
-  const targetPersonalStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE sectorPertenencia = ? AND cargo_id = ? AND activo = 1');
-  const targetPersonal = targetPersonalStmt.get(id_sector.toString(), target_cargo) as {c: number};
-  
-  if (targetPersonal.c === 0 && rules.some(r => r.legajo === null)) {
-    // Si no hay empleados con este cargo en el sector, y estamos copiando reglas generales, fallamos
-    throw new Error('El sector destino no tiene personal activo asignado a ese cargo.');
-  }
+  // Eliminamos la validación estricta de personal activo.
+  // Si el usuario quiere replicar a un cargo que aún no tiene empleados (pero es válido en el sector), se lo permitimos.
 
   const insertStmt = db.prepare(`
     INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by)
