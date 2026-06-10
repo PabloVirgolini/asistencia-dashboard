@@ -126,7 +126,7 @@ export default function WeeklyCalendar({ reglas }: WeeklyCalendarProps) {
       <div className="flex flex-1 relative overflow-hidden bg-slate-50/30">
         
         {/* Time Column (Y Axis) */}
-        <div className="w-12 shrink-0 border-r bg-white flex flex-col justify-between text-[10px] text-slate-400 font-medium z-10">
+        <div className="relative w-12 shrink-0 border-r bg-white flex flex-col justify-between text-[10px] text-slate-400 font-medium z-10">
           {[0, 4, 8, 12, 16, 20, 24].map((hour, i) => (
             <div key={hour} className="px-1 text-right" style={{ position: 'absolute', top: `${(hour / 24) * 100}%`, width: '100%', marginTop: hour === 24 ? '-14px' : (hour === 0 ? '2px' : '-7px') }}>
               {hour === 24 ? '00:00' : `${hour.toString().padStart(2, '0')}:00`}

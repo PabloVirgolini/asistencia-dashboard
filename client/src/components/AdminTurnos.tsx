@@ -620,17 +620,15 @@ export default function AdminTurnos() {
                 </button>
               </div>
             </div>
-            {viewMode === 'list' && (
-              <div className="relative w-full md:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <Input 
-                  placeholder="Buscar en la matriz..." 
-                  className="pl-9 bg-white border-slate-200"
-                  value={reglaFilter}
-                  onChange={(e) => setReglaFilter(e.target.value)}
-                />
-              </div>
-            )}
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+              <Input 
+                placeholder="Buscar en la matriz..." 
+                className="pl-9 bg-white border-slate-200"
+                value={reglaFilter}
+                onChange={(e) => setReglaFilter(e.target.value)}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
