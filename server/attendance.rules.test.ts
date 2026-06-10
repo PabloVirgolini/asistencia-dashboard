@@ -31,6 +31,7 @@ import {
   getHorariosReglas,
   addHorario,
   removeHorario,
+  updateHorario,
   getPresentesByDate
 } from './attendance';
 
@@ -102,6 +103,22 @@ describe('attendance.ts - Reglas y Turnos', () => {
     
     expect(() => addHorario(1, 2, null, 10, [1], '08:00', '17:00')).toThrowError('Ya existe una regla configurada para este mismo Turno, Día y Sector/Cargo/Legajo.');
     expect(mRun).not.toHaveBeenCalled(); // No debe insertar
+  });
+
+  it('updateHorario - actualiza correctamente un horario existente', () => {
+    mGet.mockReturnValueOnce({ c: 1 }); // Simular que la regla existe
+    
+    updateHorario(1, '09:00', '18:00');
+    
+    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE horarios SET hora_entrada = ?, hora_salida = ? WHERE id_horario = ?'));
+    expect(mRun).toHaveBeenCalledWith('09:00', '18:00', 1);
+  });
+
+  it('updateHorario - arroja error si el horario a actualizar no existe', () => {
+    mGet.mockReturnValueOnce({ c: 0 }); // Simular que la regla no existe
+    
+    expect(() => updateHorario(99, '09:00', '18:00')).toThrowError('La regla de horario no existe.');
+    expect(mRun).not.toHaveBeenCalled();
   });
 
   it('removeHorario - elimina regla correctamente', () => {

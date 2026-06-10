@@ -285,8 +285,22 @@ export function removeHorario(id_horario: number): void {
     }
   }
 
-  const stmt = db.prepare('DELETE FROM horarios WHERE id_horario = ?');
-  stmt.run(id_horario);
+  const deleteStmt = db.prepare('DELETE FROM horarios WHERE id_horario = ?');
+  deleteStmt.run(id_horario);
+}
+
+export function updateHorario(id_horario: number, hora_entrada: string, hora_salida: string): void {
+  const db = getDb();
+  
+  const checkStmt = db.prepare('SELECT COUNT(*) as c FROM horarios WHERE id_horario = ?');
+  const result = checkStmt.get(id_horario) as { c: number };
+  
+  if (result.c === 0) {
+    throw new Error('La regla de horario no existe.');
+  }
+
+  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ? WHERE id_horario = ?');
+  updateStmt.run(hora_entrada, hora_salida, id_horario);
 }
 
 /**
@@ -342,7 +356,7 @@ export function getPresentesByDate(date: string, sector?: string): AttendanceRec
       p.nombre,
       s.descripcion as sector,
       c.descripcion as cargo,
-      c.nivel_criticidad,
+      sc.nivel_criticidad,
       p.sectorPertenencia,
       p.cargo_id,
       ht.id_turno,
@@ -351,12 +365,13 @@ export function getPresentesByDate(date: string, sector?: string): AttendanceRec
     INNER JOIN fichadas f ON CAST(p.legajo AS INTEGER) = CAST(SUBSTR(f.legajo, 3) AS INTEGER)
     LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
     LEFT JOIN cargos c ON p.cargo_id = c.id_cargo
+    LEFT JOIN sectores_cargos sc ON sc.id_cargo = c.id_cargo AND sc.id_sector = p.sectorPertenencia
     LEFT JOIN historial_turnos ht ON ht.legajo = p.legajo AND ht.fecha_inicio <= ? AND (ht.fecha_fin IS NULL OR ht.fecha_fin >= ?)
     WHERE p.activo = 1 
       AND f.hora >= ? 
       AND f.hora < ?
       ${sector && sector !== 'todos' ? 'AND p.sectorPertenencia = ?' : ''}
-    GROUP BY p.legajo, p.nombre, s.descripcion, c.descripcion, c.nivel_criticidad, p.sectorPertenencia, p.cargo_id, ht.id_turno
+    GROUP BY p.legajo, p.nombre, s.descripcion, c.descripcion, sc.nivel_criticidad, p.sectorPertenencia, p.cargo_id, ht.id_turno
     ORDER BY primeraFichada ASC`;
   
   const startOfDay = `${date} 00:00:00`;
@@ -426,10 +441,11 @@ export function getAusentesByDate(date: string, sector?: string): AbsenceRecord[
       p.nombre,
       s.descripcion as sector,
       c.descripcion as cargo,
-      c.nivel_criticidad
+      sc.nivel_criticidad
     FROM personal p
     LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
     LEFT JOIN cargos c ON p.cargo_id = c.id_cargo
+    LEFT JOIN sectores_cargos sc ON sc.id_cargo = c.id_cargo AND sc.id_sector = p.sectorPertenencia
     WHERE p.activo = 1
       AND CAST(p.legajo AS INTEGER) NOT IN (
         SELECT DISTINCT CAST(SUBSTR(f.legajo, 3) AS INTEGER)
@@ -570,6 +586,56 @@ export function updatePersonal(legajo: string, nombre: string, sectorPertenencia
   const stmt = db.prepare('UPDATE personal SET nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ? WHERE legajo = ?');
   stmt.run(nombre, sectorPertenencia, activo, cargo_id, legajo);
 }
+
+export function updateSector(idSector: number, descripcion: string): void {
+  const db = getDb();
+  const stmt = db.prepare('UPDATE sectores SET descripcion = ? WHERE idSector = ?');
+  stmt.run(descripcion, idSector);
+}
+
+export function getSectoresCargos(): { id_sector: number, id_cargo: number, nivel_criticidad: number }[] {
+  const db = getDb();
+  const stmt = db.prepare('SELECT id_sector, id_cargo, nivel_criticidad FROM sectores_cargos');
+  return stmt.all() as { id_sector: number, id_cargo: number, nivel_criticidad: number }[];
+}
+
+export function updateSectorCargos(idSector: number, cargosParams: {id_cargo: number, nivel_criticidad: number}[]): void {
+  const db = getDb();
+  db.transaction(() => {
+    // 1. Validar si hay reglas de horario usando cargos que se están eliminando
+    const keepCargos = cargosParams.map(c => c.id_cargo);
+    if (keepCargos.length > 0) {
+      const placeholders = keepCargos.map(() => '?').join(',');
+      const conflictStmt = db.prepare(`SELECT COUNT(*) as c FROM horarios WHERE id_sector = ? AND id_cargo NOT IN (${placeholders})`);
+      const result = conflictStmt.get(idSector, ...keepCargos) as { c: number };
+      if (result.c > 0) {
+        throw new Error('No se pueden remover algunos cargos porque están siendo usados en reglas de horarios de este sector.');
+      }
+      
+      const conflictPersonalStmt = db.prepare(`SELECT COUNT(*) as c FROM personal WHERE sectorPertenencia = ? AND cargo_id NOT IN (${placeholders}) AND activo = 1`);
+      const personalResult = conflictPersonalStmt.get(idSector, ...keepCargos) as { c: number };
+      if (personalResult.c > 0) {
+        throw new Error('No se pueden remover algunos cargos porque hay empleados activos en este sector que los poseen.');
+      }
+    } else {
+      // Si eliminan todos
+      const result = db.prepare('SELECT COUNT(*) as c FROM horarios WHERE id_sector = ?').get(idSector) as { c: number };
+      if (result.c > 0) throw new Error('El sector tiene reglas de horarios.');
+      const personalResult = db.prepare('SELECT COUNT(*) as c FROM personal WHERE sectorPertenencia = ? AND activo = 1').get(idSector) as { c: number };
+      if (personalResult.c > 0) throw new Error('El sector tiene empleados activos.');
+    }
+
+    // 2. Eliminar todos los mapeos de este sector
+    db.prepare('DELETE FROM sectores_cargos WHERE id_sector = ?').run(idSector);
+    
+    // 3. Insertar los nuevos
+    const insertStmt = db.prepare('INSERT INTO sectores_cargos (id_sector, id_cargo, nivel_criticidad) VALUES (?, ?, ?)');
+    for (const cp of cargosParams) {
+      insertStmt.run(idSector, cp.id_cargo, cp.nivel_criticidad);
+    }
+  })();
+}
+
 
 export function deletePersonal(legajo: string): void {
   const db = getDb();

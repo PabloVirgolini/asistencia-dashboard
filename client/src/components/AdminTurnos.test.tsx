@@ -50,11 +50,14 @@ vi.mock('@/lib/trpc', () => {
         getTurnosHorarios: { useQuery: (...args: any[]) => mGetTurnos(...args) },
         getHorariosReglas: { useQuery: (...args: any[]) => mGetReglas(...args) },
         getCargos: { useQuery: (...args: any[]) => mGetCargos(...args) },
+        getSectoresCargos: { useQuery: () => ({ data: [], isLoading: false }) },
         getPersonal: { useQuery: (...args: any[]) => mGetPersonal(...args) },
         addTurnoHorario: { useMutation: () => ({ mutateAsync: mAddTurno, isPending: false }) },
         removeTurnoHorario: { useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }) },
         addHorario: { useMutation: () => ({ mutateAsync: mAddHorario, isPending: false }) },
         removeHorario: { useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }) },
+        duplicateSectorRules: { useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }) },
+        updateHorario: { useMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }) },
       },
       attendance: {
         getSectors: { useQuery: (...args: any[]) => mGetSectors(...args) }

@@ -25,7 +25,11 @@ import {
   getHorariosReglas,
   addHorario,
   removeHorario,
-  duplicateSectorRules
+  updateHorario,
+  duplicateSectorRules,
+  updateSector,
+  getSectoresCargos,
+  updateSectorCargos
 } from "./attendance";
 import { signToken } from "./jwt";
 
@@ -100,17 +104,45 @@ export const appRouter = router({
   admin: router({
     // Procedimientos protegidos para gestión de sectores
     addSector: adminProcedure
-      .input(z.object({ idSector: z.number(), descripcion: z.string() }))
+      .input(z.object({ idSector: z.number(), descripcion: z.string().min(1) }))
       .mutation(({ input }) => {
         insertSector(input.idSector, input.descripcion);
         return { success: true };
       }),
       
+    updateSector: adminProcedure
+      .input(z.object({ idSector: z.number(), descripcion: z.string().min(1) }))
+      .mutation(({ input }) => {
+        updateSector(input.idSector, input.descripcion);
+        return { success: true };
+      }),
+
     removeSector: adminProcedure
       .input(z.object({ idSector: z.number() }))
       .mutation(({ input }) => {
         deleteSector(input.idSector);
         return { success: true };
+      }),
+
+    getSectoresCargos: protectedProcedure.query(() => {
+      return getSectoresCargos();
+    }),
+
+    updateSectorCargos: adminProcedure
+      .input(z.object({
+        idSector: z.number(),
+        cargosParams: z.array(z.object({
+          id_cargo: z.number(),
+          nivel_criticidad: z.number()
+        }))
+      }))
+      .mutation(({ input }) => {
+        try {
+          updateSectorCargos(input.idSector, input.cargosParams);
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
       }),
 
     // Procedimientos protegidos para gestión de personal
@@ -220,6 +252,21 @@ export const appRouter = router({
       .mutation(({ input }) => {
         try {
           removeHorario(input.id_horario);
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
+      }),
+
+    updateHorario: adminProcedure
+      .input(z.object({
+        id_horario: z.number(),
+        hora_entrada: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato inválido (HH:mm)"),
+        hora_salida: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Formato inválido (HH:mm)")
+      }))
+      .mutation(({ input }) => {
+        try {
+          updateHorario(input.id_horario, input.hora_entrada, input.hora_salida);
           return { success: true };
         } catch (e: any) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });

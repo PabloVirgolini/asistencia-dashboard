@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Trash2, Plus, Clock, Loader2, Check, Search, Copy,
+  Trash2, Plus, Clock, Loader2, Check, Search, Copy, Pencil, X,
   ChevronRight, Building, Briefcase, User, Calendar, AlertCircle
 } from 'lucide-react';
 import {
@@ -62,6 +62,7 @@ export default function AdminTurnos() {
   const { data: turnos, isLoading: isTurnosLoading } = trpc.admin.getTurnosHorarios.useQuery();
   const { data: reglas, isLoading: isReglasLoading } = trpc.admin.getHorariosReglas.useQuery();
   const { data: sectores } = trpc.attendance.getSectors.useQuery();
+  const { data: sectoresCargos } = trpc.admin.getSectoresCargos.useQuery();
   const { data: cargos } = trpc.admin.getCargos.useQuery();
   const { data: personal } = trpc.admin.getPersonal.useQuery();
 
@@ -151,10 +152,13 @@ export default function AdminTurnos() {
   const [personalSearch, setPersonalSearch] = useState('');
   const [selectedLegajo, setSelectedLegajo] = useState<string>('');
 
-  // State para Duplicar Sector
   const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
   const [duplicateSource, setDuplicateSource] = useState<{ id_turno: number, id_sector: number, nombreSector: string } | null>(null);
   const [duplicateTargetSector, setDuplicateTargetSector] = useState<string>('');
+
+  const [editingRuleId, setEditingRuleId] = useState<number | null>(null);
+  const [editHoraEntrada, setEditHoraEntrada] = useState("");
+  const [editHoraSalida, setEditHoraSalida] = useState("");
 
   const filteredPersonal = personalSearch.length > 1 
     ? personal?.filter(p => 
@@ -189,9 +193,21 @@ export default function AdminTurnos() {
       toast.success('Turno eliminado');
       trpcContext.admin.getTurnosHorarios.invalidate();
     } catch (err: any) {
-      toast.error(err.message || 'Error al eliminar turno');
+      toast.error(`Error al eliminar: ${err.message}`);
     }
   };
+
+  const updateHorario = trpc.admin.updateHorario.useMutation({
+    onSuccess: () => {
+      toast.success('Horario actualizado correctamente');
+      setEditingRuleId(null);
+      trpcContext.admin.getTurnosHorarios.invalidate();
+      trpcContext.admin.getHorariosReglas.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Error al actualizar: ${err.message}`);
+    }
+  });
 
   const handleAddRegla = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,7 +223,6 @@ export default function AdminTurnos() {
 
     try {
       if (tipoRegla === 'general') {
-        // Multi-insert for each selected cargo
         for (const cargo of selectedCargos) {
           await addRegla.mutateAsync({
             id_sector: parseInt(selectedSector),
@@ -232,12 +247,9 @@ export default function AdminTurnos() {
       }
       toast.success('Regla(s) guardada(s) correctamente');
       trpcContext.admin.getHorariosReglas.invalidate();
-      
-      // UX Pattern: Formulario Persistente (dejamos los comboboxes fijos y limpiamos horarios por comodidad)
       setSelectedDias([]);
       setHoraEntrada('');
       setHoraSalida('');
-      // No reseteamos los selectores como pidió el usuario.
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar la regla');
     }
@@ -443,12 +455,9 @@ export default function AdminTurnos() {
                       ) : (
                         cargos
                           ?.filter((c: any) => {
-                            // Filtramos los cargos que estén asignados a personas del sector seleccionado
-                            const personasDelSector = personal?.filter((p: any) => p.sectorPertenencia?.toString() === selectedSector);
-                            if (!personasDelSector || personasDelSector.length === 0) return true; // Si no hay personal en el sector, mostramos todos por default o los permitimos? 
-                            // O podríamos obligar a que exista personal con ese cargo. 
-                            // Mejor: Dejamos pasar si el cargo existe en personasDelSector
-                            return personasDelSector.some((p: any) => p.cargo_id === c.id_cargo);
+                            if (!sectoresCargos) return false;
+                            const mapped = sectoresCargos.find((sc: any) => sc.id_sector.toString() === selectedSector && sc.id_cargo === c.id_cargo);
+                            return !!mapped;
                           })
                           .map((c: any) => (
                             <div key={c.id_cargo} className="flex items-center space-x-3 mb-2 last:mb-0">
@@ -514,11 +523,6 @@ export default function AdminTurnos() {
                               <span className="text-slate-500 text-xs ml-2 bg-slate-100 px-2 py-0.5 rounded-md">Legajo: {p.legajo}</span>
                             </div>
                           ))}
-                        </div>
-                      )}
-                      {personalSearch.length > 1 && filteredPersonal?.length === 0 && (
-                        <div className="absolute z-10 w-full mt-2 bg-white border border-slate-200 rounded-lg p-4 text-sm text-center text-slate-500 shadow-xl">
-                          No se encontraron resultados
                         </div>
                       )}
                     </div>
@@ -666,16 +670,42 @@ export default function AdminTurnos() {
                                         </div>
                                         <div>
                                           <div className="font-bold text-slate-800 text-sm">{getDiaName(r.dia_semana)}</div>
-                                          <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
-                                            <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{r.hora_entrada}</span>
-                                            <span className="text-slate-300">→</span>
-                                            <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{r.hora_salida}</span>
-                                          </div>
+                                          {editingRuleId === r.id_horario ? (
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <Input type="time" value={editHoraEntrada} onChange={e => setEditHoraEntrada(e.target.value)} className="h-7 w-24 text-xs" />
+                                              <span className="text-slate-300">→</span>
+                                              <Input type="time" value={editHoraSalida} onChange={e => setEditHoraSalida(e.target.value)} className="h-7 w-24 text-xs" />
+                                            </div>
+                                          ) : (
+                                            <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5 mt-0.5">
+                                              <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{r.hora_entrada}</span>
+                                              <span className="text-slate-300">→</span>
+                                              <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{r.hora_salida}</span>
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
-                                      <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-slate-300 hover:text-red-600 hover:bg-red-50 transition-colors">
-                                        <Trash2 className="w-4 h-4" />
-                                      </Button>
+                                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {editingRuleId === r.id_horario ? (
+                                          <>
+                                            <Button variant="ghost" size="icon" onClick={() => updateHorario.mutate({ id_horario: r.id_horario, hora_entrada: editHoraEntrada, hora_salida: editHoraSalida })} className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" disabled={updateHorario.isPending}>
+                                              <Check className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => setEditingRuleId(null)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100" disabled={updateHorario.isPending}>
+                                              <X className="w-4 h-4" />
+                                            </Button>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Button variant="ghost" size="icon" onClick={() => { setEditingRuleId(r.id_horario); setEditHoraEntrada(r.hora_entrada); setEditHoraSalida(r.hora_salida); }} className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+                                              <Pencil className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                                              <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                          </>
+                                        )}
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
@@ -714,25 +744,51 @@ export default function AdminTurnos() {
                             <TreeNode key={legajo} title={`${personName} (${legajo})`} icon={User} isException defaultExpanded={true} rightContent={renderBatchDelete(rules, `Empleado ${personName}`)}>
                               <div className="py-2 pr-2 space-y-2.5">
                                 {(rules as any[]).map(r => (
-                                  <div key={r.id_horario} className="flex items-center justify-between bg-white border border-amber-100 p-3 rounded-lg shadow-sm hover:border-amber-300 hover:shadow-md transition-all group">
-                                    <div className="flex items-center gap-4">
-                                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-50">
-                                        <Calendar className="w-4 h-4 text-amber-600" />
-                                      </div>
-                                      <div>
-                                        <div className="font-bold text-amber-900 text-sm">{getDiaName(r.dia_semana)}</div>
-                                        <div className="text-xs text-amber-700 font-medium flex items-center gap-1.5 mt-0.5">
-                                          <span className="text-amber-700 bg-amber-100/50 px-1.5 py-0.5 rounded">{r.hora_entrada}</span>
-                                          <span className="text-amber-300">→</span>
-                                          <span className="text-amber-800 bg-amber-100/50 px-1.5 py-0.5 rounded">{r.hora_salida}</span>
+                                    <div key={r.id_horario} className="flex items-center justify-between bg-white border border-amber-100 p-3 rounded-lg shadow-sm hover:border-amber-300 hover:shadow-md transition-all group">
+                                      <div className="flex items-center gap-4">
+                                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-50">
+                                          <Calendar className="w-4 h-4 text-amber-600" />
+                                        </div>
+                                        <div>
+                                          <div className="font-bold text-amber-900 text-sm">{getDiaName(r.dia_semana)}</div>
+                                          {editingRuleId === r.id_horario ? (
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <Input type="time" value={editHoraEntrada} onChange={e => setEditHoraEntrada(e.target.value)} className="h-7 w-24 text-xs" />
+                                              <span className="text-slate-300">→</span>
+                                              <Input type="time" value={editHoraSalida} onChange={e => setEditHoraSalida(e.target.value)} className="h-7 w-24 text-xs" />
+                                            </div>
+                                          ) : (
+                                            <div className="text-xs text-amber-700 font-medium flex items-center gap-1.5 mt-0.5">
+                                              <span className="text-amber-700 bg-amber-100/50 px-1.5 py-0.5 rounded">{r.hora_entrada}</span>
+                                              <span className="text-amber-300">→</span>
+                                              <span className="text-amber-800 bg-amber-100/50 px-1.5 py-0.5 rounded">{r.hora_salida}</span>
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
+                                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {editingRuleId === r.id_horario ? (
+                                          <>
+                                            <Button variant="ghost" size="icon" onClick={() => updateHorario.mutate({ id_horario: r.id_horario, hora_entrada: editHoraEntrada, hora_salida: editHoraSalida })} className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" disabled={updateHorario.isPending}>
+                                              <Check className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => setEditingRuleId(null)} className="text-slate-400 hover:text-slate-600 hover:bg-slate-100" disabled={updateHorario.isPending}>
+                                              <X className="w-4 h-4" />
+                                            </Button>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Button variant="ghost" size="icon" onClick={() => { setEditingRuleId(r.id_horario); setEditHoraEntrada(r.hora_entrada); setEditHoraSalida(r.hora_salida); }} className="text-amber-400 hover:text-amber-600 hover:bg-amber-50 transition-colors">
+                                              <Pencil className="w-4 h-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-amber-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                                              <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                          </>
+                                        )}
+                                      </div>
                                     </div>
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-amber-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                ))}
+                                  ))}
                               </div>
                             </TreeNode>
                           );

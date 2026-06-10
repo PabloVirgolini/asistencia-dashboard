@@ -51,3 +51,11 @@ Este archivo es un bitácora para documentar todos los avances, diagnósticos, s
   2. Bajo directriz del Agente UX, se rediseñó la "Matriz Actual" en el Panel de Administración. Se abandonó el modelo de tabla plana en favor de un formato "Tree Schema / Crumble" que agrupa visualmente las reglas en ramas colapsables (`Turno > Sector > Cargo > Franjas Horarias`), reduciendo la carga cognitiva.
   3. Se instauró una nueva norma de diseño obligatoria: "Tablas Interactivas". A partir de ahora, todo grid de datos incorpora automáticamente buscadores en tiempo real (barras de texto) y ordenamiento interactivo (flechas up/down) en sus cabeceras.
   4. El Agente QA desarrolló en paralelo pruebas unitarias usando `vitest` que blindan el cálculo de prioridades matemáticas y las validaciones de llegadas tardes, mockeando la base de datos `better-sqlite3`. Se solucionaron problemas de tipado agregando `@testing-library/jest-dom`.
+
+### [2026-06-10] - Fase 9: Personalización Dinámica de Sectores y Cargos
+- **Avance:** Se completó el rediseño de la arquitectura de la relación Sector-Cargo. Se implementó una tabla intermedia `sectores_cargos` que permite definir qué cargos existen en qué sector y su nivel de criticidad independiente.
+- **Detalle Arquitectónico y UX:**
+  1. Se agregó la posibilidad de editar (inline) el nombre de los sectores directamente desde el Admin Panel (`AdminPanel.tsx`).
+  2. Se creó un Modal de Configuración interactivo para cada Sector donde los administradores habilitan/deshabilitan los cargos (usando un listado global) y les asignan un valor de criticidad del 1 al 5.
+  3. Se interconectó esta nueva fuente de verdad con el Creador de Reglas (`AdminTurnos.tsx`): Al seleccionar un Sector, el combo de Cargos disponibles se filtra dinámicamente limitándose únicamente a los habilitados por la administración en dicho sector.
+  4. La suite de pruebas de QA se blindó agregando protección transaccional para evitar desactivar un cargo en un sector si ya hay empleados usándolo o reglas asociadas a él, logrando mantener una cobertura del 100% de la suite.

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Trash2, Edit2, LogOut, ArrowUpDown, Search } from 'lucide-react';
+import { Loader2, Plus, Trash2, Edit2, LogOut, ArrowUpDown, Search, Settings, Pencil, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import AdminTurnos from '@/components/AdminTurnos';
@@ -27,10 +27,16 @@ export default function AdminPanel() {
   const { data: cargos } = trpc.admin.getCargos.useQuery(undefined, {
     enabled: !!user
   });
+  const { data: sectoresCargos } = trpc.admin.getSectoresCargos.useQuery(undefined, {
+    enabled: !!user
+  });
 
   const logoutMutation = trpc.auth.logout.useMutation();
   const addSectorMutation = trpc.admin.addSector.useMutation();
   const removeSectorMutation = trpc.admin.removeSector.useMutation();
+  const updateSectorMutation = trpc.admin.updateSector.useMutation();
+  const updateSectorCargosMutation = trpc.admin.updateSectorCargos.useMutation();
+  
   const addPersonMutation = trpc.admin.addPerson.useMutation();
   const editPersonMutation = trpc.admin.editPerson.useMutation();
   const removePersonMutation = trpc.admin.removePerson.useMutation();
@@ -42,6 +48,14 @@ export default function AdminPanel() {
   // Formulario Sector
   const [sectorId, setSectorId] = useState('');
   const [sectorDesc, setSectorDesc] = useState('');
+
+  // Edición de Sector y Configuración de Cargos
+  const [editingSectorId, setEditingSectorId] = useState<number | null>(null);
+  const [editSectorDesc, setEditSectorDesc] = useState('');
+  
+  const [isCargosModalOpen, setIsCargosModalOpen] = useState(false);
+  const [selectedConfigSector, setSelectedConfigSector] = useState<number | null>(null);
+  const [cargosParams, setCargosParams] = useState<{id_cargo: number, nivel_criticidad: number}[]>([]);
 
   // Formulario Persona
   const [legajo, setLegajo] = useState('');
@@ -161,6 +175,37 @@ export default function AdminPanel() {
       trpcContext.attendance.getSectors.invalidate();
     } catch (err: any) {
       toast.error('Error al eliminar');
+    }
+  };
+
+  const handleUpdateSector = async (id: number) => {
+    try {
+      await updateSectorMutation.mutateAsync({ idSector: id, descripcion: editSectorDesc });
+      toast.success('Sector actualizado');
+      setEditingSectorId(null);
+      trpcContext.attendance.getSectors.invalidate();
+    } catch (err: any) {
+      toast.error('Error al actualizar sector');
+    }
+  };
+
+  const handleOpenCargosModal = (idSector: number) => {
+    setSelectedConfigSector(idSector);
+    // Filtrar los mapeos para este sector
+    const sectorMap = (sectoresCargos || []).filter((sc: any) => sc.id_sector === idSector);
+    setCargosParams(sectorMap.map((sc: any) => ({ id_cargo: sc.id_cargo, nivel_criticidad: sc.nivel_criticidad })));
+    setIsCargosModalOpen(true);
+  };
+
+  const handleSaveCargos = async () => {
+    if (!selectedConfigSector) return;
+    try {
+      await updateSectorCargosMutation.mutateAsync({ idSector: selectedConfigSector, cargosParams });
+      toast.success('Cargos actualizados');
+      setIsCargosModalOpen(false);
+      trpcContext.admin.getSectoresCargos.invalidate();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar cargos');
     }
   };
 
@@ -428,11 +473,45 @@ export default function AdminPanel() {
                       {sortedAndFilteredSectores.map((s: any) => (
                         <TableRow key={s.idSector}>
                           <TableCell className="font-medium">{s.idSector}</TableCell>
-                          <TableCell>{s.descripcion}</TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" onClick={() => handleRemoveSector(s.idSector)}>
-                              <Trash2 className="w-4 h-4 text-red-600" />
-                            </Button>
+                          <TableCell>
+                            {editingSectorId === s.idSector ? (
+                              <Input 
+                                value={editSectorDesc}
+                                onChange={(e) => setEditSectorDesc(e.target.value)}
+                                className="h-8 max-w-[200px]"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') handleUpdateSector(s.idSector);
+                                  if (e.key === 'Escape') setEditingSectorId(null);
+                                }}
+                              />
+                            ) : (
+                              s.descripcion
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            {editingSectorId === s.idSector ? (
+                              <>
+                                <Button variant="ghost" size="icon" onClick={() => handleUpdateSector(s.idSector)}>
+                                  <Check className="w-4 h-4 text-green-600" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => setEditingSectorId(null)}>
+                                  <X className="w-4 h-4 text-slate-400" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button variant="ghost" size="icon" title="Configurar Cargos" onClick={() => handleOpenCargosModal(s.idSector)}>
+                                  <Settings className="w-4 h-4 text-slate-600" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => { setEditingSectorId(s.idSector); setEditSectorDesc(s.descripcion); }}>
+                                  <Pencil className="w-4 h-4 text-blue-600" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleRemoveSector(s.idSector)}>
+                                  <Trash2 className="w-4 h-4 text-red-600" />
+                                </Button>
+                              </>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -449,6 +528,63 @@ export default function AdminPanel() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Modal de Configuración de Cargos por Sector */}
+            <Dialog open={isCargosModalOpen} onOpenChange={setIsCargosModalOpen}>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Configurar Cargos Habilitados</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <p className="text-sm text-slate-500">
+                    Selecciona los cargos que están habilitados para el sector y define su nivel de criticidad específico.
+                  </p>
+                  
+                  {cargos && cargos.map((cargo: any) => {
+                    const mapped = cargosParams.find(cp => cp.id_cargo === cargo.id_cargo);
+                    const isEnabled = !!mapped;
+                    
+                    return (
+                      <div key={cargo.id_cargo} className="flex items-center gap-4 p-3 border rounded-md hover:bg-slate-50">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 rounded text-indigo-600 cursor-pointer"
+                          checked={isEnabled}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setCargosParams([...cargosParams, { id_cargo: cargo.id_cargo, nivel_criticidad: 1 }]);
+                            } else {
+                              setCargosParams(cargosParams.filter(cp => cp.id_cargo !== cargo.id_cargo));
+                            }
+                          }}
+                        />
+                        <div className="flex-1 font-medium text-slate-700">{cargo.descripcion}</div>
+                        {isEnabled && (
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs text-slate-500">Criticidad:</Label>
+                            <Input 
+                              type="number" 
+                              min="1" 
+                              max="5"
+                              value={mapped.nivel_criticidad}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value) || 1;
+                                setCargosParams(cargosParams.map(cp => cp.id_cargo === cargo.id_cargo ? { ...cp, nivel_criticidad: val } : cp));
+                              }}
+                              className="w-20 h-8"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" onClick={() => setIsCargosModalOpen(false)}>Cancelar</Button>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={handleSaveCargos}>Guardar Configuración</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* TAB: TURNOS Y REGLAS */}
