@@ -639,7 +639,7 @@ export default function AdminTurnos() {
               <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
               <p>Cargando matriz de horarios...</p>
             </div>
-          ) : (
+          ) : viewMode === 'list' ? (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
               {/* Reglas Generales */}
               <div className="space-y-4">
@@ -839,6 +839,10 @@ export default function AdminTurnos() {
                   )}
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="mt-2">
+              <WeeklyCalendar reglas={filteredReglas} />
             </div>
           )}
         </CardContent>
