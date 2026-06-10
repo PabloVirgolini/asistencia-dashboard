@@ -624,6 +624,9 @@ export default function AdminPanel() {
                         <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSectorSort('descripcion')}>
                           <div className="flex items-center gap-1 font-semibold text-slate-700">Descripción <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
                         </TableHead>
+                        <TableHead>
+                          <div className="font-semibold text-slate-700">Cargos Asignados</div>
+                        </TableHead>
                         <TableHead className="text-right font-semibold text-slate-700">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -644,57 +647,59 @@ export default function AdminPanel() {
                                 }}
                               />
                             ) : (
-                              <div className="flex flex-col gap-2">
-                                <span className="font-semibold text-slate-800">{s.descripcion}</span>
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  {sectoresCargos?.filter((sc: any) => sc.id_sector === s.idSector).map((sc: any) => {
-                                    const c = cargos?.find((c: any) => c.id_cargo === sc.id_cargo);
-                                    if (!c) return null;
-                                    return (
-                                      <span key={c.id_cargo} className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-[11px] font-medium bg-white border shadow-sm text-slate-700">
-                                        {c.descripcion} 
-                                        <button 
-                                          onClick={() => handleRemoveCargoFromSector(s.idSector, c.id_cargo)} 
-                                          className="hover:bg-red-100 hover:text-red-600 rounded-full p-0.5 transition-colors"
-                                          title="Retirar cargo"
-                                        >
-                                          <X className="w-3 h-3" />
-                                        </button>
-                                      </span>
-                                    );
-                                  })}
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <button className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors border border-slate-200 shadow-sm" title="Añadir cargo rápidamente">
-                                        <Plus className="w-3 h-3" />
-                                      </button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-56 p-2" align="start">
-                                      <div className="space-y-2">
-                                        <h4 className="font-medium text-xs text-slate-500 uppercase tracking-wider">Añadir a {s.descripcion}</h4>
-                                        <div className="grid gap-1">
-                                          {cargos?.filter((c:any) => !sectoresCargos?.some((sc:any) => sc.id_sector === s.idSector && sc.id_cargo === c.id_cargo)).map((c:any) => (
-                                            <Button 
-                                              key={c.id_cargo} 
-                                              variant="ghost" 
-                                              size="sm" 
-                                              className="justify-start h-8 px-2 text-xs font-normal" 
-                                              onClick={() => handleAddCargoToSector(s.idSector, c.id_cargo)}
-                                            >
-                                              <Plus className="w-3 h-3 mr-2 text-slate-400" />
-                                              {c.descripcion}
-                                            </Button>
-                                          ))}
-                                          {cargos?.filter((c:any) => !sectoresCargos?.some((sc:any) => sc.id_sector === s.idSector && sc.id_cargo === c.id_cargo)).length === 0 && (
-                                            <span className="text-xs text-slate-500 p-2 text-center block">Todos los cargos asignados.</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
-                                </div>
-                              </div>
+                              <span className="font-medium text-slate-800">{s.descripcion}</span>
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {sectoresCargos?.filter((sc: any) => sc.id_sector === s.idSector).map((sc: any) => {
+                                const c = cargos?.find((c: any) => c.id_cargo === sc.id_cargo);
+                                if (!c) return null;
+                                return (
+                                  <span key={c.id_cargo} className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-[11px] font-medium bg-white border shadow-sm text-slate-700">
+                                    {c.descripcion} 
+                                    <button 
+                                      onClick={() => handleRemoveCargoFromSector(s.idSector, c.id_cargo)} 
+                                      className="hover:bg-red-100 hover:text-red-600 rounded-full p-0.5 transition-colors"
+                                      title="Retirar cargo"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  </span>
+                                );
+                              })}
+                              {editingSectorId !== s.idSector && (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors border border-slate-200 shadow-sm" title="Añadir cargo rápidamente">
+                                      <Plus className="w-3 h-3" />
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto min-w-[200px] max-w-[320px] p-2" align="start">
+                                    <div className="space-y-2">
+                                      <h4 className="font-medium text-xs text-slate-500 uppercase tracking-wider">Añadir a {s.descripcion}</h4>
+                                      <div className="grid gap-1">
+                                        {cargos?.filter((c:any) => !sectoresCargos?.some((sc:any) => sc.id_sector === s.idSector && sc.id_cargo === c.id_cargo)).map((c:any) => (
+                                          <Button 
+                                            key={c.id_cargo} 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="justify-start h-auto py-1.5 px-2 text-xs font-normal whitespace-normal text-left" 
+                                            onClick={() => handleAddCargoToSector(s.idSector, c.id_cargo)}
+                                          >
+                                            <Plus className="w-3 h-3 mr-2 shrink-0 text-slate-400" />
+                                            <span className="leading-tight">{c.descripcion}</span>
+                                          </Button>
+                                        ))}
+                                        {cargos?.filter((c:any) => !sectoresCargos?.some((sc:any) => sc.id_sector === s.idSector && sc.id_cargo === c.id_cargo)).length === 0 && (
+                                          <span className="text-xs text-slate-500 p-2 text-center block">Todos los cargos asignados.</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell className="text-right space-x-2">
                             {editingSectorId === s.idSector ? (
