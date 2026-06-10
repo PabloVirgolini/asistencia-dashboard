@@ -89,14 +89,14 @@ describe('AdminTurnos Component', () => {
     render(<AdminTurnos />);
     
     // Verifica que se renderice al menos la estructura principal
-    expect(screen.getByText('Gestión de Turnos')).toBeInTheDocument();
+    expect(screen.getByText('TURNOS MAESTROS')).toBeInTheDocument();
     expect(screen.getAllByText(/Turno Mañana/i).length).toBeGreaterThan(0);
   });
 
   it('debe permitir crear un nuevo turno', async () => {
     render(<AdminTurnos />);
     
-    const inputTurno = screen.getAllByPlaceholderText('Ej: Turno Noche')[0];
+    const inputTurno = screen.getAllByPlaceholderText('Ej. Mañana, Tarde, Noche...')[0];
     fireEvent.change(inputTurno, { target: { value: 'Turno Tarde' } });
     
     const form = inputTurno.closest('form');
