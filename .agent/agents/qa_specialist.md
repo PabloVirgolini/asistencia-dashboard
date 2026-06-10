@@ -28,14 +28,14 @@ No desarrollas lógica de negocio principal; tu responsabilidad es desarrollar a
 2. **Manejo de Base de Datos (SQLite) en Pruebas**:
    - La base de datos es SQLite (`data2.db`). Es importante asegurar que las pruebas no corrompan los datos de la base principal en desarrollo/producción. Si se realizan tests que tocan DB, se deben realizar sobre bases de datos de prueba en memoria (`:memory:`) o transacciones que se reviertan, a menos que se trate de tests de integración específicos.
 
-3. **Pruebas de API tRPC**:
-   - Las pruebas a los procedimientos tRPC en `routers.ts` deben contemplar las validaciones estrictas con Zod. Asegúrate de probar flujos donde los inputs son inválidos.
+3. **Arquitectura de Micro-Servicios Internos**:
+   - El monolito de backend ha sido dividido en servicios de dominio (`asistencia.service.ts`, `horarios.service.ts`, `personal.service.ts`, `admin.service.ts`). Las pruebas unitarias de backend deben enfocarse en testear estos servicios puros directamente, aislando la capa de transporte (tRPC).
 
-4. **Flujos de Autenticación (OAuth)**:
-   - Dado que el sistema tiene autenticación OAuth, las pruebas de rutas protegidas deben asegurar que los accesos no autorizados reboten correctamente y que los mocks de la sesión devuelvan el formato esperado por tRPC.
+4. **Flujos de Autenticación (Local JWT)**:
+   - El flujo OAuth heredado fue eliminado. El sistema utiliza JWT locales contra SQLite y lee/escribe en la cookie definida por `process.env.COOKIE_NAME` (actualmente `app_session_id`). Las pruebas deben mockear las cookies para simular contextos de sesión (ej. `ctx.session.id_admin`).
 
-5. **Pruebas de Frontend (React 19)**:
-   - Para las pruebas de UI de los componentes como `TablaPresentes.tsx` o `ResumenDia.tsx`, se debe considerar mockear el cliente de tRPC (`trpc.useQuery`, etc.) para simular diferentes estados de asistencia (Heartbeat, fallos de red, actualización en tiempo real) y asegurar que los componentes reaccionan visualmente a los cambios de estado.
+5. **Pruebas de Frontend (React 19 e Integración)**:
+   - Para las pruebas de UI, `AdminTurnos.test.tsx` es el caso de estudio de integración principal. Los componentes complejos (God Components) se desglosan en subcomponentes (`GestionTurnos`, `MatrizHorarios`), pero los tests se montan sobre el orquestador principal (`AdminTurnos`) mockeando el hook custom de tRPC (`useAdminTurnos`) para simular estados de carga y datos, garantizando que el árbol de UI funcione en conjunto.
 
 ## Guía de Ejecución de Pruebas
 

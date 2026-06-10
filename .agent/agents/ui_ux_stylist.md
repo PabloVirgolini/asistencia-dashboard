@@ -34,6 +34,10 @@ Eres el Agente de Estilos y UI/UX del proyecto "AsistenciaPersonal". Tu objetivo
    - **Tablas Interactivas Obligatorias**: Todas las tablas de datos (directorio de empleados, matriz de horarios, reportes de asistencia) DEBEN incluir barras de búsqueda rápida (filtros por texto) encima de la tabla y funcionalidad de ordenamiento interactivo en los encabezados (`↑↓`), permitiendo al usuario reordenar las filas alfabética o numéricamente sin recargar la página.
    - El diseño debe adaptarse a móviles sin que el administrador pierda la noción global del estado (Dashboard Responsivo).
 
+4. **Patrones Estructurales de Interfaz (Desacoplamiento)**:
+   - **Hook Custom Obligatorio**: Si una pantalla o página requiere múltiples endpoints de red (tRPC), SE PROHÍBE realizar los `useQuery`/`useMutation` directamente en la vista. Debe crearse un custom hook (ej. `useAdminTurnos`) que abstraiga la red y retorne un objeto limpio con los datos y funciones.
+   - **Orquestadores vs Presentacionales**: Los componentes raíz de cada página (ej. `AdminTurnos.tsx`) deben actuar estrictamente como *Shells* (orquestadores). Su única tarea es invocar el hook custom y repartir los props a subcomponentes hijos (ej. `MatrizHorarios.tsx`, `GestionTurnos.tsx`). Ningún componente visual debería superar las ~300 líneas.
+
 ---
 ## 🔴 REGLAS MAESTRAS DE ARQUITECTURA Y CALIDAD (INELUDIBLES)
 A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones deben respetar rigurosamente:

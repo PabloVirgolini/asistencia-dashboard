@@ -121,6 +121,20 @@ Este archivo es un bitácora para documentar todos los avances, diagnósticos, s
   2. **Cobertura de Unit Tests:** Los archivos `server/attendance.test.ts` y `server/attendance.rules.test.ts` fueron analizados confirmando que mockean correctamente la base de datos (`better-sqlite3`) y validan de manera robusta casos comunes, solapamientos, flujos negativos y reglas de prioridad entre excepciones de legajo y reglas generales, manteniendo una alta cobertura.
   3. **Directivas Cumplidas:** Se han cumplido rigurosamente las Reglas Maestras de Arquitectura establecidas en el sprint anterior, blindando la aplicación contra el anti-patrón "God Class".
 
+### [2026-06-10] - Auditoría de Seguridad y Poda de Código Muerto (OAuth)
+- **Avance:** Se eliminó por completo el boilerplate heredado de OAuth tras confirmación de inactividad.
+- **Detalle Arquitectónico y Seguridad:**
+  1. Los agentes *Security QA* y *Systems Analyst* auditaron el flujo de autenticación, concluyendo que el login local (basado en JWT contra SQLite local y guardado en la cookie segura `app_session_id`) era 100% independiente de los archivos `oauth.ts` y `sdk.ts`.
+  2. Se suprimieron todos los endpoints (`auth.oauth_login`, `auth.oauth_callback`) y variables de entorno huérfanas (`OAUTH_SERVER_URL`), reduciendo drásticamente la superficie de ataque y el ruido del código base.
+
+### [2026-06-10] - Gran Refactorización de UI: Desacoplamiento de AdminTurnos
+- **Avance:** Se desmanteló el componente monolítico `AdminTurnos.tsx` (>1000 líneas), aplicando los mismos principios de *Arquitectura Limpia* (SRP) que se aplicaron en el backend.
+- **Detalle Arquitectónico y UX:**
+  1. **Aislamiento de Estado y Red:** Se creó el hook `useAdminTurnos.ts` que encierra todas las consultas (`useQuery`) y mutaciones (`useMutation`) de tRPC, ocultando la complejidad de las recargas (invalidation) y el manejo de errores a la vista.
+  2. **Subcomponentes Puros:** Se dividió la pantalla en módulos autónomos: `GestionTurnos.tsx` (para crear/eliminar Turnos Maestros) y `CreadorReglasForm.tsx` (que maneja independientemente todos los inputs, combinaciones de horas y excepciones).
+  3. **Orquestador Visual:** Se creó `MatrizHorarios.tsx`, un poderoso contenedor interactivo que aloja toda la lógica de filtros dinámicos y alterna entre la vista de Calendario (`WeeklyCalendar`) y la recién abstraída vista de Árbol interactivo (`MatrizList.tsx`).
+  4. **Conclusión:** El archivo `AdminTurnos.tsx` quedó reducido a ~60 líneas, operando exclusivamente como un *Shell* importador de subcomponentes. El agente *QA Specialist* verificó la integración, garantizando que el árbol de componentes sigue estando respaldado por las 43 pruebas de `vitest`.
+
 ---
 
 ## 🏛️ DIRECTIVAS ARQUITECTÓNICAS OBLIGATORIAS (NUEVO ESTÁNDAR)
