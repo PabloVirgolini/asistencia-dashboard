@@ -1,0 +1,238 @@
+import { getDb } from '../db/database';
+
+export function getTurnosHorarios(): { id_turno: number, descripcion: string }[] {
+  const db = getDb();
+  const stmt = db.prepare('SELECT id_turno, descripcion FROM turnos_horarios ORDER BY id_turno ASC');
+  return stmt.all() as { id_turno: number, descripcion: string }[];
+}
+
+export function addTurnoHorario(descripcion: string): void {
+  const db = getDb();
+  const checkStmt = db.prepare('SELECT COUNT(*) as c FROM turnos_horarios WHERE LOWER(descripcion) = LOWER(?)');
+  const result = checkStmt.get(descripcion) as { c: number };
+  if (result.c > 0) {
+    throw new Error('Ya existe un turno con este nombre.');
+  }
+
+  const stmt = db.prepare('INSERT INTO turnos_horarios (descripcion) VALUES (?)');
+  stmt.run(descripcion);
+}
+
+export function removeTurnoHorario(id_turno: number): void {
+  const db = getDb();
+  const countStmt = db.prepare('SELECT COUNT(*) as c FROM horarios WHERE id_turno = ?');
+  const result = countStmt.get(id_turno) as { c: number };
+  if (result.c > 0) {
+    throw new Error('No se puede eliminar el turno porque tiene reglas de horario asignadas.');
+  }
+
+  const stmt = db.prepare('DELETE FROM turnos_horarios WHERE id_turno = ?');
+  stmt.run(id_turno);
+}
+
+export function getHorariosReglas(): any[] {
+  const db = getDb();
+  const stmt = db.prepare(`
+    SELECT h.id_horario, h.dia_semana, h.hora_entrada, h.hora_salida, h.legajo,
+           h.id_turno, h.id_sector, h.id_cargo, h.updated_at, h.updated_by,
+           t.descripcion as turno, s.descripcion as sector, c.descripcion as cargo
+    FROM horarios h
+    LEFT JOIN turnos_horarios t ON h.id_turno = t.id_turno
+    LEFT JOIN sectores s ON h.id_sector = s.idSector
+    LEFT JOIN cargos c ON h.id_cargo = c.id_cargo
+    ORDER BY h.id_turno ASC, h.dia_semana ASC
+  `);
+  return stmt.all();
+}
+
+export function duplicateSectorRules(id_turno: number, sourceSectorId: number, targetSectorId: number, adminName: string = 'Sistema'): void {
+  const db = getDb();
+  
+  const stmt = db.prepare(`
+    SELECT id_cargo, dia_semana, hora_entrada, hora_salida, legajo
+    FROM horarios
+    WHERE id_turno = ? AND id_sector = ?
+  `);
+  
+  const rules = stmt.all(id_turno, sourceSectorId) as any[];
+  
+  if (rules.length === 0) {
+    throw new Error('No hay reglas para copiar en este sector y turno.');
+  }
+
+  const targetPersonalStmt = db.prepare('SELECT cargo_id FROM personal WHERE sectorPertenencia = ? AND activo = 1');
+  const targetPersonal = targetPersonalStmt.all(targetSectorId.toString()) as {cargo_id: number}[];
+  
+  const rulesToCopy = rules.filter(r => {
+    if (r.id_cargo === null) return true;
+    if (targetPersonal.length === 0) return true; 
+    return targetPersonal.some(p => p.cargo_id === r.id_cargo);
+  });
+
+  if (rulesToCopy.length === 0) {
+    throw new Error('Ninguno de los cargos de estas reglas existe en el sector destino. No se copió nada.');
+  }
+
+  const insertStmt = db.prepare(`
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)
+  `);
+
+  const transaction = db.transaction((rulesToInsert: any[]) => {
+    for (const rule of rulesToInsert) {
+      const checkStmt = db.prepare(`
+        SELECT COUNT(*) as c FROM horarios 
+        WHERE id_turno = ? AND dia_semana = ? AND id_sector = ? AND id_cargo = ? AND (legajo IS NULL OR legajo = ?)
+      `);
+      const res = checkStmt.get(id_turno, rule.dia_semana, targetSectorId, rule.id_cargo, rule.legajo) as { c: number };
+      
+      if (res.c === 0) {
+        insertStmt.run(
+          targetSectorId, 
+          rule.id_cargo, 
+          id_turno, 
+          rule.dia_semana, 
+          rule.hora_entrada, 
+          rule.hora_salida, 
+          rule.legajo,
+          adminName
+        );
+      }
+    }
+  });
+
+  transaction(rulesToCopy);
+}
+
+export function duplicateCargoRules(id_turno: number, id_sector: number, source_cargo: number, target_cargo: number, adminName: string = 'Sistema'): void {
+  const db = getDb();
+  
+  const stmt = db.prepare(`
+    SELECT dia_semana, hora_entrada, hora_salida, legajo
+    FROM horarios
+    WHERE id_turno = ? AND id_sector = ? AND id_cargo = ?
+  `);
+  
+  const rules = stmt.all(id_turno, id_sector, source_cargo) as any[];
+  
+  if (rules.length === 0) {
+    throw new Error('No hay reglas para copiar en este cargo, sector y turno.');
+  }
+
+  const insertStmt = db.prepare(`
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)
+  `);
+
+  const transaction = db.transaction((rulesToInsert: any[]) => {
+    for (const rule of rulesToInsert) {
+      const checkStmt = db.prepare(`
+        SELECT COUNT(*) as c FROM horarios 
+        WHERE id_turno = ? AND dia_semana = ? AND id_sector = ? AND id_cargo = ? AND (legajo IS NULL OR legajo = ?)
+      `);
+      const res = checkStmt.get(id_turno, rule.dia_semana, id_sector, target_cargo, rule.legajo) as { c: number };
+      
+      if (res.c === 0) {
+        insertStmt.run(id_sector, target_cargo, id_turno, rule.dia_semana, rule.hora_entrada, rule.hora_salida, rule.legajo, adminName);
+      }
+    }
+  });
+
+  transaction(rules);
+}
+
+export function addHorario(
+  id_sector: number | null, 
+  id_cargo: number | null, 
+  legajo: string | null, 
+  id_turno: number, 
+  dias: number[], 
+  hora_entrada: string, 
+  hora_salida: string,
+  adminName: string = 'Sistema'
+): void {
+  const db = getDb();
+  
+  const checkStmt = db.prepare(`
+    SELECT COUNT(*) as c FROM horarios 
+    WHERE id_turno = ? 
+      AND dia_semana = ?
+      AND (
+        (legajo IS NOT NULL AND legajo = ?) OR 
+        (legajo IS NULL AND ? IS NULL AND id_sector = ? AND id_cargo = ?)
+      )
+  `);
+
+  const insertStmt = db.prepare(`
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)
+  `);
+
+  const transaction = db.transaction((diasArr: number[]) => {
+    for (const dia of diasArr) {
+      const res = checkStmt.get(id_turno, dia, legajo, legajo, id_sector, id_cargo) as { c: number };
+      if (res.c > 0) {
+        throw new Error(`Ya existe una regla de horario para el día ${dia} con estos parámetros.`);
+      }
+      insertStmt.run(id_sector, id_cargo, id_turno, dia, hora_entrada, hora_salida, legajo, adminName);
+    }
+  });
+
+  transaction(dias);
+}
+
+export function removeHorario(id_horario: number): void {
+  const db = getDb();
+  
+  const ruleStmt = db.prepare('SELECT id_sector, id_cargo, legajo FROM horarios WHERE id_horario = ?');
+  const rule = ruleStmt.get(id_horario) as { id_sector: number | null, id_cargo: number | null, legajo: string | null } | undefined;
+  
+  if (!rule) {
+    throw new Error('La regla no existe.');
+  }
+
+  if (rule.legajo) {
+    const pStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE legajo = ? AND activo = 1');
+    const pResult = pStmt.get(rule.legajo) as { c: number };
+    if (pResult.c > 0) {
+      throw new Error(`No se puede eliminar: el empleado con legajo ${rule.legajo} está activo en el sistema.`);
+    }
+  } else if (rule.id_sector && rule.id_cargo) {
+    const pStmt = db.prepare('SELECT COUNT(*) as c FROM personal WHERE sectorPertenencia = ? AND cargo_id = ? AND activo = 1');
+    const pResult = pStmt.get(rule.id_sector, rule.id_cargo) as { c: number };
+    if (pResult.c > 0) {
+      throw new Error(`No se puede eliminar: hay ${pResult.c} empleado(s) activo(s) con este sector y cargo.`);
+    }
+  }
+
+  const deleteStmt = db.prepare('DELETE FROM horarios WHERE id_horario = ?');
+  deleteStmt.run(id_horario);
+}
+
+export function updateHorario(id_horario: number, hora_entrada: string, hora_salida: string, adminName: string = 'Sistema'): void {
+  const db = getDb();
+  
+  const checkStmt = db.prepare('SELECT COUNT(*) as c FROM horarios WHERE id_horario = ?');
+  const result = checkStmt.get(id_horario) as { c: number };
+  
+  if (result.c === 0) {
+    throw new Error('La regla de horario no existe.');
+  }
+
+  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?');
+  updateStmt.run(hora_entrada, hora_salida, adminName, id_horario);
+}
+
+export function batchUpdateHorarios(id_horarios: number[], hora_entrada: string, hora_salida: string, adminName: string = 'Sistema'): void {
+  const db = getDb();
+  
+  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?');
+  
+  const transaction = db.transaction((ids: number[]) => {
+    for (const id of ids) {
+      updateStmt.run(hora_entrada, hora_salida, adminName, id);
+    }
+  });
+  
+  transaction(id_horarios);
+}

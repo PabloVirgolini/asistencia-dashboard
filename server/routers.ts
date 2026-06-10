@@ -3,39 +3,23 @@ import { publicProcedure, router, protectedProcedure, adminProcedure } from "./_
 import { z } from "zod";
 import * as crypto from 'crypto';
 import { COOKIE_NAME } from '../shared/const';
-import {
-  getSectors,
-  getPresentesByDate,
-  getAusentesByDate,
-  getAttendanceSummary,
-  isValidDate,
-  getTodayDate,
-  createAdmin,
-  getAdminByEmail,
-  insertSector,
-  deleteSector,
-  insertPersonal,
-  updatePersonal,
-  deletePersonal,
-  getActivePersonal,
-  getCargos,
-  getTurnosHorarios,
-  addTurnoHorario,
-  removeTurnoHorario,
-  getHorariosReglas,
-  addHorario,
-  removeHorario,
-  updateHorario,
-  batchUpdateHorarios,
-  duplicateSectorRules,
-  duplicateCargoRules,
-  updateSector,
-  getSectoresCargos,
-  updateSectorCargos,
-  insertCargo,
-  updateCargo,
-  deleteCargo
-} from "./attendance";
+import { 
+  getSectors, getActivePersonal, getCargos, getSectoresCargos, 
+  insertSector, deleteSector, updateSector, updateSectorCargos, 
+  insertCargo, updateCargo, deleteCargo, 
+  insertPersonal, updatePersonal, deletePersonal 
+} from "./services/personal.service";
+import { 
+  getTurnosHorarios, addTurnoHorario, removeTurnoHorario, 
+  getHorariosReglas, addHorario, updateHorario, removeHorario, batchUpdateHorarios, 
+  duplicateSectorRules, duplicateCargoRules 
+} from "./services/horarios.service";
+import { 
+  getFichadasByDate, getPresentesByDate, getAusentesByDate, getAttendanceSummary 
+} from "./services/asistencia.service";
+import { 
+  getAdminByEmail, createAdmin, isValidDate, getTodayDate 
+} from "./services/admin.service";
 import { signToken } from "./jwt";
 
 const hashPassword = (password: string) => {

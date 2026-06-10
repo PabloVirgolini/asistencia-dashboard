@@ -1,12 +1,14 @@
 import { describe, it, expect } from "vitest";
+import { getSectors } from "./services/personal.service";
 import {
-  getSectors,
   getPresentesByDate,
   getAusentesByDate,
   getAttendanceSummary,
+} from "./services/asistencia.service";
+import {
   isValidDate,
   getTodayDate,
-} from "./attendance";
+} from "./services/admin.service";
 
 describe("Attendance Database Functions", () => {
   describe("isValidDate", () => {

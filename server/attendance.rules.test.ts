@@ -31,9 +31,11 @@ import {
   getHorariosReglas,
   addHorario,
   removeHorario,
-  updateHorario,
+  updateHorario
+} from './services/horarios.service';
+import {
   getPresentesByDate
-} from './attendance';
+} from './services/asistencia.service';
 
 describe('attendance.ts - Reglas y Turnos', () => {
   beforeEach(() => {
