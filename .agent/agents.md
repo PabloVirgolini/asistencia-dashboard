@@ -9,7 +9,7 @@ Para mantener la calidad y el enfoque, el conocimiento del sistema se ha fragmen
 
 **Regla de Sostenibilidad y Colaboración**: Mantener actualizados los documentos agents.md y project_journal.md con las decisiones de diseño, cambios arquitectónicos y lecciones aprendidas. Esto es crucial para la sostenibilidad del proyecto y la colaboración efectiva.
 
-**Regla de Planificación y Cierre de Tareas**: Cada vez que se complete la resolución de un problema o se realice un push de código, el agente **debe revisar obligatoriamente el archivo `agents/master_implementation_plan.md`** junto con el usuario. Este archivo contiene la hoja de ruta oficial y el backlog de features y deudas técnicas. Revisarlo asegura saber exactamente por dónde seguir avanzando.
+**Regla de Planificación y Control del Usuario (MODIFICADA)**: El agente **NO DEBE** revisar, leer ni sugerir próximos pasos basados en el `master_implementation_plan.md` de forma proactiva al finalizar una tarea. Solo debe consultarlo **cuando el usuario se lo indique explícitamente**. El usuario mantiene el control absoluto sobre cuándo avanzar en el backlog.
 
 **Regla Anti-Bucles e Interacciones Puntuales (CRÍTICA)**:
 1. **Consultas Puntuales e Investigativas**: Si el usuario realiza una pregunta informativa (ej. cómo funciona algo, consultar el estado de una tarea, o preguntas directas puntuales), la IA **debe responder directamente** de forma concisa. **No** debe iniciar revisiones de seguridad, ni ejecutar análisis de QA, ni actualizar el diario de proyectos o estados.

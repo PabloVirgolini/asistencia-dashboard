@@ -64,6 +64,7 @@ export default function AdminPanel() {
   // Formulario y Estados Cargos
   const [isCargoModalOpen, setIsCargoModalOpen] = useState(false);
   const [cargoDesc, setCargoDesc] = useState('');
+  const [inlineCargoDesc, setInlineCargoDesc] = useState('');
   const [editingCargoId, setEditingCargoId] = useState<number | null>(null);
   const [editCargoDesc, setEditCargoDesc] = useState('');
   const [cargoSortConfig, setCargoSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
@@ -104,6 +105,13 @@ export default function AdminPanel() {
   const [personaSector, setPersonaSector] = useState('');
   const [personaCargo, setPersonaCargo] = useState('1');
   const [editingPerson, setEditingPerson] = useState<string | null>(null);
+
+  const cargosFiltradosPorSector = React.useMemo(() => {
+    if (!personaSector || !sectoresCargos || !cargos) return [];
+    const sectorId = parseInt(personaSector);
+    const validCargoIds = sectoresCargos.filter((sc: any) => sc.id_sector === sectorId).map((sc: any) => sc.id_cargo);
+    return cargos.filter((c: any) => validCargoIds.includes(c.id_cargo));
+  }, [personaSector, sectoresCargos, cargos]);
 
   // Estados para ordenar y filtrar la tabla de personal
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
@@ -263,6 +271,19 @@ export default function AdminPanel() {
     }
   };
 
+  const handleAddInlineCargo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inlineCargoDesc.trim()) return;
+    try {
+      await addCargoMutation.mutateAsync({ descripcion: inlineCargoDesc });
+      toast.success('Cargo añadido globalmente');
+      setInlineCargoDesc('');
+      trpcContext.admin.getCargos.invalidate();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al añadir cargo');
+    }
+  };
+
   const handleRemoveCargo = async (id: number) => {
     if (!confirm('¿Seguro que deseas eliminar este cargo?')) return;
     try {
@@ -402,7 +423,12 @@ export default function AdminPanel() {
                       </div>
                       <div>
                         <Label>Sector</Label>
-                        <Select value={personaSector} onValueChange={setPersonaSector} required>
+                        <Select value={personaSector} onValueChange={(val) => {
+                          setPersonaSector(val);
+                          if (editingPerson) {
+                            setPersonaCargo('');
+                          }
+                        }} required>
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccione un sector" />
                           </SelectTrigger>
@@ -421,9 +447,13 @@ export default function AdminPanel() {
                               <SelectValue placeholder="Seleccione un cargo" />
                             </SelectTrigger>
                             <SelectContent>
-                              {cargos?.map((c: any) => (
-                                <SelectItem key={c.id_cargo} value={c.id_cargo.toString()}>{c.descripcion}</SelectItem>
-                              ))}
+                              {cargosFiltradosPorSector.length > 0 ? (
+                                cargosFiltradosPorSector.map((c: any) => (
+                                  <SelectItem key={c.id_cargo} value={c.id_cargo.toString()}>{c.descripcion}</SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="0" disabled>No hay cargos habilitados en este sector</SelectItem>
+                              )}
                             </SelectContent>
                           </Select>
                         </div>
@@ -610,7 +640,9 @@ export default function AdminPanel() {
             <Dialog open={isCargosModalOpen} onOpenChange={setIsCargosModalOpen}>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Configurar Cargos Habilitados</DialogTitle>
+                  <DialogTitle>
+                    Configurar Cargos: {selectedConfigSector} - {sectores?.find((s: any) => s.idSector === selectedConfigSector)?.descripcion || ''}
+                  </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <p className="text-sm text-slate-500">
@@ -655,6 +687,26 @@ export default function AdminPanel() {
                       </div>
                     );
                   })}
+
+                  <div className="mt-6 pt-4 border-t">
+                    <Label className="text-sm font-semibold mb-2 block text-slate-700">¿Falta un cargo? Añádelo rápidamente:</Label>
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        placeholder="Nombre del nuevo cargo..." 
+                        value={inlineCargoDesc}
+                        onChange={e => setInlineCargoDesc(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddInlineCargo(e as any);
+                          }
+                        }}
+                      />
+                      <Button type="button" variant="secondary" onClick={handleAddInlineCargo} disabled={!inlineCargoDesc.trim()}>
+                        <Plus className="w-4 h-4 mr-1" /> Crear
+                      </Button>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
                   <Button variant="outline" onClick={() => setIsCargosModalOpen(false)}>Cancelar</Button>
