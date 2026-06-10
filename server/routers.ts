@@ -29,7 +29,10 @@ import {
   duplicateSectorRules,
   updateSector,
   getSectoresCargos,
-  updateSectorCargos
+  updateSectorCargos,
+  insertCargo,
+  updateCargo,
+  deleteCargo
 } from "./attendance";
 import { signToken } from "./jwt";
 
@@ -153,6 +156,31 @@ export const appRouter = router({
     getCargos: adminProcedure.query(() => {
         return getCargos();
     }),
+
+    addCargo: adminProcedure
+      .input(z.object({ descripcion: z.string().min(1) }))
+      .mutation(({ input }) => {
+        insertCargo(input.descripcion);
+        return { success: true };
+      }),
+
+    editCargo: adminProcedure
+      .input(z.object({ id_cargo: z.number(), descripcion: z.string().min(1) }))
+      .mutation(({ input }) => {
+        updateCargo(input.id_cargo, input.descripcion);
+        return { success: true };
+      }),
+
+    removeCargo: adminProcedure
+      .input(z.object({ id_cargo: z.number() }))
+      .mutation(({ input }) => {
+        try {
+          deleteCargo(input.id_cargo);
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
+      }),
 
     addPerson: adminProcedure
       .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string() }))
@@ -284,12 +312,13 @@ export const appRouter = router({
         z.object({
           date: z.string().refine(isValidDate, "Fecha inválida. Use formato YYYY-MM-DD"),
           sector: z.string().optional(),
+          toleranciaMinutos: z.number().optional().default(0),
         })
       )
       .query(({ input }) => {
-        const presentes = getPresentesByDate(input.date, input.sector);
+        const presentes = getPresentesByDate(input.date, input.sector, input.toleranciaMinutos);
         const ausentes = getAusentesByDate(input.date, input.sector);
-        const summary = getAttendanceSummary(input.date, input.sector);
+        const summary = getAttendanceSummary(input.date, input.sector, input.toleranciaMinutos);
 
         return {
           presentes,
@@ -305,10 +334,11 @@ export const appRouter = router({
         z.object({
           date: z.string().refine(isValidDate, "Fecha inválida. Use formato YYYY-MM-DD"),
           sector: z.string().optional(),
+          toleranciaMinutos: z.number().optional().default(0),
         })
       )
       .query(({ input }) => {
-        return getAttendanceSummary(input.date, input.sector);
+        return getAttendanceSummary(input.date, input.sector, input.toleranciaMinutos);
       }),
 
     getTodayDate: publicProcedure.query(() => {

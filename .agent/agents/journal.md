@@ -59,3 +59,10 @@ Este archivo es un bitácora para documentar todos los avances, diagnósticos, s
   2. Se creó un Modal de Configuración interactivo para cada Sector donde los administradores habilitan/deshabilitan los cargos (usando un listado global) y les asignan un valor de criticidad del 1 al 5.
   3. Se interconectó esta nueva fuente de verdad con el Creador de Reglas (`AdminTurnos.tsx`): Al seleccionar un Sector, el combo de Cargos disponibles se filtra dinámicamente limitándose únicamente a los habilitados por la administración en dicho sector.
   4. La suite de pruebas de QA se blindó agregando protección transaccional para evitar desactivar un cargo en un sector si ya hay empleados usándolo o reglas asociadas a él, logrando mantener una cobertura del 100% de la suite.
+
+### [2026-06-10] - Fase 8: Hito de Completitud (Gestión de Cargos y Tolerancia Interactiva)
+- **Avance:** Se completaron los componentes pendientes de la Fase 8, añadiendo la capacidad de administrar los Cargos globalmente y hacer dinámica la visualización de llegadas tarde.
+- **Detalle Arquitectónico y UX:**
+  1. **CRUD Central de Cargos:** Se añadió una nueva pestaña "Cargos" en el Panel de Administrador, permitiendo gestionar los cargos sin necesidad de scripts de base de datos directos, implementando validaciones estrictas de borrado (no se puede borrar si ya está configurado en un sector, personal u horario).
+  2. **Criticidad Desacoplada:** Se validó junto al usuario que el "Nivel de Criticidad" pertenece únicamente a la relación Sector-Cargo, por lo que el cargo base se mantiene simple.
+  3. **UX Simulable (Tolerancia Dinámica):** En vez de hardcodear un "tiempo de gracia" en el backend para la llegada tarde, se implementó un control interactivo (slider de 0 a 60 minutos) en el Dashboard. El backend (`getPresentesByDate`) recibe este parámetro al vuelo, permitiendo al usuario visualizar el panorama del día y jugar con los minutos de tolerancia de forma bidireccional en tiempo real.

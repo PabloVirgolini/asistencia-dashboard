@@ -347,7 +347,7 @@ export function getFichadasByDate(date: string): FichadaRecord[] {
 /**
  * Obtiene las personas presentes en un día específico
  */
-export function getPresentesByDate(date: string, sector?: string): AttendanceRecord[] {
+export function getPresentesByDate(date: string, sector?: string, toleranciaMinutos: number = 0): AttendanceRecord[] {
   const db = getDb();
   
   let query = `
@@ -413,7 +413,16 @@ export function getPresentesByDate(date: string, sector?: string): AttendanceRec
 
     if (horaEsperada) {
        const timePart = r.primeraFichada.split(' ')[1]; // "HH:MM:SS"
-       if (timePart.substring(0, 5) > horaEsperada) {
+       
+       const [expectedH, expectedM] = horaEsperada.split(':').map(Number);
+       const expectedDate = new Date(jsDate);
+       expectedDate.setHours(expectedH, expectedM + toleranciaMinutos, 0, 0);
+
+       const actualDate = new Date(jsDate);
+       const [ah, am, as] = timePart.split(':').map(Number);
+       actualDate.setHours(ah, am, as || 0, 0);
+
+       if (actualDate > expectedDate) {
          llegadaTarde = true;
        }
     }
@@ -474,7 +483,7 @@ export function getAusentesByDate(date: string, sector?: string): AbsenceRecord[
 /**
  * Obtiene el resumen de asistencia para un día específico
  */
-export function getAttendanceSummary(date: string, sector?: string): AttendanceSummary {
+export function getAttendanceSummary(date: string, sector?: string, toleranciaMinutos: number = 0): AttendanceSummary {
   const db = getDb();
   
   // Obtener total de personal activo
@@ -490,7 +499,7 @@ export function getAttendanceSummary(date: string, sector?: string): AttendanceS
   const totalActivos = totalResult.count;
   
   // Obtener presentes
-  const presentes = getPresentesByDate(date, sector).length;
+  const presentes = getPresentesByDate(date, sector, toleranciaMinutos).length;
   const ausentes = totalActivos - presentes;
   
   const porcentajePresentes = totalActivos > 0 ? Math.round((presentes / totalActivos) * 100) : 0;
@@ -572,6 +581,36 @@ export function deleteSector(idSector: number): void {
   const db = getDb();
   const stmt = db.prepare('DELETE FROM sectores WHERE idSector = ?');
   stmt.run(idSector);
+}
+
+// Gestión de Cargos
+export function insertCargo(descripcion: string): void {
+  const db = getDb();
+  const stmt = db.prepare('INSERT INTO cargos (descripcion) VALUES (?)');
+  stmt.run(descripcion);
+}
+
+export function updateCargo(id_cargo: number, descripcion: string): void {
+  const db = getDb();
+  const stmt = db.prepare('UPDATE cargos SET descripcion = ? WHERE id_cargo = ?');
+  stmt.run(descripcion, id_cargo);
+}
+
+export function deleteCargo(id_cargo: number): void {
+  const db = getDb();
+  db.transaction(() => {
+    const pResult = db.prepare('SELECT COUNT(*) as c FROM personal WHERE cargo_id = ?').get(id_cargo) as { c: number };
+    if (pResult.c > 0) throw new Error('No se puede eliminar el cargo: está asignado a uno o más empleados.');
+
+    const scResult = db.prepare('SELECT COUNT(*) as c FROM sectores_cargos WHERE id_cargo = ?').get(id_cargo) as { c: number };
+    if (scResult.c > 0) throw new Error('No se puede eliminar el cargo: está configurado en uno o más sectores.');
+
+    const hResult = db.prepare('SELECT COUNT(*) as c FROM horarios WHERE id_cargo = ?').get(id_cargo) as { c: number };
+    if (hResult.c > 0) throw new Error('No se puede eliminar el cargo: está siendo usado en reglas de horarios.');
+
+    const stmt = db.prepare('DELETE FROM cargos WHERE id_cargo = ?');
+    stmt.run(id_cargo);
+  })();
 }
 
 // Gestión de Personal

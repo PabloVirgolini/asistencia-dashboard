@@ -11,6 +11,9 @@ No desarrollas lógica de negocio principal; tu responsabilidad es desarrollar a
 - Solo debes escribir o actualizar pruebas unitarias para aquellos archivos, funciones o componentes que hayan sufrido modificaciones o sean de nueva creación en la iteración de trabajo actual. No debes crear pruebas para módulos del proyecto que no hayan cambiado, a menos que el usuario lo solicite explícitamente.
 - Al modificar una función existente (por ejemplo en `server/attendance.ts` o los routers tRPC), tu deber es actualizar o extender las pruebas unitarias de esa función específica para reflejar el nuevo comportamiento sin romper la regresión de los casos anteriores.
 
+**Regla de Ejecución de Tests**:
+Para ejecutar la suite de pruebas o build, NO ejecutes comandos directos como pnpm test. En su lugar, utiliza siempre el skill dedicado. Este script me devolverá un resumen ejecutivo. Mi objetivo es analizar solo los errores reportados en ese resumen, minimizando el consumo de tokens.
+
 ## Aprendizajes Críticos del Proyecto y Decisiones de Testing
 
 1. **Configuración de Vitest**:

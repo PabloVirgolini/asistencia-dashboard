@@ -22,6 +22,7 @@ export default function AttendanceDashboard() {
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedSector, setSelectedSector] = useState<string>("todos");
   const [showEncargados, setShowEncargados] = useState<boolean>(true);
+  const [toleranciaMinutos, setToleranciaMinutos] = useState<number>(0);
   const [nextUpdateTime, setNextUpdateTime] = useState<Date | null>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -36,6 +37,7 @@ export default function AttendanceDashboard() {
     {
       date: selectedDate || todayQuery.data?.date || "",
       sector: selectedSector === "todos" ? undefined : selectedSector,
+      toleranciaMinutos: toleranciaMinutos,
     },
     {
       enabled: !!selectedDate || !!todayQuery.data?.date,
@@ -144,28 +146,47 @@ export default function AttendanceDashboard() {
           </div>
 
           {/* Controles */}
-          <div className="flex gap-4 flex-wrap">
-            <SelectorFecha
-              selectedDate={selectedDate}
-              onDateChange={setSelectedDate}
-            />
-            <Select value={selectedSector} onValueChange={setSelectedSector}>
-              <SelectTrigger className="w-64">
-                <SelectValue placeholder="Seleccionar sector..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los sectores</SelectItem>
-                {sectorsQuery.data?.map((sector) => (
-                  <SelectItem
-                    key={sector.idSector}
-                    value={sector.idSector.toString()}
-                  >
-                    {sector.descripcion}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
+          <div className="flex gap-4 flex-wrap items-end mb-6">
+            <div>
+              <Label className="mb-2 block text-sm font-medium text-slate-700">Fecha</Label>
+              <SelectorFecha
+                selectedDate={selectedDate}
+                onDateChange={setSelectedDate}
+              />
+            </div>
+            <div>
+              <Label className="mb-2 block text-sm font-medium text-slate-700">Sector</Label>
+              <Select value={selectedSector} onValueChange={setSelectedSector}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="Seleccionar sector..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos los sectores</SelectItem>
+                  {sectorsQuery.data?.map((sector) => (
+                    <SelectItem
+                      key={sector.idSector}
+                      value={sector.idSector.toString()}
+                    >
+                      {sector.descripcion}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="mb-2 block text-sm font-medium text-slate-700">Tolerancia Tarde: {toleranciaMinutos} mins</Label>
+              <div className="flex items-center gap-2 h-10 px-3 bg-white border border-slate-200 rounded-md shadow-sm w-48">
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="60" 
+                  step="5"
+                  value={toleranciaMinutos} 
+                  onChange={(e) => setToleranciaMinutos(parseInt(e.target.value))}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

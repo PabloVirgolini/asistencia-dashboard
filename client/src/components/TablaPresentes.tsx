@@ -141,7 +141,7 @@ export default function TablaPresentes({ presentes, showEncargados = true }: Tab
                     <TableCell className="font-medium text-slate-900">
                       {showEncargados && presente.cargo?.toLowerCase().includes("encargado") ? `(E) ${presente.nombre}` : presente.nombre}
                       {presente.llegadaTarde && (
-                        <Badge variant="outline" className="ml-2 bg-orange-50 text-orange-700 border-orange-200">
+                        <Badge variant="outline" className="ml-2 bg-orange-50 text-orange-700 border-orange-200" title="Ingresó luego de su horario esperado más tolerancia">
                           Llegó Tarde
                         </Badge>
                       )}
