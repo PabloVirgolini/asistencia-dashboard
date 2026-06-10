@@ -5,9 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Trash2, Plus, Clock, Loader2, Check, Search,
+  Trash2, Plus, Clock, Loader2, Check, Search, Copy,
   ChevronRight, Building, Briefcase, User, Calendar, AlertCircle
 } from 'lucide-react';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 
@@ -67,6 +70,7 @@ export default function AdminTurnos() {
   const removeTurno = trpc.admin.removeTurnoHorario.useMutation();
   const addRegla = trpc.admin.addHorario.useMutation();
   const removeRegla = trpc.admin.removeHorario.useMutation();
+  const duplicateSector = trpc.admin.duplicateSectorRules.useMutation();
 
 
 
@@ -146,6 +150,11 @@ export default function AdminTurnos() {
   // Buscador de personal
   const [personalSearch, setPersonalSearch] = useState('');
   const [selectedLegajo, setSelectedLegajo] = useState<string>('');
+
+  // State para Duplicar Sector
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
+  const [duplicateSource, setDuplicateSource] = useState<{ id_turno: number, id_sector: number, nombreSector: string } | null>(null);
+  const [duplicateTargetSector, setDuplicateTargetSector] = useState<string>('');
 
   const filteredPersonal = personalSearch.length > 1 
     ? personal?.filter(p => 
@@ -271,6 +280,24 @@ export default function AdminTurnos() {
   const getAllIds = (node: any): number[] => {
     if (Array.isArray(node)) return node.map(r => r.id_horario);
     return Object.values(node).flatMap(getAllIds);
+  };
+
+  const handleDuplicateSector = async () => {
+    if (!duplicateSource || !duplicateTargetSector) return;
+    try {
+      await duplicateSector.mutateAsync({
+        id_turno: duplicateSource.id_turno,
+        source_sector: duplicateSource.id_sector,
+        target_sector: parseInt(duplicateTargetSector)
+      });
+      toast.success('Sector duplicado correctamente');
+      setDuplicateModalOpen(false);
+      setDuplicateTargetSector('');
+      setDuplicateSource(null);
+      trpcContext.admin.getHorariosReglas.invalidate();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al duplicar el sector');
+    }
   };
 
   const renderBatchDelete = (nodeData: any, name: string) => {
@@ -442,7 +469,8 @@ export default function AdminTurnos() {
                             {c.descripcion}
                           </Label>
                         </div>
-                      ))}
+                          ))
+                      )}
                     </div>
                   </div>
                 </>
@@ -597,10 +625,38 @@ export default function AdminTurnos() {
                   ) : (
                     Object.entries(groupedGeneral).map(([turno, sectores]) => (
                       <TreeNode key={turno} title={turno} icon={Clock} defaultExpanded={true} rightContent={renderBatchDelete(sectores, `Turno ${turno}`)}>
-                        {Object.entries(sectores as Record<string, any>).map(([sector, cargos]) => (
-                          <TreeNode key={sector} title={`Sector: ${sector}`} icon={Building} defaultExpanded={true} rightContent={renderBatchDelete(cargos, `Sector ${sector}`)}>
-                            {Object.entries(cargos as Record<string, any>).map(([cargo, rules]) => (
-                              <TreeNode key={cargo} title={`Cargo: ${cargo}`} icon={Briefcase} defaultExpanded={true} rightContent={renderBatchDelete(rules, `Cargo ${cargo}`)}>
+                        {Object.entries(sectores as Record<string, any>).map(([sector, cargos]) => {
+                          const sampleRule = Object.values(cargos as Record<string, any[]>)[0]?.[0];
+                          const id_turno = sampleRule?.id_turno;
+                          const id_sector = sampleRule?.id_sector;
+                          return (
+                            <TreeNode 
+                              key={sector} 
+                              title={`Sector: ${sector}`} 
+                              icon={Building} 
+                              defaultExpanded={true} 
+                              rightContent={
+                                <div className="flex items-center gap-1">
+                                  {id_turno && id_sector && (
+                                    <Button 
+                                      variant="ghost" 
+                                      size="sm" 
+                                      className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDuplicateSource({ id_turno, id_sector, nombreSector: sector });
+                                        setDuplicateModalOpen(true);
+                                      }}
+                                    >
+                                      <Copy className="w-4 h-4 mr-1" /> Replicar
+                                    </Button>
+                                  )}
+                                  {renderBatchDelete(cargos, `Sector ${sector}`)}
+                                </div>
+                              }
+                            >
+                              {Object.entries(cargos as Record<string, any>).map(([cargo, rules]) => (
+                                <TreeNode key={cargo} title={`Cargo: ${cargo}`} icon={Briefcase} defaultExpanded={true} rightContent={renderBatchDelete(rules, `Cargo ${cargo}`)}>
                                 <div className="py-2 pr-2 space-y-2.5">
                                   {(rules as any[]).map(r => (
                                     <div key={r.id_horario} className="flex items-center justify-between bg-white border border-slate-100 p-3 rounded-lg shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group">
@@ -626,7 +682,8 @@ export default function AdminTurnos() {
                               </TreeNode>
                             ))}
                           </TreeNode>
-                        ))}
+                        );
+                      })}
                       </TreeNode>
                     ))
                   )}
@@ -689,7 +746,49 @@ export default function AdminTurnos() {
           )}
         </CardContent>
       </Card>
-
+      <Dialog open={duplicateModalOpen} onOpenChange={setDuplicateModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Replicar Reglas de Sector</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-slate-600">
+              Estás a punto de copiar todas las reglas de <strong>{duplicateSource?.nombreSector}</strong> (del Turno actual).
+            </p>
+            <div className="space-y-2">
+              <Label>Selecciona el Sector de Destino</Label>
+              <Select value={duplicateTargetSector} onValueChange={setDuplicateTargetSector}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Elegir sector..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {sectores?.map((s: any) => (
+                    s.idSector !== duplicateSource?.id_sector && (
+                      <SelectItem key={s.idSector} value={s.idSector.toString()}>
+                        {s.idSector} - {s.descripcion}
+                      </SelectItem>
+                    )
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-slate-500">
+              * Nota: El sector destino debe tener personal activo asignado a los mismos cargos que las reglas originales.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDuplicateModalOpen(false)}>Cancelar</Button>
+            <Button 
+              className="bg-indigo-600 hover:bg-indigo-700 text-white" 
+              onClick={handleDuplicateSector} 
+              disabled={!duplicateTargetSector || duplicateSector.isLoading}
+            >
+              {duplicateSector.isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
+              Replicar Reglas
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -24,7 +24,8 @@ import {
   removeTurnoHorario,
   getHorariosReglas,
   addHorario,
-  removeHorario
+  removeHorario,
+  duplicateSectorRules
 } from "./attendance";
 import { signToken } from "./jwt";
 
@@ -171,6 +172,21 @@ export const appRouter = router({
     getHorariosReglas: adminProcedure.query(() => {
       return getHorariosReglas();
     }),
+    
+    duplicateSectorRules: adminProcedure
+      .input(z.object({
+        id_turno: z.number(),
+        source_sector: z.number(),
+        target_sector: z.number()
+      }))
+      .mutation(({ input }) => {
+        try {
+          duplicateSectorRules(input.id_turno, input.source_sector, input.target_sector);
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
+      }),
     
     addHorario: adminProcedure
       .input(z.object({

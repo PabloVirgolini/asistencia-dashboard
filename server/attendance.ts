@@ -142,6 +142,7 @@ export function getHorariosReglas(): any[] {
   const db = getDb();
   const stmt = db.prepare(`
     SELECT h.id_horario, h.dia_semana, h.hora_entrada, h.hora_salida, h.legajo,
+           h.id_turno, h.id_sector, h.id_cargo,
            t.descripcion as turno, s.descripcion as sector, c.descripcion as cargo
     FROM horarios h
     LEFT JOIN turnos_horarios t ON h.id_turno = t.id_turno
@@ -150,6 +151,72 @@ export function getHorariosReglas(): any[] {
     ORDER BY h.id_turno ASC, h.dia_semana ASC
   `);
   return stmt.all();
+}
+
+export function duplicateSectorRules(id_turno: number, sourceSectorId: number, targetSectorId: number): void {
+  const db = getDb();
+  
+  // 1. Fetch all rules from the source sector under the specific turno
+  const stmt = db.prepare(`
+    SELECT id_cargo, dia_semana, hora_entrada, hora_salida, legajo
+    FROM horarios
+    WHERE id_turno = ? AND id_sector = ?
+  `);
+  
+  const rules = stmt.all(id_turno, sourceSectorId) as any[];
+  
+  if (rules.length === 0) {
+    throw new Error('No hay reglas para copiar en este sector y turno.');
+  }
+
+  // 1.5 Validate that the target sector actually has employees with the required cargos
+  const uniqueCargos = [...new Set(rules.map(r => r.id_cargo))];
+  for (const cargoId of uniqueCargos) {
+    if (cargoId === null) continue;
+    const checkCargoStmt = db.prepare(`
+      SELECT COUNT(*) as c FROM personal 
+      WHERE sectorPertenencia = ? AND cargo_id = ? AND activo = 1
+    `);
+    const res = checkCargoStmt.get(targetSectorId, cargoId) as { c: number };
+    if (res.c === 0) {
+      throw new Error(`El sector destino no tiene personal activo con el cargo ID ${cargoId}. No se puede duplicar.`);
+    }
+  }
+
+  // 2. We could just delete existing rules in the target if we wanted to OVERWRITE,  
+  // but usually "duplicar" implies adding to what's there or just cloning.
+  // We'll just clone them. Overlaps will be caught by a check or we can just ignore overlaps here.
+  // Actually, to avoid crashing halfway, we will use a transaction.
+  
+  const insertStmt = db.prepare(`
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const transaction = db.transaction((rulesToCopy: any[]) => {
+    for (const rule of rulesToCopy) {
+      // Basic check to avoid EXACT duplicates in target
+      const checkStmt = db.prepare(`
+        SELECT COUNT(*) as c FROM horarios 
+        WHERE id_turno = ? AND dia_semana = ? AND id_sector = ? AND id_cargo = ? AND (legajo IS NULL OR legajo = ?)
+      `);
+      const res = checkStmt.get(id_turno, rule.dia_semana, targetSectorId, rule.id_cargo, rule.legajo) as { c: number };
+      
+      if (res.c === 0) {
+        insertStmt.run(
+          targetSectorId, 
+          rule.id_cargo, 
+          id_turno, 
+          rule.dia_semana, 
+          rule.hora_entrada, 
+          rule.hora_salida, 
+          rule.legajo
+        );
+      }
+    }
+  });
+
+  transaction(rules);
 }
 
 export function addHorario(

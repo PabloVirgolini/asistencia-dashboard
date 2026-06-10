@@ -34,3 +34,11 @@ Se identificaron brechas lógicas en la base de datos para la configuración de 
 ## Premisas de Diseño y UX (Core Principles)
 - **Leyes de Gestalt**: Al elaborar o refactorizar cualquier página, aplicar rigurosamente principios de Gestalt (como la *Ley de Proximidad*). Los controles que afectan a un elemento visual deben estar inmediatamente adyacentes a dicho elemento, no flotando en encabezados globales aislados.
 - **Estética Premium**: Las interfaces deben contar con tipografía moderna, paletas armoniosas, glassmorphism sutil y micro-interacciones. Nada de componentes MVP sin estilizar.
+
+## Fase 4: Deuda Técnica y Refactorización (Pendiente)
+A partir de la revisión técnica del escuadrón de subagentes, quedan agendadas las siguientes prioridades a resolver en el futuro:
+- [ ] **Seguridad**: Securizar `auth.register` para que no sea un endpoint público y cambiar el hashing de claves a `bcrypt`.
+- [ ] **Performance**: Eliminar el CAST/SUBSTR en `getPresentesByDate` e indexar la columna del legajo para evitar el full-table scan.
+- [ ] **QA**: Mockear la DB en `attendance.test.ts` y añadir pruebas exhaustivas para Turnos Nocturnos (cruces de medianoche) y horarios solapados.
+- [ ] **QA**: Evaluar métricas históricas de empleados dados de baja (`activo=0`).
+- [ ] **Arquitectura React**: Dividir `AdminTurnos.tsx` y `AdminPanel.tsx` en hooks personalizados para reducir el tamaño monolítico. Reparar el `setTimeout` estático del dashboard.
