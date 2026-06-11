@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Search, Trash2, Loader2, Check, Pencil, X } from 'lucide-react';
 import { ReglaHorario } from '@server/db/schema';
-import WeeklyCalendar from '../WeeklyCalendar';
+import WeeklyCalendar from './WeeklyCalendar';
 import MatrizList from './MatrizList';
 import { useMatrizHorarios } from './MatrizHorarios/useMatrizHorarios';
 import { Modales } from './MatrizHorarios/Modales';

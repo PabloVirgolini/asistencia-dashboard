@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, Building, Briefcase, Clock, Trash2, Copy, Check, X, Pencil } from 'lucide-react';
-import { TreeNode } from '../TreeNode';
+import { TreeNode } from '@/components/TreeNode';
 
 export function MatrizListGenerales({
   groupedGeneral,

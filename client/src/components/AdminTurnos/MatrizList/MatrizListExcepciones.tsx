@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar, User, Clock, Trash2, Check, X, Pencil, AlertCircle } from 'lucide-react';
-import { TreeNode } from '../TreeNode';
+import { TreeNode } from '@/components/TreeNode';
 
 export function MatrizListExcepciones({
   groupedExceptions,
