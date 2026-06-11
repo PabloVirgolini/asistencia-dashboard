@@ -6,7 +6,7 @@ import { WeeklyCalendarBlock } from './WeeklyCalendarBlock';
 interface WeeklyCalendarProps {
   reglas: ReglaHorario[];
   onEditRule?: (r: ReglaHorario) => void;
-  onHideTurno?: (turno: string) => void;
+  onHideTurno?: (turno: string | number) => void;
 }
 
 export default function WeeklyCalendar({ reglas, onEditRule, onHideTurno }: WeeklyCalendarProps) {

@@ -24,28 +24,23 @@ export function useMatrizHorarios(reglas: any[], mutations: any) {
   const [collapseToken, setCollapseToken] = useState(0);
 
   // Suggested Filters for Calendar
-  const [activeTurno, setActiveTurno] = useState<string>('todos');
-  const [activeSector, setActiveSector] = useState<string>('todos');
-  const [activeCargo, setActiveCargo] = useState<string>('todos');
-  const [hiddenTurnos, setHiddenTurnos] = useState<string[]>([]);
+  const [activeTurnos, setActiveTurnos] = useState<string[]>([]);
+  const [activeSectores, setActiveSectores] = useState<string[]>([]);
+  const [activeCargos, setActiveCargos] = useState<string[]>([]);
+  const [hiddenRules, setHiddenRules] = useState<number[]>([]);
 
   const uniqueTurnos = useMemo(() => Array.from(new Set(reglas?.map(r => r.turno).filter(Boolean))), [reglas]);
   const uniqueSectores = useMemo(() => Array.from(new Set(reglas?.map(r => r.sector).filter(Boolean))), [reglas]);
   const uniqueCargos = useMemo(() => Array.from(new Set(reglas?.map(r => r.cargo).filter(Boolean))), [reglas]);
 
   const filteredReglas = useMemo(() => {
-    let baseReglas = (reglas || []) as ReglaHorario[];
-    if (hiddenTurnos.length > 0) {
-      baseReglas = baseReglas.filter(r => r.turno && !hiddenTurnos.includes(r.turno));
-    }
-    
-    return filtrarReglas(baseReglas, {
+    return filtrarReglas(reglas as ReglaHorario[], {
       texto: reglaFilter,
-      turno: activeTurno,
-      sector: activeSector,
-      cargo: activeCargo
-    });
-  }, [reglas, reglaFilter, activeTurno, activeSector, activeCargo, hiddenTurnos]);
+      turnos: activeTurnos,
+      sectores: activeSectores,
+      cargos: activeCargos
+    }, hiddenRules);
+  }, [reglas, reglaFilter, activeTurnos, activeSectores, activeCargos, hiddenRules]);
 
   const { groupedGeneral, groupedExceptions } = useMemo(() => {
     return agruparReglas(filteredReglas as ReglaHorario[]);
@@ -140,10 +135,10 @@ export function useMatrizHorarios(reglas: any[], mutations: any) {
     reglaFilter, setReglaFilter,
     viewMode, setViewMode,
     collapseToken, setCollapseToken,
-    activeTurno, setActiveTurno,
-    activeSector, setActiveSector,
-    activeCargo, setActiveCargo,
-    hiddenTurnos, setHiddenTurnos,
+    activeTurnos, setActiveTurnos,
+    activeSectores, setActiveSectores,
+    activeCargos, setActiveCargos,
+    hiddenRules, setHiddenRules,
     uniqueTurnos, uniqueSectores, uniqueCargos,
     filteredReglas, groupedGeneral, groupedExceptions,
     duplicateModalOpen, setDuplicateModalOpen,

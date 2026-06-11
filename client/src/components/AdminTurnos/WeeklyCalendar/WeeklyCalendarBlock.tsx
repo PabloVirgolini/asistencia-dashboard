@@ -17,7 +17,7 @@ interface WeeklyCalendarBlockProps {
   idx: number;
   colisionesPrevias: number;
   onEditRule?: (r: ReglaHorario) => void;
-  onHideTurno?: (turno: string) => void;
+  onHideTurno?: (turno: string | number) => void;
 }
 
 export function WeeklyCalendarBlock({ block, idx, colisionesPrevias, onHideTurno }: WeeklyCalendarBlockProps) {
@@ -81,7 +81,9 @@ export function WeeklyCalendarBlock({ block, idx, colisionesPrevias, onHideTurno
             <button 
               onClick={(e) => { 
                 e.stopPropagation(); 
-                onHideTurno(block.turno || 'Sin Turno'); 
+                if (block.id_horario || block.id) {
+                  onHideTurno(block.id_horario || block.id); 
+                }
               }}
               className="w-full mt-2 pt-2 border-t border-slate-100 text-xs font-medium text-slate-500 hover:text-indigo-600 text-center transition-colors flex items-center justify-center gap-1.5"
             >

@@ -1,5 +1,6 @@
 export interface ReglaHorario {
   id: number;
+  id_horario?: number;
   id_sector: number | null;
   id_cargo: number | null;
   id_turno: number;
@@ -17,15 +18,19 @@ export interface ReglaHorario {
 
 export interface FiltrosHorarios {
   texto: string;
-  turno: string;
-  sector: string;
-  cargo: string;
+  turnos: string[];
+  sectores: string[];
+  cargos: string[];
 }
 
-export function filtrarReglas(reglas: ReglaHorario[] | undefined, filtros: FiltrosHorarios): ReglaHorario[] {
+export function filtrarReglas(reglas: ReglaHorario[] | undefined, filtros: FiltrosHorarios, hiddenRules: number[] = []): ReglaHorario[] {
   if (!reglas) return [];
   
   let result = [...reglas];
+
+  if (hiddenRules.length > 0) {
+    result = result.filter(r => !hiddenRules.includes(r.id_horario || r.id)); // Assuming id_horario or id is available. (I'll check ReglaHorario: it has 'id')
+  }
   
   if (filtros.texto) {
     const lf = filtros.texto.toLowerCase();
@@ -37,14 +42,14 @@ export function filtrarReglas(reglas: ReglaHorario[] | undefined, filtros: Filtr
     );
   }
   
-  if (filtros.turno && filtros.turno !== 'todos') {
-    result = result.filter(r => r.turno === filtros.turno);
+  if (filtros.turnos?.length > 0) {
+    result = result.filter(r => r.turno && filtros.turnos.includes(r.turno));
   }
-  if (filtros.sector && filtros.sector !== 'todos') {
-    result = result.filter(r => r.sector === filtros.sector);
+  if (filtros.sectores?.length > 0) {
+    result = result.filter(r => r.sector && filtros.sectores.includes(r.sector));
   }
-  if (filtros.cargo && filtros.cargo !== 'todos') {
-    result = result.filter(r => r.cargo === filtros.cargo);
+  if (filtros.cargos?.length > 0) {
+    result = result.filter(r => r.cargo && filtros.cargos.includes(r.cargo));
   }
   
   return result;

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Search, Trash2, Loader2, Check, Pencil, X } from 'lucide-react';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { ReglaHorario } from '@server/db/schema';
 import WeeklyCalendar from './WeeklyCalendar';
 import MatrizList from './MatrizList';
@@ -131,62 +132,47 @@ export default function MatrizHorarios({
             <div className="flex flex-col gap-4 mt-2">
               <div className="flex flex-wrap gap-4 items-center p-3 bg-slate-50/50 rounded-xl border border-slate-100">
                 <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-2">Filtros:</div>
-                <div className="w-40">
-                  <Select value={ctx.activeTurno} onValueChange={ctx.setActiveTurno}>
-                    <SelectTrigger className="h-8 text-xs bg-white">
-                      <SelectValue placeholder="Turno" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos los Turnos</SelectItem>
-                      {ctx.uniqueTurnos.map(t => (
-                        <SelectItem key={t as string} value={t as string}>{t as string}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="w-48">
+                  <MultiSelect 
+                    options={ctx.uniqueTurnos.map(t => ({ label: t as string, value: t as string }))} 
+                    selectedValues={ctx.activeTurnos} 
+                    onSelectedValuesChange={ctx.setActiveTurnos} 
+                    placeholder="Turnos" 
+                  />
                 </div>
-                <div className="w-40">
-                  <Select value={ctx.activeSector} onValueChange={ctx.setActiveSector}>
-                    <SelectTrigger className="h-8 text-xs bg-white">
-                      <SelectValue placeholder="Sector" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos los Sectores</SelectItem>
-                      {ctx.uniqueSectores.map(s => (
-                        <SelectItem key={s as string} value={s as string}>{s as string}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="w-48">
+                  <MultiSelect 
+                    options={ctx.uniqueSectores.map(t => ({ label: t as string, value: t as string }))} 
+                    selectedValues={ctx.activeSectores} 
+                    onSelectedValuesChange={ctx.setActiveSectores} 
+                    placeholder="Sectores" 
+                  />
                 </div>
-                <div className="w-40">
-                  <Select value={ctx.activeCargo} onValueChange={ctx.setActiveCargo}>
-                    <SelectTrigger className="h-8 text-xs bg-white">
-                      <SelectValue placeholder="Cargo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="todos">Todos los Cargos</SelectItem>
-                      {ctx.uniqueCargos.map(c => (
-                        <SelectItem key={c as string} value={c as string}>{c as string}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="w-48">
+                  <MultiSelect 
+                    options={ctx.uniqueCargos.map(t => ({ label: t as string, value: t as string }))} 
+                    selectedValues={ctx.activeCargos} 
+                    onSelectedValuesChange={ctx.setActiveCargos} 
+                    placeholder="Cargos" 
+                  />
                 </div>
                 <div className="flex-1 flex justify-end gap-2">
-                  {ctx.hiddenTurnos.length > 0 && (
+                  {ctx.hiddenRules.length > 0 && (
                     <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-md">
                       <span className="text-xs text-indigo-700 font-medium">
-                        Ocultos: {ctx.hiddenTurnos.length} turno(s)
+                        Ocultos: {ctx.hiddenRules.length} horario(s)
                       </span>
                       <button 
-                        onClick={() => ctx.setHiddenTurnos([])}
+                        onClick={() => ctx.setHiddenRules([])}
                         className="text-indigo-400 hover:text-indigo-600 ml-1"
-                        title="Mostrar todos los turnos ocultos"
+                        title="Mostrar todos los horarios ocultos"
                       >
                         <X className="w-3 h-3" />
                       </button>
                     </div>
                   )}
-                  {(ctx.activeTurno !== 'todos' || ctx.activeSector !== 'todos' || ctx.activeCargo !== 'todos') && (
-                    <Button variant="ghost" size="sm" onClick={() => { ctx.setActiveTurno('todos'); ctx.setActiveSector('todos'); ctx.setActiveCargo('todos'); }} className="h-8 text-xs text-indigo-600">
+                  {(ctx.activeTurnos.length > 0 || ctx.activeSectores.length > 0 || ctx.activeCargos.length > 0) && (
+                    <Button variant="ghost" size="sm" onClick={() => { ctx.setActiveTurnos([]); ctx.setActiveSectores([]); ctx.setActiveCargos([]); }} className="h-8 text-xs text-indigo-600">
                       Limpiar Filtros
                     </Button>
                   )}
@@ -194,7 +180,7 @@ export default function MatrizHorarios({
               </div>
               <WeeklyCalendar 
                 reglas={ctx.filteredReglas as ReglaHorario[]} 
-                onHideTurno={(turno) => ctx.setHiddenTurnos(prev => Array.from(new Set([...prev, turno])))}
+                onHideTurno={(id_horario: string | number) => ctx.setHiddenRules(prev => Array.from(new Set([...prev, Number(id_horario)])))}
                 onEditRule={(rule) => {
                   ctx.setEditingRuleId(rule.id_horario);
                   ctx.setEditHoraEntrada(rule.hora_entrada);
