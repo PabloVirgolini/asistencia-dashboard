@@ -47,6 +47,6 @@ export function useAdminNovedades() {
     setIsModalOpen,
     handleAdd,
     handleRemove,
-    isAdding: addMutation.isLoading
+    isAdding: addMutation.isPending || removeMutation.isPending
   };
 }

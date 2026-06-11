@@ -1,3 +1,9 @@
+/**
+ * @module PersonalService
+ * @description
+ * Servicio encargado de gestionar el ABM (Alta, Baja, Modificación) del Personal,
+ * Sectores, Cargos y las relaciones entre ellos (sectores_cargos).
+ */
 import { getDb } from '../db/database';
 
 export interface PersonalRecord {

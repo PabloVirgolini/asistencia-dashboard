@@ -29,6 +29,10 @@ Eres el Analista de Sistemas del proyecto "AsistenciaPersonal". Tu objetivo prin
   - Toda manipulación de strings con formato `YYYY-MM-DD` en el cliente React debe ser parseada extrayendo explícitamente sus componentes (`split('-')`) e inicializando el objeto Date usando la firma local: `new Date(year, monthIndex, day)`. Está estrictamente **prohibido** utilizar `new Date("YYYY-MM-DD")` para evitar corrimientos de días provocados por la conversión implícita a UTC en navegadores con zonas horarias negativas (ej: Argentina GMT-3).
 - **Lógica de Negocio y Tolerancias Flexibles (Simulabilidad):**
   - Para reglas de negocio que pueden estar sujetas a interpretación o variaciones operativas (ej. minutos de tolerancia para considerar una llegada tarde), la lógica no debe ser *hardcodeada* rígidamente en el backend. El backend debe aceptar estos parámetros dinámicamente a través de la API, delegando en el Frontend la inclusión de controles interactivos (ej. Sliders en el Dashboard). Esto empodera al usuario para jugar con los valores y evaluar diferentes panoramas en tiempo real sin requerir despliegues de código.
+- **Asignación de Turnos y Rotatividad**:
+  - Los empleados poseen una bandera booleana `es_rotativo`. Solo el personal rotativo participa de la "Grilla del Planificador Semanal". El personal administrativo o fijo no debe ser planificado repetitivamente; sus turnos se configuran una vez y perduran.
+  - Al realizar inserciones masivas en `historial_turnos` (Bulk Inserts), el sistema DEBE **eliminar primero (DELETE)** cualquier solapamiento previo de ese mismo empleado en el mismo rango de fechas. Esto garantiza la atomicidad y previene registros fantasma.
+  - La planificación de turnos futuros SIEMPRE debe ser cruzada (`LEFT JOIN` o consultas correlacionadas) contra la tabla `novedades_licencias`. Si un empleado tiene una licencia (vacaciones/enfermedad) solapada con la fecha a planificar, la interfaz y el backend deben bloquear/excluir la asignación de turno.
 
 ---
 ## 🔴 REGLAS MAESTRAS DE ARQUITECTURA Y CALIDAD (INELUDIBLES)

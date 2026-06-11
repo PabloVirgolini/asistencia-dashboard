@@ -11,6 +11,9 @@ interface ReglaHorario {
   turno?: string;
   sector?: string;
   cargo?: string;
+  es_cortado?: number;
+  hora_entrada_2?: string | null;
+  hora_salida_2?: string | null;
 }
 
 interface WeeklyCalendarProps {
@@ -107,6 +110,46 @@ export default function WeeklyCalendar({ reglas }: WeeklyCalendarProps) {
           color: getSectorColor(r.sector, r.cargo),
           isContinued: true
         });
+      }
+
+      // Procesar segundo bloque si es horario cortado
+      if (r.es_cortado === 1 && r.hora_entrada_2 && r.hora_salida_2) {
+        const startPercent2 = timeToPercent(r.hora_entrada_2);
+        const endPercent2 = timeToPercent(r.hora_salida_2);
+
+        if (endPercent2 > startPercent2) {
+          blocks.push({
+            ...r,
+            top: startPercent2,
+            height: endPercent2 - startPercent2,
+            color: getSectorColor(r.sector, r.cargo),
+            isContinued: false,
+            isCortadoPart2: true
+          });
+        } else {
+          const firstDayDuration2 = 100 - startPercent2;
+          const secondDayDuration2 = endPercent2;
+          const nextDay2 = (r.dia_semana + 1) % 7;
+          
+          blocks.push({
+            ...r,
+            top: startPercent2,
+            height: firstDayDuration2,
+            color: getSectorColor(r.sector, r.cargo),
+            isContinued: false,
+            isCortadoPart2: true
+          });
+          
+          blocks.push({
+            ...r,
+            dia_semana: nextDay2,
+            top: 0,
+            height: secondDayDuration2,
+            color: getSectorColor(r.sector, r.cargo),
+            isContinued: true,
+            isCortadoPart2: true
+          });
+        }
       }
     });
     

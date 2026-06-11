@@ -1,3 +1,9 @@
+/**
+ * @module AsistenciaService
+ * @description
+ * Servicio encargado de gestionar las fichadas, calcular tardanzas, y proveer
+ * los reportes de presentes, ausentes y el resumen de métricas diarias.
+ */
 import { getDb } from '../db/database';
 import { calcularLlegadaTarde } from '../utils/calculadoraTardanzas';
 

@@ -1,9 +1,27 @@
+/**
+ * @module HorariosService
+ * @description
+ * Servicio principal para la configuración de las reglas de horarios (Turnos Maestros y Horarios).
+ * Contiene la lógica para obtener, crear, actualizar, eliminar y replicar horarios de los distintos sectores.
+ */
 import { getDb } from '../db/database';
 
 export function getTurnosHorarios(): { id_turno: number, descripcion: string }[] {
   const db = getDb();
   const stmt = db.prepare('SELECT id_turno, descripcion FROM turnos_horarios ORDER BY id_turno ASC');
   return stmt.all() as { id_turno: number, descripcion: string }[];
+}
+
+export function getTurnosPorSector(id_sector: number): { id_turno: number, descripcion: string }[] {
+  const db = getDb();
+  const stmt = db.prepare(`
+    SELECT DISTINCT t.id_turno, t.descripcion 
+    FROM turnos_horarios t
+    INNER JOIN horarios h ON t.id_turno = h.id_turno
+    WHERE h.id_sector = ?
+    ORDER BY t.id_turno ASC
+  `);
+  return stmt.all(id_sector) as { id_turno: number, descripcion: string }[];
 }
 
 export function addTurnoHorario(descripcion: string): void {
@@ -35,6 +53,7 @@ export function getHorariosReglas(): any[] {
   const stmt = db.prepare(`
     SELECT h.id_horario, h.dia_semana, h.hora_entrada, h.hora_salida, h.legajo,
            h.id_turno, h.id_sector, h.id_cargo, h.updated_at, h.updated_by,
+           h.es_cortado, h.hora_entrada_2, h.hora_salida_2,
            t.descripcion as turno, s.descripcion as sector, c.descripcion as cargo
     FROM horarios h
     LEFT JOIN turnos_horarios t ON h.id_turno = t.id_turno
@@ -49,7 +68,7 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
   const db = getDb();
   
   const stmt = db.prepare(`
-    SELECT id_cargo, dia_semana, hora_entrada, hora_salida, legajo
+    SELECT id_cargo, dia_semana, hora_entrada, hora_salida, legajo, es_cortado, hora_entrada_2, hora_salida_2
     FROM horarios
     WHERE id_turno = ? AND id_sector = ?
   `);
@@ -74,8 +93,8 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
   }
 
   const insertStmt = db.prepare(`
-    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by, es_cortado, hora_entrada_2, hora_salida_2)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)
   `);
 
   const transaction = db.transaction((rulesToInsert: any[]) => {
@@ -95,7 +114,10 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
           rule.hora_entrada, 
           rule.hora_salida, 
           rule.legajo,
-          adminName
+          adminName,
+          rule.es_cortado,
+          rule.hora_entrada_2,
+          rule.hora_salida_2
         );
       }
     }
@@ -108,7 +130,7 @@ export function duplicateCargoRules(id_turno: number, id_sector: number, source_
   const db = getDb();
   
   const stmt = db.prepare(`
-    SELECT dia_semana, hora_entrada, hora_salida, legajo
+    SELECT dia_semana, hora_entrada, hora_salida, legajo, es_cortado, hora_entrada_2, hora_salida_2
     FROM horarios
     WHERE id_turno = ? AND id_sector = ? AND id_cargo = ?
   `);
@@ -120,8 +142,8 @@ export function duplicateCargoRules(id_turno: number, id_sector: number, source_
   }
 
   const insertStmt = db.prepare(`
-    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by, es_cortado, hora_entrada_2, hora_salida_2)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)
   `);
 
   const transaction = db.transaction((rulesToInsert: any[]) => {
@@ -133,7 +155,7 @@ export function duplicateCargoRules(id_turno: number, id_sector: number, source_
       const res = checkStmt.get(id_turno, rule.dia_semana, id_sector, target_cargo, rule.legajo) as { c: number };
       
       if (res.c === 0) {
-        insertStmt.run(id_sector, target_cargo, id_turno, rule.dia_semana, rule.hora_entrada, rule.hora_salida, rule.legajo, adminName);
+        insertStmt.run(id_sector, target_cargo, id_turno, rule.dia_semana, rule.hora_entrada, rule.hora_salida, rule.legajo, adminName, rule.es_cortado, rule.hora_entrada_2, rule.hora_salida_2);
       }
     }
   });
@@ -149,7 +171,10 @@ export function addHorario(
   dias: number[], 
   hora_entrada: string, 
   hora_salida: string,
-  adminName: string
+  adminName: string,
+  es_cortado: number = 0,
+  hora_entrada_2: string | null = null,
+  hora_salida_2: string | null = null
 ): void {
   const db = getDb();
   
@@ -164,8 +189,8 @@ export function addHorario(
   `);
 
   const insertStmt = db.prepare(`
-    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?)
+    INSERT INTO horarios (id_sector, id_cargo, id_turno, dia_semana, hora_entrada, hora_salida, legajo, updated_at, updated_by, es_cortado, hora_entrada_2, hora_salida_2)
+    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), ?, ?, ?, ?)
   `);
 
   const transaction = db.transaction((diasArr: number[]) => {
@@ -174,7 +199,7 @@ export function addHorario(
       if (res.c > 0) {
         throw new Error(`Ya existe una regla de horario para el día ${dia} con estos parámetros.`);
       }
-      insertStmt.run(id_sector, id_cargo, id_turno, dia, hora_entrada, hora_salida, legajo, adminName);
+      insertStmt.run(id_sector, id_cargo, id_turno, dia, hora_entrada, hora_salida, legajo, adminName, es_cortado, hora_entrada_2, hora_salida_2);
     }
   });
 
@@ -195,7 +220,15 @@ export function removeHorario(id_horario: number): void {
   deleteStmt.run(id_horario);
 }
 
-export function updateHorario(id_horario: number, hora_entrada: string, hora_salida: string, adminName: string): void {
+export function updateHorario(
+  id_horario: number, 
+  hora_entrada: string, 
+  hora_salida: string, 
+  adminName: string,
+  es_cortado: number = 0,
+  hora_entrada_2: string | null = null,
+  hora_salida_2: string | null = null
+): void {
   const db = getDb();
   
   const checkStmt = db.prepare('SELECT COUNT(*) as c FROM horarios WHERE id_horario = ?');
@@ -205,18 +238,26 @@ export function updateHorario(id_horario: number, hora_entrada: string, hora_sal
     throw new Error('La regla de horario no existe.');
   }
 
-  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?');
-  updateStmt.run(hora_entrada, hora_salida, adminName, id_horario);
+  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ?, es_cortado = ?, hora_entrada_2 = ?, hora_salida_2 = ? WHERE id_horario = ?');
+  updateStmt.run(hora_entrada, hora_salida, adminName, es_cortado, hora_entrada_2, hora_salida_2, id_horario);
 }
 
-export function batchUpdateHorarios(id_horarios: number[], hora_entrada: string, hora_salida: string, adminName: string): void {
+export function batchUpdateHorarios(
+  id_horarios: number[], 
+  hora_entrada: string, 
+  hora_salida: string, 
+  adminName: string,
+  es_cortado: number = 0,
+  hora_entrada_2: string | null = null,
+  hora_salida_2: string | null = null
+): void {
   const db = getDb();
   
-  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?');
+  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ?, es_cortado = ?, hora_entrada_2 = ?, hora_salida_2 = ? WHERE id_horario = ?');
   
   const transaction = db.transaction((ids: number[]) => {
     for (const id of ids) {
-      updateStmt.run(hora_entrada, hora_salida, adminName, id);
+      updateStmt.run(hora_entrada, hora_salida, adminName, es_cortado, hora_entrada_2, hora_salida_2, id);
     }
   });
   

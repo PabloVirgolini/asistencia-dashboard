@@ -86,7 +86,8 @@ export function PlanificadorTurnos() {
           <GrillaAsignacion
             personal={personalPlanificable}
             turnosBase={turnosBase}
-            asignaciones={asignaciones}
+            sectores={sectores}
+            asignaciones={asignaciones as any}
             onSelectTurno={handleSelectTurno}
             onSelectMasivo={handleSelectMasivo}
             isLoading={isLoading}

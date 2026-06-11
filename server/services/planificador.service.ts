@@ -1,3 +1,9 @@
+/**
+ * @module PlanificadorService
+ * @description
+ * Servicio encargado del Planificador Semanal Ágil. Se encarga de proveer 
+ * el listado de personal disponible y persistir las asignaciones masivas de turnos y excepciones.
+ */
 import { getDb } from '../db/database';
 
 export interface PersonaPlanificable {
@@ -54,12 +60,12 @@ export function getPersonalPlanificable(sector: string, fecha_inicio: string, fe
   }));
 }
 
-export function savePlanificacionMasiva(asignaciones: { legajo: string, id_turno: number, fecha_inicio: string, fecha_fin: string }[]): void {
+export function savePlanificacionMasiva(asignaciones: { legajo: string, id_turno: number | null, fecha_inicio: string, fecha_fin: string, es_excepcional?: number, hora_entrada_excepcional?: string, hora_salida_excepcional?: string, id_sector_excepcional?: number }[]): void {
   const db = getDb();
   
   // Realizar inserción en lote (Transaction)
   const insert = db.transaction((asignacionesList) => {
-    const stmt = db.prepare('INSERT INTO historial_turnos (legajo, id_turno, fecha_inicio, fecha_fin) VALUES (?, ?, ?, ?)');
+    const stmt = db.prepare('INSERT INTO historial_turnos (legajo, id_turno, fecha_inicio, fecha_fin, es_excepcional, hora_entrada_excepcional, hora_salida_excepcional, id_sector_excepcional) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
     
     for (const asig of asignacionesList) {
       // 1. Borrar cualquier planificación previa que este empleado pudiera tener en estas fechas para no duplicar
@@ -69,7 +75,16 @@ export function savePlanificacionMasiva(asignaciones: { legajo: string, id_turno
       `).run(asig.legajo, asig.fecha_inicio, asig.fecha_fin);
 
       // 2. Insertar la nueva
-      stmt.run(asig.legajo, asig.id_turno, asig.fecha_inicio, asig.fecha_fin);
+      stmt.run(
+        asig.legajo, 
+        asig.id_turno, 
+        asig.fecha_inicio, 
+        asig.fecha_fin, 
+        asig.es_excepcional || 0, 
+        asig.hora_entrada_excepcional || null, 
+        asig.hora_salida_excepcional || null, 
+        asig.id_sector_excepcional || null
+      );
     }
   });
 

@@ -1,0 +1,63 @@
+import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { adminProcedure } from "../../_core/trpc";
+import { 
+  getActivePersonal, getCargos, insertCargo, updateCargo, deleteCargo, 
+  insertPersonal, updatePersonal, deletePersonal 
+} from "../../services/personal.service";
+
+export const personalProcedures = {
+  getPersonal: adminProcedure.query(() => {
+      return getActivePersonal();
+  }),
+
+  getCargos: adminProcedure.query(() => {
+      return getCargos();
+  }),
+
+  addCargo: adminProcedure
+    .input(z.object({ descripcion: z.string().min(1) }))
+    .mutation(({ input }) => {
+      insertCargo(input.descripcion);
+      return { success: true };
+    }),
+
+  editCargo: adminProcedure
+    .input(z.object({ id_cargo: z.number(), descripcion: z.string().min(1) }))
+    .mutation(({ input }) => {
+      updateCargo(input.id_cargo, input.descripcion);
+      return { success: true };
+    }),
+
+  removeCargo: adminProcedure
+    .input(z.object({ id_cargo: z.number() }))
+    .mutation(({ input }) => {
+      try {
+        deleteCargo(input.id_cargo);
+        return { success: true };
+      } catch (e: any) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+      }
+    }),
+
+  addPerson: adminProcedure
+    .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), cargo_id: z.number(), es_rotativo: z.number().default(0) }))
+    .mutation(({ input }) => {
+      insertPersonal(input.legajo, input.nombre, input.sector, input.cargo_id, input.es_rotativo);
+      return { success: true };
+    }),
+
+  editPerson: adminProcedure
+    .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), activo: z.number(), cargo_id: z.number().nullable().optional(), es_rotativo: z.number().default(0) }))
+    .mutation(({ input }) => {
+      updatePersonal(input.legajo, input.nombre, input.sector, input.activo, input.cargo_id || 1, input.es_rotativo);
+      return { success: true };
+    }),
+
+  removePerson: adminProcedure
+    .input(z.object({ legajo: z.string() }))
+    .mutation(({ input }) => {
+      deletePersonal(input.legajo);
+      return { success: true };
+    }),
+};

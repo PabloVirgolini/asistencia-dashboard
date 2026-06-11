@@ -1,3 +1,9 @@
+/**
+ * @module NovedadesService
+ * @description
+ * Servicio encargado de gestionar las novedades (vacaciones, ausencias, ART, francos)
+ * para el personal. Provee las altas, bajas y listados de las novedades.
+ */
 import { getDb } from '../db/database';
 
 export interface NovedadRecord {
