@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { trpc } from '../utils/trpc';
-import toast from 'react-hot-toast';
+import { trpc } from '../lib/trpc';
+import { toast } from 'sonner';
 
 export function useAdminNovedades() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: novedades = [], refetch, isLoading } = trpc.getNovedades.useQuery();
-  const { data: personalActivo = [] } = trpc.getActivePersonal.useQuery({ sector: 'todos' });
+  const { data: novedades = [], refetch, isLoading } = trpc.admin.getNovedades.useQuery();
+  const { data: personalActivo = [] } = trpc.admin.getPersonal.useQuery();
 
-  const addMutation = trpc.addNovedad.useMutation({
+  const addMutation = trpc.admin.addNovedad.useMutation({
     onSuccess: () => {
       toast.success('Novedad registrada exitosamente');
       refetch();
@@ -19,7 +19,7 @@ export function useAdminNovedades() {
     }
   });
 
-  const removeMutation = trpc.removeNovedad.useMutation({
+  const removeMutation = trpc.admin.removeNovedad.useMutation({
     onSuccess: () => {
       toast.success('Novedad eliminada');
       refetch();

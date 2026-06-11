@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { trpc } from '../utils/trpc';
-import toast from 'react-hot-toast';
+import { trpc } from '../lib/trpc';
+import { toast } from 'sonner';
 
 export function usePlanificadorSemanal() {
   const [sector, setSector] = useState<string>('');
@@ -10,15 +10,15 @@ export function usePlanificadorSemanal() {
   // Estado local para almacenar qué turno seleccionó el admin para cada empleado
   const [asignaciones, setAsignaciones] = useState<Record<string, number>>({});
 
-  const { data: sectores = [] } = trpc.getSectores.useQuery();
-  const { data: turnosBase = [] } = trpc.getTurnosHorarios.useQuery();
+  const { data: sectores = [] } = trpc.attendance.getSectors.useQuery();
+  const { data: turnosBase = [] } = trpc.admin.getTurnosHorarios.useQuery();
   
-  const { data: personalPlanificable = [], isLoading, refetch } = trpc.getPlanificable.useQuery(
+  const { data: personalPlanificable = [], isLoading, refetch } = trpc.admin.getPlanificable.useQuery(
     { sector, fecha_inicio: fechaInicio, fecha_fin: fechaFin },
     { enabled: !!sector && !!fechaInicio && !!fechaFin }
   );
 
-  const saveMutation = trpc.savePlanificacion.useMutation({
+  const saveMutation = trpc.admin.savePlanificacion.useMutation({
     onSuccess: () => {
       toast.success('Planificación guardada exitosamente');
       refetch();
