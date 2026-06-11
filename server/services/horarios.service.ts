@@ -38,14 +38,21 @@ export function addTurnoHorario(descripcion: string): void {
 
 export function removeTurnoHorario(id_turno: number): void {
   const db = getDb();
-  const countStmt = db.prepare('SELECT COUNT(*) as c FROM horarios WHERE id_turno = ?');
-  const result = countStmt.get(id_turno) as { c: number };
-  if (result.c > 0) {
-    throw new Error('No se puede eliminar el turno porque tiene reglas de horario asignadas.');
+  
+  const checkStmt = db.prepare('SELECT COUNT(*) as count FROM horarios WHERE id_turno = ?');
+  const result: any = checkStmt.get(id_turno);
+  if (result.count > 0) {
+    throw new Error('No se puede eliminar el turno porque está en uso en las reglas de horarios');
   }
-
+  
   const stmt = db.prepare('DELETE FROM turnos_horarios WHERE id_turno = ?');
   stmt.run(id_turno);
+}
+
+export function updateTurnoHorario(id_turno: number, descripcion: string): void {
+  const db = getDb();
+  const stmt = db.prepare('UPDATE turnos_horarios SET descripcion = ? WHERE id_turno = ?');
+  stmt.run(descripcion, id_turno);
 }
 
 export function getHorariosReglas(): any[] {

@@ -7,7 +7,7 @@ import MatrizHorarios from './AdminTurnos/MatrizHorarios';
 export default function AdminTurnos() {
   const { queries, mutations } = useAdminTurnos();
   const { turnos, isTurnosLoading, reglas, isReglasLoading, sectores, sectoresCargos, cargosData, personal } = queries;
-  const { addTurno, removeTurno, addRegla, removeRegla, updateHorario, batchUpdate, duplicateSector, duplicateCargo } = mutations;
+  const { addTurno, removeTurno, updateTurnoHorario, addRegla, removeRegla, updateHorario, batchUpdate, duplicateSector, duplicateCargo } = mutations;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-12 animate-in fade-in duration-500">
@@ -16,6 +16,7 @@ export default function AdminTurnos() {
         turnos={turnos}
         isLoading={isTurnosLoading}
         onAddTurno={async (desc) => { await addTurno.mutateAsync({ descripcion: desc }); }}
+        onUpdateTurno={async (id, desc) => { await updateTurnoHorario.mutateAsync({ id_turno: id, descripcion: desc }); }}
         onRemoveTurno={async (id) => { 
           if(confirm('¿Seguro que deseas eliminar este turno? Podría afectar a las reglas asociadas.')) {
             await removeTurno.mutateAsync({ id_turno: id }); 

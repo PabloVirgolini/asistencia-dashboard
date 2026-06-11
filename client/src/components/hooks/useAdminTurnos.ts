@@ -33,6 +33,15 @@ export function useAdminTurnos() {
     }
   });
 
+  const updateTurnoHorario = trpc.admin.updateTurnoHorario.useMutation({
+    onSuccess: () => {
+      toast.success('Turno actualizado exitosamente');
+      trpcContext.admin.getTurnosHorarios.invalidate();
+      trpcContext.admin.getHorariosReglas.invalidate();
+    },
+    onError: (err: any) => toast.error(`Error al actualizar turno: ${err.message}`)
+  });
+
   const addRegla = trpc.admin.addHorario.useMutation({
     onSuccess: () => {
       trpcContext.admin.getHorariosReglas.invalidate();
@@ -113,6 +122,7 @@ export function useAdminTurnos() {
       batchUpdate,
       duplicateSector,
       duplicateCargo,
+      updateTurnoHorario,
     }
   };
 }

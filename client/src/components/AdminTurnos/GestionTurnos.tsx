@@ -15,11 +15,13 @@ interface GestionTurnosProps {
   isLoading: boolean;
   onAddTurno: (descripcion: string) => Promise<void>;
   onRemoveTurno: (id: number) => Promise<void>;
+  onUpdateTurno?: (id: number, descripcion: string) => Promise<void>;
 }
 
-export default function GestionTurnos({ turnos, isLoading, onAddTurno, onRemoveTurno }: GestionTurnosProps) {
+export default function GestionTurnos({ turnos, isLoading, onAddTurno, onUpdateTurno, onRemoveTurno }: GestionTurnosProps) {
   const [nuevoTurnoDesc, setNuevoTurnoDesc] = useState('');
   const [selectedTurnoParaEliminar, setSelectedTurnoParaEliminar] = useState<string>('');
+  const [editTurnoDesc, setEditTurnoDesc] = useState('');
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,13 +64,17 @@ export default function GestionTurnos({ turnos, isLoading, onAddTurno, onRemoveT
 
           <div className="space-y-3 p-4 bg-slate-50/50 rounded-xl border border-slate-100">
             <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-              <Trash2 className="w-4 h-4 text-red-500" /> Eliminar Turno
+              <Plus className="w-4 h-4 text-indigo-500" /> Modificar o Eliminar Turno
             </h3>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1">
-                <Select value={selectedTurnoParaEliminar} onValueChange={setSelectedTurnoParaEliminar}>
+                <Select value={selectedTurnoParaEliminar} onValueChange={(val) => {
+                  setSelectedTurnoParaEliminar(val);
+                  const t = turnos?.find(t => t.id_turno.toString() === val);
+                  if (t) setEditTurnoDesc(t.descripcion);
+                }}>
                   <SelectTrigger className="bg-white shadow-sm border-slate-200">
-                    <SelectValue placeholder="Seleccionar turno a eliminar..." />
+                    <SelectValue placeholder="Seleccionar turno..." />
                   </SelectTrigger>
                   <SelectContent>
                     {turnos?.map((t) => (
@@ -77,21 +83,46 @@ export default function GestionTurnos({ turnos, isLoading, onAddTurno, onRemoveT
                   </SelectContent>
                 </Select>
               </div>
-              <Button 
-                type="button"
-                variant="outline"
-                className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 w-full sm:w-auto transition-colors"
-                disabled={!selectedTurnoParaEliminar}
-                onClick={async () => {
-                  if (selectedTurnoParaEliminar) {
-                    await onRemoveTurno(parseInt(selectedTurnoParaEliminar));
-                    setSelectedTurnoParaEliminar('');
-                  }
-                }}
-              >
-                <Trash2 className="w-4 h-4 mr-2" /> Eliminar
-              </Button>
             </div>
+            
+            {selectedTurnoParaEliminar && (
+              <div className="flex flex-col sm:flex-row gap-2 mt-2 pt-2 border-t border-slate-200">
+                <Input 
+                  value={editTurnoDesc}
+                  onChange={e => setEditTurnoDesc(e.target.value)}
+                  placeholder="Nuevo nombre..."
+                  className="bg-white shadow-sm border-slate-200 focus-visible:ring-indigo-500 flex-1"
+                />
+                <Button 
+                  type="button"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+                  disabled={!editTurnoDesc.trim() || editTurnoDesc === turnos?.find(t => t.id_turno.toString() === selectedTurnoParaEliminar)?.descripcion}
+                  onClick={async () => {
+                    if (selectedTurnoParaEliminar && editTurnoDesc.trim()) {
+                      await onUpdateTurno?.(parseInt(selectedTurnoParaEliminar), editTurnoDesc.trim());
+                      setSelectedTurnoParaEliminar('');
+                      setEditTurnoDesc('');
+                    }
+                  }}
+                >
+                  Actualizar
+                </Button>
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+                  onClick={async () => {
+                    if (selectedTurnoParaEliminar) {
+                      await onRemoveTurno(parseInt(selectedTurnoParaEliminar));
+                      setSelectedTurnoParaEliminar('');
+                      setEditTurnoDesc('');
+                    }
+                  }}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

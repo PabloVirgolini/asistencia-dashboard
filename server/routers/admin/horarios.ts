@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { adminProcedure } from "../../_core/trpc";
 import { 
-  getTurnosHorarios, getTurnosPorSector, addTurnoHorario, removeTurnoHorario, 
+  getTurnosHorarios, getTurnosPorSector, addTurnoHorario, removeTurnoHorario, updateTurnoHorario,
   getHorariosReglas, addHorario, updateHorario, removeHorario, batchUpdateHorarios, 
   duplicateSectorRules, duplicateCargoRules 
 } from "../../services/horarios.service";
@@ -29,6 +29,17 @@ export const horariosProcedures = {
       }
     }),
     
+  updateTurnoHorario: adminProcedure
+    .input(z.object({ id_turno: z.number(), descripcion: z.string().min(1) }))
+    .mutation(({ input }) => {
+      try {
+        updateTurnoHorario(input.id_turno, input.descripcion);
+        return { success: true };
+      } catch (e: any) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+      }
+    }),
+
   removeTurnoHorario: adminProcedure
     .input(z.object({ id_turno: z.number() }))
     .mutation(({ input }) => {
