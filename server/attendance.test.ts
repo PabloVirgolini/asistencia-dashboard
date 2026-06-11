@@ -1,9 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { getSectors } from "./services/personal.service";
 import {
-  getPresentesByDate,
-  getAusentesByDate,
-  getAttendanceSummary,
+  getAttendanceGroupedByTurno
 } from "./services/asistencia.service";
 import {
   isValidDate,
@@ -44,74 +42,28 @@ describe("Attendance Database Functions", () => {
     });
   });
 
-  describe("getPresentesByDate", () => {
-    it("debe retornar personas presentes para una fecha válida", () => {
-      const presentes = getPresentesByDate("2025-08-21");
-      expect(Array.isArray(presentes)).toBe(true);
+  describe("getAttendanceGroupedByTurno", () => {
+    it("debe retornar grupos de turnos y summary para una fecha válida", () => {
+      const result = getAttendanceGroupedByTurno("2026-06-11");
       
-      if (presentes.length > 0) {
-        expect(presentes[0]).toHaveProperty("legajo");
-        expect(presentes[0]).toHaveProperty("nombre");
-        expect(presentes[0]).toHaveProperty("sector");
-        expect(presentes[0]).toHaveProperty("primeraFichada");
-      }
-    });
-
-    it("debe retornar presentes filtrados por sector", () => {
-      const sectors = getSectors();
-      if (sectors.length > 0) {
-        const sectorDescripcion = sectors[0].descripcion;
-        const presentes = getPresentesByDate("2025-08-21", sectorDescripcion);
-        expect(Array.isArray(presentes)).toBe(true);
-      }
-    });
-  });
-
-  describe("getAusentesByDate", () => {
-    it("debe retornar personas ausentes para una fecha válida", () => {
-      const ausentes = getAusentesByDate("2025-08-21");
-      expect(Array.isArray(ausentes)).toBe(true);
+      expect(result).toHaveProperty("grupos");
+      expect(result).toHaveProperty("summary");
+      expect(Array.isArray(result.grupos)).toBe(true);
       
-      if (ausentes.length > 0) {
-        expect(ausentes[0]).toHaveProperty("legajo");
-        expect(ausentes[0]).toHaveProperty("nombre");
-        expect(ausentes[0]).toHaveProperty("sector");
-      }
-    });
-
-    it("debe retornar ausentes filtrados por sector", () => {
-      const sectors = getSectors();
-      if (sectors.length > 0) {
-        const sectorDescripcion = sectors[0].descripcion;
-        const ausentes = getAusentesByDate("2025-08-21", sectorDescripcion);
-        expect(Array.isArray(ausentes)).toBe(true);
-      }
-    });
-  });
-
-  describe("getAttendanceSummary", () => {
-    it("debe retornar un resumen válido de asistencia", () => {
-      const summary = getAttendanceSummary("2025-08-21");
+      const { summary } = result;
       expect(summary).toHaveProperty("totalActivos");
       expect(summary).toHaveProperty("presentes");
       expect(summary).toHaveProperty("ausentes");
-      expect(summary).toHaveProperty("porcentajePresentes");
-      expect(summary).toHaveProperty("porcentajeAusentes");
-
-      expect(summary.totalActivos).toBeGreaterThan(0);
-      expect(summary.presentes).toBeGreaterThanOrEqual(0);
-      expect(summary.ausentes).toBeGreaterThanOrEqual(0);
-      expect(summary.presentes + summary.ausentes).toBe(summary.totalActivos);
-      expect(summary.porcentajePresentes + summary.porcentajeAusentes).toBeLessThanOrEqual(100);
+      expect(summary).toHaveProperty("licencias");
+      expect(summary.totalActivos).toBeGreaterThanOrEqual(0);
     });
 
-    it("debe retornar resumen filtrado por sector", () => {
+    it("debe retornar resultados filtrados por sector", () => {
       const sectors = getSectors();
       if (sectors.length > 0) {
-        const sectorDescripcion = sectors[0].descripcion;
-        const summary = getAttendanceSummary("2025-08-21", sectorDescripcion);
-        expect(summary.totalActivos).toBeGreaterThanOrEqual(0);
-        expect(summary.presentes + summary.ausentes).toBe(summary.totalActivos);
+        const sectorId = sectors[0].idSector;
+        const result = getAttendanceGroupedByTurno("2026-06-11", sectorId.toString());
+        expect(Array.isArray(result.grupos)).toBe(true);
       }
     });
   });

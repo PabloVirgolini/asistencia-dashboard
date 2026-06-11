@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -12,11 +12,10 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
-import { AlertCircle, CheckCircle2, Users, UserCheck, UserX } from "lucide-react";
-import TablaPresentes from "@/components/TablaPresentes";
-import TablaAusentes from "@/components/TablaAusentes";
+import { AlertCircle } from "lucide-react";
 import SelectorFecha from "@/components/SelectorFecha";
 import ResumenDia from "@/components/ResumenDia";
+import GrupoTurnoAsistencia from "@/components/GrupoTurnoAsistencia";
 
 export default function AttendanceDashboard() {
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -26,13 +25,9 @@ export default function AttendanceDashboard() {
   const [nextUpdateTime, setNextUpdateTime] = useState<Date | null>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Obtener fecha de hoy
   const todayQuery = trpc.attendance.getTodayDate.useQuery();
-
-  // Obtener sectores disponibles
   const sectorsQuery = trpc.attendance.getSectors.useQuery();
 
-  // Obtener datos de asistencia
   const attendanceQuery = trpc.attendance.getByDate.useQuery(
     {
       date: selectedDate || todayQuery.data?.date || "",
@@ -44,14 +39,12 @@ export default function AttendanceDashboard() {
     }
   );
 
-  // Inicializar fecha de hoy (solo una vez)
   useEffect(() => {
     if (todayQuery.data?.date && !selectedDate) {
       setSelectedDate(todayQuery.data.date);
     }
   }, [todayQuery.data?.date]);
 
-  // Configurar actualización automática cada hora
   useEffect(() => {
     const calculateNextUpdateTime = () => {
       const now = new Date();
@@ -69,12 +62,10 @@ export default function AttendanceDashboard() {
 
       const timeUntilNextHour = nextUpdate.getTime() - Date.now();
 
-      // Limpiar timeout anterior si existe
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
       }
 
-      // Configurar nuevo timeout
       updateTimeoutRef.current = setTimeout(() => {
         attendanceQuery.refetch();
         scheduleNextUpdate();
@@ -83,7 +74,6 @@ export default function AttendanceDashboard() {
 
     scheduleNextUpdate();
 
-    // Cleanup
     return () => {
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
@@ -91,7 +81,6 @@ export default function AttendanceDashboard() {
     };
   }, []);
 
-  // Calcular tiempo hasta próxima actualización
   const calculateTimeRemaining = () => {
     if (!nextUpdateTime) return { minutes: 0, seconds: 0 };
     const now = new Date();
@@ -111,7 +100,6 @@ export default function AttendanceDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Encabezado */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -145,7 +133,6 @@ export default function AttendanceDashboard() {
             </div>
           </div>
 
-          {/* Controles */}
           <div className="flex gap-4 flex-wrap items-end mb-6">
             <div>
               <Label className="mb-2 block text-sm font-medium text-slate-700">Fecha</Label>
@@ -190,7 +177,6 @@ export default function AttendanceDashboard() {
           </div>
         </div>
 
-        {/* Mensajes de estado */}
         {isError && (
           <Card className="mb-6 border-red-200 bg-red-50">
             <CardContent className="pt-6 flex items-center gap-3">
@@ -211,23 +197,33 @@ export default function AttendanceDashboard() {
           </div>
         ) : attendanceQuery.data ? (
           <>
-            {/* Resumen del día */}
             <ResumenDia
               summary={attendanceQuery.data.summary}
               date={attendanceQuery.data.date}
               sector={attendanceQuery.data.sector}
             />
 
-            {/* Tablas de asistencia */}
             <div className="flex items-center justify-end mb-4">
               <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-md border border-slate-200 shadow-sm">
                 <Switch id="show-encargados" checked={showEncargados} onCheckedChange={setShowEncargados} />
                 <Label htmlFor="show-encargados" className="text-slate-600 font-medium cursor-pointer">Resaltar Encargados</Label>
               </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <TablaPresentes presentes={attendanceQuery.data.presentes} showEncargados={showEncargados} />
-              <TablaAusentes ausentes={attendanceQuery.data.ausentes} showEncargados={showEncargados} />
+
+            <div className="space-y-2">
+              {attendanceQuery.data.grupos.map((grupo) => (
+                <GrupoTurnoAsistencia 
+                  key={grupo.id_turno || 'fuera-de-turno'} 
+                  grupo={grupo} 
+                  showEncargados={showEncargados} 
+                />
+              ))}
+              
+              {attendanceQuery.data.grupos.length === 0 && (
+                <div className="text-center py-12 text-slate-500 bg-white rounded-lg border border-slate-200 border-dashed">
+                  No hay turnos ni fichadas para la fecha y sector seleccionados.
+                </div>
+              )}
             </div>
           </>
         ) : null}

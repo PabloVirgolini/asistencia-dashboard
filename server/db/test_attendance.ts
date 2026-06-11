@@ -1,19 +1,5 @@
-/**
- * @module AsistenciaService
- * @description
- * Servicio encargado de gestionar las fichadas, calcular tardanzas, y proveer
- * los reportes de asistencia agrupados por turnos.
- */
-import { getDb } from '../db/database';
+import { getDb } from './database';
 import { calcularLlegadaTarde } from '../utils/calculadoraTardanzas';
-
-export interface FichadaRecord {
-  nroFichada: number;
-  reloj: string;
-  hora: string;
-  legajo: string;
-  fichadaRepetida: number;
-}
 
 export interface AttendancePerson {
   legajo: string;
@@ -22,8 +8,8 @@ export interface AttendancePerson {
   cargo: string;
   nivel_criticidad: number;
   es_rotativo: boolean;
-  id_turno: number | null;
-  fichadas: string[];
+  id_turno: number | null; // El turno al que pertenece
+  fichadas: string[]; // Lista de horas de fichada
   llegadaTarde: boolean;
   novedad_activa: { tipo: string; observaciones: string } | null;
 }
@@ -36,35 +22,10 @@ export interface TurnoGroup {
   ausentes: AttendancePerson[];
   licencias: AttendancePerson[];
   tarde: AttendancePerson[];
-  fichadas_inesperadas: AttendancePerson[];
+  fichadas_inesperadas: AttendancePerson[]; // Presentes pero sin turno asignado
 }
 
-export interface AttendanceSummary {
-  totalActivos: number;
-  presentes: number;
-  ausentes: number;
-  licencias: number;
-  porcentajePresentes: number;
-  porcentajeAusentes: number;
-}
-
-/**
- * Obtiene las fichadas puras de un día específico
- */
-export function getFichadasByDate(date: string): FichadaRecord[] {
-  const db = getDb();
-  const stmt = db.prepare(
-    'SELECT nroFichada, reloj, hora, legajo, fichadaRepetida FROM fichadas WHERE hora >= ? AND hora < ? ORDER BY hora ASC'
-  );
-  const startOfDay = `${date} 00:00:00`;
-  const endOfDay = `${date} 23:59:59`;
-  return stmt.all(startOfDay, endOfDay) as FichadaRecord[];
-}
-
-/**
- * Obtiene la asistencia estructurada y agrupada por Turnos
- */
-export function getAttendanceGroupedByTurno(date: string, sector?: string, toleranciaMinutos: number = 0): { grupos: TurnoGroup[], summary: AttendanceSummary } {
+export function getAttendanceGroupedByTurno(date: string, sector?: string, toleranciaMinutos: number = 0): TurnoGroup[] {
   const db = getDb();
   
   const jsDate = new Date(date + 'T00:00:00');
@@ -91,7 +52,7 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
   
   const personal = db.prepare(queryPersonal).all(...paramsPersonal) as any[];
 
-  // 2. Obtener Historial de Turnos (para rotativos)
+  // 2. Obtener Historial de Turnos (para rotativos) que solapen la fecha
   const historialTurnos = db.prepare(`
     SELECT legajo, id_turno 
     FROM historial_turnos 
@@ -116,9 +77,10 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
     ORDER BY hora ASC
   `).all(startOfDay, endOfDay) as any[];
 
-  // Diccionarios
+  // Diccionarios para acceso rápido
   const turnosDict = db.prepare(`SELECT id_turno, descripcion FROM turnos_horarios`).all() as any[];
-  
+  const turnosMap = new Map(turnosDict.map(t => [t.id_turno, t.descripcion]));
+
   const historialMap = new Map(historialTurnos.map(h => [h.legajo, h.id_turno]));
   
   const novedadesMap = new Map();
@@ -128,39 +90,37 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
 
   const fichadasMap = new Map<string, string[]>();
   fichadas.forEach(f => {
-    // Los relojes agregan un prefijo (ej. 10 o 20) al legajo, por lo que 411 llega como 10411.
-    // Usamos módulo 10000 para extraer el legajo real.
-    const fLegajoInt = parseInt(f.legajo, 10);
-    const legajoReal = isNaN(fLegajoInt) ? f.legajo : (fLegajoInt % 10000).toString();
-    
-    if (!fichadasMap.has(legajoReal)) fichadasMap.set(legajoReal, []);
-    fichadasMap.get(legajoReal)!.push(f.hora);
+    if (!fichadasMap.has(f.legajo)) fichadasMap.set(f.legajo, []);
+    fichadasMap.get(f.legajo)!.push(f.hora);
   });
 
   // Procesar cada empleado
   const procesados: AttendancePerson[] = personal.map(p => {
-    const legajoStr = p.legajo.toString();
     let id_turno: number | null = null;
 
-    if (p.es_rotativo === 1 || p.es_rotativo === '1') {
-      id_turno = historialMap.get(legajoStr) || null;
+    if (p.es_rotativo) {
+      // Rotativo: Sacar del historial de turnos
+      id_turno = historialMap.get(p.legajo) || null;
     } else {
+      // Fijo: Inferir desde su regla general (Sector + Cargo)
+      // Buscamos si hay un horario específico para su sector y cargo
       const matchingHorarios = horarios.filter(h => 
         h.sector_id === p.sectorPertenencia && 
         (h.cargo_id === p.cargo_id || h.cargo_id === null)
       );
       if (matchingHorarios.length > 0) {
+        // Tomamos el primer turno configurado
         id_turno = matchingHorarios[0].id_turno;
       }
     }
 
-    const susFichadas = fichadasMap.get(legajoStr) || [];
+    const susFichadas = fichadasMap.get(p.legajo) || [];
     let llegadaTarde = false;
 
     if (id_turno !== null && susFichadas.length > 0) {
       const susHorarios = horarios.filter(h => h.id_turno === id_turno);
       llegadaTarde = calcularLlegadaTarde(
-        { legajo: legajoStr, sectorPertenencia: p.sectorPertenencia, cargo_id: p.cargo_id, primeraFichada: susFichadas[0] },
+        { legajo: p.legajo, sectorPertenencia: p.sectorPertenencia, cargo_id: p.cargo_id, primeraFichada: susFichadas[0] },
         susHorarios,
         new Date(jsDate),
         toleranciaMinutos
@@ -168,21 +128,23 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
     }
 
     return {
-      legajo: legajoStr,
+      legajo: p.legajo,
       nombre: p.nombre,
       sector: p.sector || 'Sin Sector',
       cargo: p.cargo || 'Sin Cargo',
       nivel_criticidad: p.nivel_criticidad || 0,
-      es_rotativo: p.es_rotativo === 1 || p.es_rotativo === '1',
+      es_rotativo: p.es_rotativo === 1,
       id_turno,
       fichadas: susFichadas,
       llegadaTarde,
-      novedad_activa: novedadesMap.get(legajoStr) || null
+      novedad_activa: novedadesMap.get(p.legajo) || null
     };
   });
 
+  // Agrupar por Turno
   const gruposMap = new Map<number | null, TurnoGroup>();
 
+  // Inicializar grupos base (incluyendo Sin Turno)
   gruposMap.set(null, {
     id_turno: null,
     nombre_turno: 'Fuera de Turno / Inesperados',
@@ -207,10 +169,6 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
     });
   });
 
-  let totalPresentes = 0;
-  let totalAusentes = 0;
-  let totalLicencias = 0;
-
   procesados.forEach(p => {
     const group = gruposMap.get(p.id_turno) || gruposMap.get(null)!;
     
@@ -218,43 +176,27 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
       group.esperados += 1;
       
       if (p.fichadas.length > 0) {
+        group.presentes.push(p);
         if (p.llegadaTarde) {
           group.tarde.push(p);
-        } else {
-          group.presentes.push(p);
         }
-        totalPresentes++;
       } else if (p.novedad_activa) {
         group.licencias.push(p);
-        totalLicencias++;
       } else {
         group.ausentes.push(p);
-        totalAusentes++;
       }
     } else {
+      // Fuera de Turno
       if (p.fichadas.length > 0) {
         group.fichadas_inesperadas.push(p);
-        totalPresentes++;
       }
     }
   });
 
-  const gruposFiltrados = Array.from(gruposMap.values()).filter(g => 
+  // Filtrar grupos que no tienen a nadie
+  const result = Array.from(gruposMap.values()).filter(g => 
     g.esperados > 0 || g.fichadas_inesperadas.length > 0
   );
 
-  const totalActivos = personal.length;
-  const porcentajePresentes = totalActivos > 0 ? Math.round((totalPresentes / totalActivos) * 100) : 0;
-  const porcentajeAusentes = totalActivos > 0 ? 100 - porcentajePresentes : 0;
-
-  const summary: AttendanceSummary = {
-    totalActivos,
-    presentes: totalPresentes,
-    ausentes: totalAusentes,
-    licencias: totalLicencias,
-    porcentajePresentes,
-    porcentajeAusentes
-  };
-
-  return { grupos: gruposFiltrados, summary };
+  return result;
 }

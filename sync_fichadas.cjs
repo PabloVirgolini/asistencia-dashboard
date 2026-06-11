@@ -15,7 +15,11 @@ try {
   db.exec('DELETE FROM fichadas');
   
   console.log('Importando fichadas recientes desde disco T: ...');
-  const info = db.prepare('INSERT INTO fichadas SELECT * FROM remoteDB.fichadas').run();
+  const info = db.prepare(`
+    INSERT INTO fichadas (nroFichada, reloj, hora, legajo, fichadaRepetida)
+    SELECT nroFichada, reloj, hora, legajo, fichadaRepetida 
+    FROM remoteDB.fichadas
+  `).run();
   
   console.log(`¡Sincronización completa! Se importaron ${info.changes} fichadas.`);
 } catch (error) {

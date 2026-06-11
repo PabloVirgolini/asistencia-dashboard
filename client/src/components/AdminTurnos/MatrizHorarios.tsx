@@ -16,6 +16,7 @@ interface MatrizHorariosProps {
   reglas: any[];
   isReglasLoading: boolean;
   cargosData: any[];
+  sectoresCargos?: any[];
   personal: any[];
   mutations: {
     removeRegla: any;
@@ -27,7 +28,7 @@ interface MatrizHorariosProps {
 }
 
 export default function MatrizHorarios({
-  reglas, isReglasLoading, cargosData, personal, mutations
+  reglas, isReglasLoading, cargosData, sectoresCargos, personal, mutations
 }: MatrizHorariosProps) {
   
   const ctx = useMatrizHorarios(reglas, mutations);
@@ -258,7 +259,12 @@ export default function MatrizHorarios({
       <Modales 
         {...ctx}
         reglas={reglas}
+        uniqueSectores={ctx.uniqueSectores}
         cargosData={cargosData}
+        sectoresCargos={sectoresCargos}
+        handleDuplicateSector={ctx.handleDuplicateSector}
+        handleDuplicateCargo={ctx.handleDuplicateCargo}
+        handleBatchUpdateSubmit={ctx.handleBatchUpdateSubmit}
       />
     </>
   );

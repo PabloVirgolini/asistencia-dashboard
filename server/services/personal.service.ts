@@ -155,10 +155,20 @@ export function insertPersonal(legajo: string, nombre: string, sectorPertenencia
   stmt.run(legajo, nombre, enCapacitacion ? '1' : '0', sectorPertenencia, cargo_id, es_rotativo);
 }
 
-export function updatePersonal(legajo: string, nombre: string, sectorPertenencia: string, activo: number, cargo_id: number, es_rotativo: number, enCapacitacion: boolean = false): void {
+export function updatePersonal(originalLegajo: string, legajo: string, nombre: string, sectorPertenencia: string, activo: number, cargo_id: number, es_rotativo: number, enCapacitacion: boolean = false): void {
   const db = getDb();
-  const stmt = db.prepare('UPDATE personal SET nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ?, es_rotativo = ?, enCapacitacion = ? WHERE legajo = ?');
-  stmt.run(nombre, sectorPertenencia, activo, cargo_id, es_rotativo, enCapacitacion ? '1' : '0', legajo);
+  if (originalLegajo !== legajo) {
+    db.transaction(() => {
+      db.prepare('UPDATE personal SET legajo = ?, nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ?, es_rotativo = ?, enCapacitacion = ? WHERE legajo = ?')
+        .run(legajo, nombre, sectorPertenencia, activo, cargo_id, es_rotativo, enCapacitacion ? '1' : '0', originalLegajo);
+      
+      db.prepare('UPDATE historial_turnos SET legajo = ? WHERE legajo = ?').run(legajo, originalLegajo);
+      db.prepare('UPDATE novedades_licencias SET legajo = ? WHERE legajo = ?').run(legajo, originalLegajo);
+    })();
+  } else {
+    const stmt = db.prepare('UPDATE personal SET nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ?, es_rotativo = ?, enCapacitacion = ? WHERE legajo = ?');
+    stmt.run(nombre, sectorPertenencia, activo, cargo_id, es_rotativo, enCapacitacion ? '1' : '0', originalLegajo);
+  }
 }
 
 export function deletePersonal(legajo: string): void {

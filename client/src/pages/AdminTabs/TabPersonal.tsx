@@ -103,6 +103,7 @@ export function TabPersonal() {
     try {
       if (editingPerson) {
         await editPersonMutation.mutateAsync({
+          originalLegajo: editingPerson,
           legajo,
           nombre,
           sector: personaSector,
@@ -188,7 +189,7 @@ export function TabPersonal() {
             <form onSubmit={handleSavePerson} className="space-y-4">
               <div>
                 <Label>Legajo (Único)</Label>
-                <Input value={legajo} onChange={e => setLegajo(e.target.value)} disabled={!!editingPerson} required />
+                <Input value={legajo} onChange={e => setLegajo(e.target.value)} required />
               </div>
               <div>
                 <Label>Nombre Completo</Label>
@@ -268,7 +269,7 @@ export function TabPersonal() {
             onChange={(e) => setFilterText(e.target.value)}
           />
         </div>
-        {isPersonalLoading ? <Loader2 className="animate-spin mx-auto my-8 text-indigo-600" /> : (
+        {!personal ? <Loader2 className="animate-spin mx-auto my-8 text-indigo-600" /> : (
           <div className="border rounded-md">
             <Table>
               <TableHeader>

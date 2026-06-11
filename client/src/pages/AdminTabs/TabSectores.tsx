@@ -192,7 +192,7 @@ export function TabSectores() {
             onChange={(e) => setSectorFilterText(e.target.value)}
           />
         </div>
-        {isSectoresLoading ? <Loader2 className="animate-spin mx-auto my-8 text-indigo-600" /> : (
+        {!sectores ? <Loader2 className="animate-spin mx-auto my-8 text-indigo-600" /> : (
           <div className="border rounded-md">
           <Table>
             <TableHeader>

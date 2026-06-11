@@ -139,7 +139,7 @@ export function TabCargos() {
             onChange={(e) => setCargoFilterText(e.target.value)}
           />
         </div>
-        {isCargosLoading ? <Loader2 className="animate-spin mx-auto my-8 text-indigo-600" /> : (
+        {!cargos ? <Loader2 className="animate-spin mx-auto my-8 text-indigo-600" /> : (
           <div className="border rounded-md">
           <Table>
             <TableHeader>

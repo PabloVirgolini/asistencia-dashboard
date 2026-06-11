@@ -21,8 +21,19 @@ export function Modales({
   
   duplicateCargoModalOpen, setDuplicateCargoModalOpen,
   duplicateCargoSource, duplicateCargoTarget, setDuplicateCargoTarget,
-  cargosData, handleDuplicateCargo
+  cargosData, sectoresCargos, handleDuplicateCargo
 }: any) {
+  
+  // Filtrar los cargos que pertenecen al sector de origen
+  const cargosPermitidosEnSector = React.useMemo(() => {
+    if (!duplicateCargoSource || !sectoresCargos) return cargosData;
+    const idsCargosDelSector = sectoresCargos
+      .filter((sc: any) => sc.id_sector === duplicateCargoSource.id_sector)
+      .map((sc: any) => sc.id_cargo);
+    
+    return cargosData?.filter((c: any) => idsCargosDelSector.includes(c.id_cargo));
+  }, [duplicateCargoSource, sectoresCargos, cargosData]);
+
   return (
     <>
       {/* Modal Edición en Lote */}
@@ -106,14 +117,14 @@ export function Modales({
           <DialogHeader>
             <DialogTitle>Replicar reglas de cargo</DialogTitle>
             <DialogDescription>
-              Copiar reglas del cargo "{duplicateCargoSource?.nombreCargo}" a otro cargo dentro del mismo sector.
+              Copiar reglas del cargo "{duplicateCargoSource?.nombreCargo}" a otro cargo habilitado en el mismo sector.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Select value={duplicateCargoTarget} onValueChange={setDuplicateCargoTarget}>
               <SelectTrigger><SelectValue placeholder="Seleccionar cargo destino..." /></SelectTrigger>
               <SelectContent>
-                {cargosData?.filter((c: any) => c.id_cargo !== duplicateCargoSource?.id_cargo).map((c: any) => (
+                {cargosPermitidosEnSector?.filter((c: any) => c.id_cargo !== duplicateCargoSource?.id_cargo).map((c: any) => (
                   <SelectItem key={c.id_cargo} value={c.id_cargo.toString()}>{c.descripcion}</SelectItem>
                 ))}
               </SelectContent>

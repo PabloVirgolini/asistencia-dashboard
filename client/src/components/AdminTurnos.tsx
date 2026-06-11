@@ -68,6 +68,7 @@ export default function AdminTurnos() {
         reglas={reglas}
         isReglasLoading={isReglasLoading}
         cargosData={cargosData}
+        sectoresCargos={sectoresCargos}
         personal={personal}
         mutations={{
           removeRegla,

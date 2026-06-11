@@ -67,7 +67,7 @@ export function MatrizListGenerales({
           </div>
         ) : (
           Object.entries(groupedGeneral).map(([turno, sectores]) => (
-            <TreeNode collapseToken={collapseToken} key={turno} title={turno} icon={Clock} defaultExpanded={true} rightContent={renderBatchDelete(sectores, `Turno ${turno}`)}>
+            <TreeNode collapseToken={collapseToken} key={turno} title={turno} icon={Clock} defaultExpanded={false} rightContent={renderBatchDelete(sectores, `Turno ${turno}`)}>
               {Object.entries(sectores as Record<string, any>).map(([sector, cargos]) => {
                 const sampleRule = Object.values(cargos as Record<string, any[]>)[0]?.[0];
                 const id_turno = sampleRule?.id_turno;
@@ -77,7 +77,7 @@ export function MatrizListGenerales({
                     key={sector} 
                     title={`Sector: ${sector}`} 
                     icon={Building} 
-                    defaultExpanded={true} 
+                    defaultExpanded={false} 
                     rightContent={
                       <div className="flex items-center gap-1">
                         {id_turno && id_sector && (
@@ -106,7 +106,7 @@ export function MatrizListGenerales({
                         key={cargoName} 
                         title={`Cargo: ${cargoName}`} 
                         icon={Briefcase} 
-                        defaultExpanded={true} 
+                        defaultExpanded={false} 
                         rightContent={
                           <div className="flex items-center gap-1">
                             {id_turno && id_sector && cargoObj && (

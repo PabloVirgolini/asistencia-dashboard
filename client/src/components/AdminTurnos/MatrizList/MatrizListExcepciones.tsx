@@ -50,12 +50,12 @@ export function MatrizListExcepciones({
           </div>
         ) : (
           Object.entries(groupedExceptions).map(([turno, legajos]) => (
-            <TreeNode collapseToken={collapseToken} key={turno} title={turno} icon={Clock} isException defaultExpanded={true} rightContent={renderBatchDelete(legajos, `Turno ${turno}`)}>
+            <TreeNode collapseToken={collapseToken} key={turno} title={turno} icon={Clock} isException defaultExpanded={false} rightContent={renderBatchDelete(legajos, `Turno ${turno}`)}>
               {Object.entries(legajos as Record<string, any>).map(([legajo, rules]) => {
                 const person = personal?.find((p: any) => p.legajo === legajo);
                 const personName = person ? person.nombre : `Legajo ${legajo}`;
                 return (
-                  <TreeNode collapseToken={collapseToken} key={legajo} title={`${personName} (${legajo})`} icon={User} isException defaultExpanded={true} rightContent={renderBatchDelete(rules, `Empleado ${personName}`)}>
+                  <TreeNode collapseToken={collapseToken} key={legajo} title={`${personName} (${legajo})`} icon={User} isException defaultExpanded={false} rightContent={renderBatchDelete(rules, `Empleado ${personName}`)}>
                     <div className="py-2 pr-2 space-y-2.5">
                       {(rules as any[]).map(r => (
                           <div key={r.id_horario} className="flex items-center justify-between bg-white border border-amber-100 p-3 rounded-lg shadow-sm hover:border-amber-300 hover:shadow-md transition-all group">
