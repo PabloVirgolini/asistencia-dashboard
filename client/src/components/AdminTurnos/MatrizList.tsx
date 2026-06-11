@@ -19,6 +19,12 @@ interface MatrizListProps {
   setEditHoraEntrada: (val: string) => void;
   editHoraSalida: string;
   setEditHoraSalida: (val: string) => void;
+  editEsCortado: boolean;
+  setEditEsCortado: (val: boolean) => void;
+  editHoraEntrada2: string;
+  setEditHoraEntrada2: (val: string) => void;
+  editHoraSalida2: string;
+  setEditHoraSalida2: (val: string) => void;
   updateHorario: any;
   handleRemoveRegla: (id: number) => void;
   renderBatchDelete: (nodeData: any, name: string) => React.ReactNode;

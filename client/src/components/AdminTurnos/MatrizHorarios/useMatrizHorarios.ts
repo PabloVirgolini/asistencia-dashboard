@@ -17,6 +17,9 @@ export function useMatrizHorarios(reglas: any[], mutations: any) {
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [batchHoraEntrada, setBatchHoraEntrada] = useState('');
   const [batchHoraSalida, setBatchHoraSalida] = useState('');
+  const [batchEsCortado, setBatchEsCortado] = useState(false);
+  const [batchHoraEntrada2, setBatchHoraEntrada2] = useState('');
+  const [batchHoraSalida2, setBatchHoraSalida2] = useState('');
 
   // Filter and Group Reglas
   const [reglaFilter, setReglaFilter] = useState('');
@@ -53,10 +56,13 @@ export function useMatrizHorarios(reglas: any[], mutations: any) {
   const [duplicateCargoModalOpen, setDuplicateCargoModalOpen] = useState(false);
   const [duplicateCargoSource, setDuplicateCargoSource] = useState<{ id_turno: number, id_sector: number, id_cargo: number, nombreCargo: string } | null>(null);
   const [duplicateCargoTarget, setDuplicateCargoTarget] = useState<string>('');
-
+  
   const [editingRuleId, setEditingRuleId] = useState<number | null>(null);
-  const [editHoraEntrada, setEditHoraEntrada] = useState("");
-  const [editHoraSalida, setEditHoraSalida] = useState("");
+  const [editHoraEntrada, setEditHoraEntrada] = useState('');
+  const [editHoraSalida, setEditHoraSalida] = useState('');
+  const [editEsCortado, setEditEsCortado] = useState(false);
+  const [editHoraEntrada2, setEditHoraEntrada2] = useState('');
+  const [editHoraSalida2, setEditHoraSalida2] = useState('');
 
   const handleRemoveRegla = async (id: number) => {
     if (!confirm('¿Eliminar esta regla de horario?')) return;
@@ -114,11 +120,15 @@ export function useMatrizHorarios(reglas: any[], mutations: any) {
 
   const handleBatchUpdateSubmit = async () => {
     if(!batchHoraEntrada || !batchHoraSalida) return toast.error('Ingresa hora de entrada y salida');
+    if(batchEsCortado && (!batchHoraEntrada2 || !batchHoraSalida2)) return toast.error('Ingresa el segundo bloque horario');
     try {
       await batchUpdate.mutateAsync({
-        ids: selectedRules,
+        id_horarios: selectedRules,
         hora_entrada: batchHoraEntrada,
-        hora_salida: batchHoraSalida
+        hora_salida: batchHoraSalida,
+        es_cortado: batchEsCortado ? 1 : 0,
+        hora_entrada_2: batchEsCortado ? batchHoraEntrada2 : null,
+        hora_salida_2: batchEsCortado ? batchHoraSalida2 : null
       });
       setBatchModalOpen(false);
       setIsBatchMode(false);
@@ -132,6 +142,9 @@ export function useMatrizHorarios(reglas: any[], mutations: any) {
     batchModalOpen, setBatchModalOpen,
     batchHoraEntrada, setBatchHoraEntrada,
     batchHoraSalida, setBatchHoraSalida,
+    batchEsCortado, setBatchEsCortado,
+    batchHoraEntrada2, setBatchHoraEntrada2,
+    batchHoraSalida2, setBatchHoraSalida2,
     reglaFilter, setReglaFilter,
     viewMode, setViewMode,
     collapseToken, setCollapseToken,
@@ -150,6 +163,9 @@ export function useMatrizHorarios(reglas: any[], mutations: any) {
     editingRuleId, setEditingRuleId,
     editHoraEntrada, setEditHoraEntrada,
     editHoraSalida, setEditHoraSalida,
+    editEsCortado, setEditEsCortado,
+    editHoraEntrada2, setEditHoraEntrada2,
+    editHoraSalida2, setEditHoraSalida2,
     handleRemoveRegla,
     handleRemoveBatch,
     handleDuplicateSector,

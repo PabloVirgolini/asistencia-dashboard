@@ -41,7 +41,10 @@ export default function AdminTurnos() {
                 id_turno: params.id_turno,
                 dias: params.dias,
                 hora_entrada: params.hora_entrada,
-                hora_salida: params.hora_salida
+                hora_salida: params.hora_salida,
+                es_cortado: params.es_cortado,
+                hora_entrada_2: params.hora_entrada_2,
+                hora_salida_2: params.hora_salida_2
               });
             }
           } else {
@@ -52,7 +55,10 @@ export default function AdminTurnos() {
               id_turno: params.id_turno,
               dias: params.dias,
               hora_entrada: params.hora_entrada,
-              hora_salida: params.hora_salida
+              hora_salida: params.hora_salida,
+              es_cortado: params.es_cortado,
+              hora_entrada_2: params.hora_entrada_2,
+              hora_salida_2: params.hora_salida_2
             });
           }
         }}

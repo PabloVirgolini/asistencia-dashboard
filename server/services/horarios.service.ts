@@ -245,7 +245,7 @@ export function updateHorario(
     throw new Error('La regla de horario no existe.');
   }
 
-  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ?, es_cortado = ?, hora_entrada_2 = ?, hora_salida_2 = ? WHERE id_horario = ?');
+  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime(\'now\', \'localtime\'), updated_by = ?, es_cortado = ?, hora_entrada_2 = ?, hora_salida_2 = ? WHERE id_horario = ?');
   updateStmt.run(hora_entrada, hora_salida, adminName, es_cortado, hora_entrada_2, hora_salida_2, id_horario);
 }
 
@@ -260,7 +260,7 @@ export function batchUpdateHorarios(
 ): void {
   const db = getDb();
   
-  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ?, es_cortado = ?, hora_entrada_2 = ?, hora_salida_2 = ? WHERE id_horario = ?');
+  const updateStmt = db.prepare('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime(\'now\', \'localtime\'), updated_by = ?, es_cortado = ?, hora_entrada_2 = ?, hora_salida_2 = ? WHERE id_horario = ?');
   
   const transaction = db.transaction((ids: number[]) => {
     for (const id of ids) {

@@ -146,10 +146,23 @@ export function MatrizListGenerales({
                               <div>
                                 <div className="font-bold text-slate-800 text-sm">{getDiaName(r.dia_semana)}</div>
                                 {editingRuleId === r.id_horario ? (
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <Input type="time" value={editHoraEntrada} onChange={e => setEditHoraEntrada(e.target.value)} className="h-7 w-24 text-xs" />
-                                    <span className="text-slate-300">→</span>
-                                    <Input type="time" value={editHoraSalida} onChange={e => setEditHoraSalida(e.target.value)} className="h-7 w-24 text-xs" />
+                                  <div className="flex flex-col gap-2 mt-1">
+                                    <div className="flex items-center gap-2">
+                                      <Input type="time" value={editHoraEntrada} onChange={e => setEditHoraEntrada(e.target.value)} className="h-7 w-24 text-xs" />
+                                      <span className="text-slate-300">→</span>
+                                      <Input type="time" value={editHoraSalida} onChange={e => setEditHoraSalida(e.target.value)} className="h-7 w-24 text-xs" />
+                                      <label className="flex items-center gap-1 ml-2 text-xs text-slate-600 cursor-pointer">
+                                        <input type="checkbox" className="rounded border-slate-300" checked={editEsCortado} onChange={e => setEditEsCortado(e.target.checked)} />
+                                        Cortado
+                                      </label>
+                                    </div>
+                                    {editEsCortado && (
+                                      <div className="flex items-center gap-2">
+                                        <Input type="time" value={editHoraEntrada2} onChange={e => setEditHoraEntrada2(e.target.value)} className="h-7 w-24 text-xs" />
+                                        <span className="text-slate-300">→</span>
+                                        <Input type="time" value={editHoraSalida2} onChange={e => setEditHoraSalida2(e.target.value)} className="h-7 w-24 text-xs" />
+                                      </div>
+                                    )}
                                   </div>
                                 ) : (
                                   <div className="flex flex-wrap items-center gap-1.5 mt-1">
@@ -184,7 +197,10 @@ export function MatrizListGenerales({
                                     updateHorario.mutate({
                                       id_horario: r.id_horario,
                                       hora_entrada: editHoraEntrada,
-                                      hora_salida: editHoraSalida
+                                      hora_salida: editHoraSalida,
+                                      es_cortado: editEsCortado ? 1 : 0,
+                                      hora_entrada_2: editEsCortado ? editHoraEntrada2 : null,
+                                      hora_salida_2: editEsCortado ? editHoraSalida2 : null
                                     }, { onSuccess: () => setEditingRuleId(null) });
                                   }} className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" disabled={updateHorario.isPending}>
                                     <Check className="w-4 h-4" />
@@ -195,7 +211,14 @@ export function MatrizListGenerales({
                                 </>
                               ) : (
                                 <>
-                                  <Button variant="ghost" size="icon" onClick={() => { setEditingRuleId(r.id_horario); setEditHoraEntrada(r.hora_entrada); setEditHoraSalida(r.hora_salida); }} className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
+                                  <Button variant="ghost" size="icon" onClick={() => { 
+                                    setEditingRuleId(r.id_horario); 
+                                    setEditHoraEntrada(r.hora_entrada); 
+                                    setEditHoraSalida(r.hora_salida);
+                                    setEditEsCortado(!!r.es_cortado);
+                                    setEditHoraEntrada2(r.hora_entrada_2 || '');
+                                    setEditHoraSalida2(r.hora_salida_2 || '');
+                                  }} className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors">
                                     <Pencil className="w-4 h-4" />
                                   </Button>
                                   <Button variant="ghost" size="icon" onClick={() => handleRemoveRegla(r.id_horario)} className="text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">

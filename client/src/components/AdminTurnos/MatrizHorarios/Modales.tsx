@@ -9,6 +9,9 @@ export function Modales({
   batchModalOpen, setBatchModalOpen,
   batchHoraEntrada, setBatchHoraEntrada,
   batchHoraSalida, setBatchHoraSalida,
+  batchEsCortado, setBatchEsCortado,
+  batchHoraEntrada2, setBatchHoraEntrada2,
+  batchHoraSalida2, setBatchHoraSalida2,
   handleBatchUpdateSubmit,
   selectedRules,
   
@@ -31,15 +34,35 @@ export function Modales({
               Se aplicarán estos horarios a todas las reglas seleccionadas. Los días de la semana se mantendrán.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
-            <div className="space-y-2">
-              <Label>Nueva Hora Entrada</Label>
-              <Input type="time" value={batchHoraEntrada} onChange={e => setBatchHoraEntrada(e.target.value)} />
+          <div className="py-4 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nueva Hora Entrada</Label>
+                <Input type="time" value={batchHoraEntrada} onChange={e => setBatchHoraEntrada(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Nueva Hora Salida</Label>
+                <Input type="time" value={batchHoraSalida} onChange={e => setBatchHoraSalida(e.target.value)} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Nueva Hora Salida</Label>
-              <Input type="time" value={batchHoraSalida} onChange={e => setBatchHoraSalida(e.target.value)} />
+            
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+              <input type="checkbox" id="batchEsCortado" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" checked={batchEsCortado} onChange={e => setBatchEsCortado(e.target.checked)} />
+              <Label htmlFor="batchEsCortado" className="cursor-pointer">Convertir a Turno Cortado</Label>
             </div>
+            
+            {batchEsCortado && (
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <div className="space-y-2">
+                  <Label className="text-xs text-slate-500">2da Hora Entrada</Label>
+                  <Input type="time" value={batchHoraEntrada2} onChange={e => setBatchHoraEntrada2(e.target.value)} className="h-8" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-slate-500">2da Hora Salida</Label>
+                  <Input type="time" value={batchHoraSalida2} onChange={e => setBatchHoraSalida2(e.target.value)} className="h-8" />
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setBatchModalOpen(false)}>Cancelar</Button>

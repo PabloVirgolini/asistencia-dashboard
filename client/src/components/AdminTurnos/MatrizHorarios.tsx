@@ -119,6 +119,12 @@ export default function MatrizHorarios({
               setEditHoraEntrada={ctx.setEditHoraEntrada}
               editHoraSalida={ctx.editHoraSalida}
               setEditHoraSalida={ctx.setEditHoraSalida}
+              editEsCortado={ctx.editEsCortado}
+              setEditEsCortado={ctx.setEditEsCortado}
+              editHoraEntrada2={ctx.editHoraEntrada2}
+              setEditHoraEntrada2={ctx.setEditHoraEntrada2}
+              editHoraSalida2={ctx.editHoraSalida2}
+              setEditHoraSalida2={ctx.setEditHoraSalida2}
               updateHorario={mutations.updateHorario}
               handleRemoveRegla={ctx.handleRemoveRegla}
               renderBatchDelete={renderBatchDelete}
