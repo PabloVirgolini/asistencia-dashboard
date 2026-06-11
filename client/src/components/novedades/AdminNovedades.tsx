@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Calendar, FileText, User } from 'lucide-react';
+import { Plus, Trash2, Calendar, FileText, User, Check, ChevronsUpDown } from 'lucide-react';
 import { useAdminNovedades } from '../../hooks/useAdminNovedades';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
+import { cn } from '../../lib/utils';
+import { toast } from 'sonner';
 
 export function AdminNovedades() {
   const { 
@@ -21,6 +25,7 @@ export function AdminNovedades() {
     observaciones: ''
   });
   const [customTipo, setCustomTipo] = useState('');
+  const [openCombobox, setOpenCombobox] = useState(false);
 
   const filteredNovedades = novedades.filter(n => 
     n.nombre_empleado?.toLowerCase().includes(filterText.toLowerCase()) ||
@@ -29,6 +34,10 @@ export function AdminNovedades() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.legajo) {
+      toast.error('Debe seleccionar un empleado');
+      return;
+    }
     const finalData = {
       ...formData,
       tipo: formData.tipo === 'Otro' ? customTipo : formData.tipo
@@ -131,21 +140,56 @@ export function AdminNovedades() {
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">×</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-2 flex flex-col">
                 <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
                   <User size={14} /> Empleado
                 </label>
-                <select
-                  required
-                  value={formData.legajo}
-                  onChange={e => setFormData({...formData, legajo: e.target.value})}
-                  className="w-full px-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option value="">Seleccione empleado...</option>
-                  {personalActivo.map(p => (
-                    <option key={p.legajo} value={p.legajo}>{p.nombre} ({p.legajo})</option>
-                  ))}
-                </select>
+                <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openCombobox}
+                      className="w-full justify-between font-normal text-slate-700 border-slate-200"
+                    >
+                      {formData.legajo
+                        ? (() => {
+                            const p = personalActivo.find((p) => p.legajo === formData.legajo);
+                            return p ? `${p.nombre} (${p.legajo})` : "Seleccione empleado...";
+                          })()
+                        : "Seleccione empleado..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[380px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar por nombre o legajo..." />
+                      <CommandList>
+                        <CommandEmpty>No se encontraron empleados.</CommandEmpty>
+                        <CommandGroup>
+                          {personalActivo.map((p) => (
+                            <CommandItem
+                              key={p.legajo}
+                              value={`${p.nombre} ${p.legajo}`}
+                              onSelect={() => {
+                                setFormData({ ...formData, legajo: p.legajo });
+                                setOpenCombobox(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.legajo === p.legajo ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {p.nombre} ({p.legajo})
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
