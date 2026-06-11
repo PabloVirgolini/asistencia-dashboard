@@ -39,6 +39,15 @@ export function usePlanificadorSemanal() {
     }
   });
 
+  const toggleCapacitacionMutation = trpc.admin.toggleCapacitacion.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
+    onError: (err) => {
+      toast.error(`Error al actualizar estado de capacitación: ${err.message}`);
+    }
+  });
+
   const handleSelectTurno = (legajo: string, asig: AsignacionType) => {
     setAsignaciones(prev => ({ ...prev, [legajo]: asig }));
   };
@@ -46,9 +55,7 @@ export function usePlanificadorSemanal() {
   const handleSelectMasivo = (asig: AsignacionType) => {
     const nuevasAsignaciones: Record<string, AsignacionType> = {};
     personalPlanificable.forEach(p => {
-      if (!p.novedad_activa) {
-        nuevasAsignaciones[p.legajo] = asig;
-      }
+      nuevasAsignaciones[p.legajo] = asig;
     });
     setAsignaciones(nuevasAsignaciones);
   };
@@ -73,6 +80,46 @@ export function usePlanificadorSemanal() {
     saveMutation.mutate({ asignaciones: payload });
   };
 
+  const handleResetPlan = () => {
+    setSector('');
+    setFechaInicio('');
+    setFechaFin('');
+    setAsignaciones({});
+  };
+
+  const trpcContext = trpc.useContext();
+  
+  const handleEditPlan = async (editSector: string, editFechaInicio: string, editFechaFin: string) => {
+    setSector(editSector);
+    setFechaInicio(editFechaInicio);
+    setFechaFin(editFechaFin);
+    
+    try {
+      const existingPlan = await trpcContext.client.admin.getPlanificacionGuardada.query({
+        sector: editSector,
+        fecha_inicio: editFechaInicio,
+        fecha_fin: editFechaFin
+      });
+      
+      const newAsignaciones: any = {};
+      existingPlan.forEach((p: any) => {
+        newAsignaciones[p.legajo] = {
+          id_turno: p.id_turno,
+          es_excepcional: p.es_excepcional === 1,
+          hora_entrada_excepcional: p.hora_entrada_excepcional,
+          hora_salida_excepcional: p.hora_salida_excepcional,
+          id_sector_excepcional: p.id_sector_excepcional
+        };
+      });
+      
+      setAsignaciones(newAsignaciones);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.error("Error loading existing plan", err);
+      toast.error('No se pudo cargar el plan existente.');
+    }
+  };
+
   return {
     sectores,
     turnosBase,
@@ -85,6 +132,10 @@ export function usePlanificadorSemanal() {
     handleSelectTurno,
     handleSelectMasivo,
     handleSave,
-    isSaving: saveMutation.isPending
+    isSaving: saveMutation.isPending,
+    toggleCapacitacion: toggleCapacitacionMutation.mutateAsync,
+    setAsignaciones,
+    handleEditPlan,
+    handleResetPlan
   };
 }

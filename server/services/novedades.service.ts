@@ -56,6 +56,14 @@ export function insertNovedad(legajo: string, tipo: string, fecha_inicio: string
 
 export function deleteNovedad(id_novedad: number): void {
   const db = getDb();
-  const stmt = db.prepare('DELETE FROM novedades_licencias WHERE id_novedad = ?');
-  stmt.run(id_novedad);
+  db.prepare('DELETE FROM novedades_licencias WHERE id_novedad = ?').run(id_novedad);
+}
+
+export function updateNovedad(id_novedad: number, legajo: string, tipo: string, fecha_inicio: string, fecha_fin: string, observaciones?: string): void {
+  const db = getDb();
+  db.prepare(`
+    UPDATE novedades_licencias 
+    SET legajo = ?, tipo = ?, fecha_inicio = ?, fecha_fin = ?, observaciones = ? 
+    WHERE id_novedad = ?
+  `).run(legajo, tipo, fecha_inicio, fecha_fin, observaciones || null, id_novedad);
 }

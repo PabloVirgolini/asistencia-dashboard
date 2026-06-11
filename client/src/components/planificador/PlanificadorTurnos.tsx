@@ -1,23 +1,29 @@
 import React from 'react';
 import { usePlanificadorSemanal } from '../../hooks/usePlanificadorSemanal';
 import { GrillaAsignacion } from './GrillaAsignacion';
+import { ListadoPlanesGuardados } from './ListadoPlanesGuardados';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { Calendar, Save, Filter } from 'lucide-react';
+import { Calendar, Save, Filter, History, Plus } from 'lucide-react';
+import { trpc } from '@/lib/trpc';
 
 export function PlanificadorTurnos() {
   const {
-    sectores, turnosBase,
     sector, setSector,
     fechaInicio, setFechaInicio,
     fechaFin, setFechaFin,
-    personalPlanificable,
-    isLoading,
     asignaciones,
     handleSelectTurno,
     handleSelectMasivo,
     handleSave,
-    isSaving
+    personalPlanificable,
+    turnosBase,
+    sectores,
+    isLoading,
+    isSaving,
+    toggleCapacitacion,
+    handleEditPlan,
+    handleResetPlan
   } = usePlanificadorSemanal();
 
   return (
@@ -28,11 +34,20 @@ export function PlanificadorTurnos() {
       </div>
 
       <Card className="border-indigo-100 shadow-sm">
-        <CardHeader className="bg-indigo-50/50 pb-4 border-b border-indigo-100">
+        <CardHeader className="bg-indigo-50/50 pb-4 border-b border-indigo-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <CardTitle className="text-lg text-indigo-900 flex items-center gap-2">
             <Filter className="w-5 h-5 text-indigo-600" />
             Configuración de Planificación
           </CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleResetPlan}
+            className="flex items-center gap-2 bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Planificación
+          </Button>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -90,6 +105,7 @@ export function PlanificadorTurnos() {
             asignaciones={asignaciones as any}
             onSelectTurno={handleSelectTurno}
             onSelectMasivo={handleSelectMasivo}
+            onToggleCapacitacion={toggleCapacitacion}
             isLoading={isLoading}
           />
           
@@ -115,6 +131,16 @@ export function PlanificadorTurnos() {
           </p>
         </div>
       )}
+
+      {/* Separador y Listado de Planes Guardados */}
+      <div className="pt-10 pb-6 border-t border-slate-200 mt-12">
+        <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2 mb-2">
+          <History className="w-6 h-6 text-indigo-600" />
+          Historial de Planes Generados
+        </h3>
+        <p className="text-slate-500 mb-6">Listado de todas las planificaciones que han sido guardadas en el sistema ordenadas por fecha más reciente.</p>
+        <ListadoPlanesGuardados onEditPlan={handleEditPlan} />
+      </div>
     </div>
   );
 }

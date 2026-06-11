@@ -8,6 +8,10 @@ const __dirname = path.dirname(__filename);
 
 let db: Database.Database | null = null;
 
+export function setDbForTesting(mockDb: Database.Database | null) {
+  db = mockDb;
+}
+
 export function getDb(): Database.Database {
   if (!db) {
     // Intentar múltiples rutas posibles

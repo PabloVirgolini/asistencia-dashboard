@@ -50,6 +50,7 @@ export function TabPersonal() {
   const [personaSector, setPersonaSector] = useState('');
   const [personaCargo, setPersonaCargo] = useState('1');
   const [personaEsRotativo, setPersonaEsRotativo] = useState<number>(0);
+  const [personaEnCapacitacion, setPersonaEnCapacitacion] = useState(false);
   const [editingPerson, setEditingPerson] = useState<string | null>(null);
 
   const cargosFiltradosPorSector = useMemo(() => {
@@ -107,7 +108,8 @@ export function TabPersonal() {
           sector: personaSector,
           activo: 1,
           cargo_id: parseInt(personaCargo),
-          es_rotativo: personaEsRotativo
+          es_rotativo: personaEsRotativo,
+          en_capacitacion: personaEnCapacitacion
         });
         toast.success('Empleado actualizado');
       } else {
@@ -116,7 +118,8 @@ export function TabPersonal() {
           nombre,
           sector: personaSector,
           cargo_id: parseInt(personaCargo),
-          es_rotativo: personaEsRotativo
+          es_rotativo: personaEsRotativo,
+          en_capacitacion: personaEnCapacitacion
         });
         toast.success('Empleado añadido');
       }
@@ -142,6 +145,7 @@ export function TabPersonal() {
     
     setPersonaCargo(p.cargo_id?.toString() || '1');
     setPersonaEsRotativo(p.es_rotativo || 0);
+    setPersonaEnCapacitacion(p.enCapacitacion === '1' || p.enCapacitacion === 1 || p.enCapacitacion === true);
     setIsPersonModalOpen(true);
   };
 
@@ -152,6 +156,7 @@ export function TabPersonal() {
     setPersonaSector('');
     setPersonaCargo('');
     setPersonaEsRotativo(0);
+    setPersonaEnCapacitacion(false);
     setIsPersonModalOpen(true);
   };
 
@@ -234,6 +239,18 @@ export function TabPersonal() {
                   Es Personal Rotativo
                 </Label>
               </div>
+              <div className="flex items-center space-x-2 pb-2">
+                <input 
+                  type="checkbox" 
+                  id="en_capacitacion" 
+                  className="w-4 h-4 text-amber-600 rounded border-gray-300 focus:ring-amber-500"
+                  checked={personaEnCapacitacion}
+                  onChange={(e) => setPersonaEnCapacitacion(e.target.checked)}
+                />
+                <Label htmlFor="en_capacitacion" className="font-medium cursor-pointer">
+                  Está en Capacitación
+                </Label>
+              </div>
               <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
                 Guardar
               </Button>
@@ -268,6 +285,9 @@ export function TabPersonal() {
                   <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('cargo')}>
                     <div className="flex items-center gap-1 font-semibold text-slate-700">Cargo / Función <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
                   </TableHead>
+                  <TableHead className="cursor-pointer hover:bg-slate-100 transition-colors text-center" onClick={() => handleSort('enCapacitacion')}>
+                    <div className="flex items-center justify-center gap-1 font-semibold text-slate-700">Estado Formación <ArrowUpDown className="w-3 h-3 text-slate-400" /></div>
+                  </TableHead>
                   <TableHead className="text-right font-semibold text-slate-700">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
@@ -286,6 +306,11 @@ export function TabPersonal() {
                       {p.cargo || 'Operario'}
                     </span>
                   </TableCell>
+                  <TableCell className="text-center">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase ${p.enCapacitacion === '1' || p.enCapacitacion === 1 || p.enCapacitacion === true ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-slate-100 text-slate-500 border border-slate-200'}`}>
+                      {p.enCapacitacion === '1' || p.enCapacitacion === 1 || p.enCapacitacion === true ? 'En Capacitación' : 'Normal'}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button variant="ghost" size="icon" onClick={() => openEditPerson(p)}>
                       <Edit2 className="w-4 h-4 text-blue-600" />
@@ -298,7 +323,7 @@ export function TabPersonal() {
               ))}
               {sortedAndFilteredPersonal.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-slate-500 py-6">
+                  <TableCell colSpan={6} className="text-center text-slate-500 py-6">
                     No se encontraron empleados
                   </TableCell>
                 </TableRow>

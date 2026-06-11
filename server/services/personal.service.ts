@@ -149,20 +149,26 @@ export function deleteCargo(id_cargo: number): void {
   })();
 }
 
-export function insertPersonal(legajo: string, nombre: string, sectorPertenencia: string, cargo_id: number, es_rotativo: number): void {
+export function insertPersonal(legajo: string, nombre: string, sectorPertenencia: string, cargo_id: number, es_rotativo: number, enCapacitacion: boolean = false): void {
   const db = getDb();
-  const stmt = db.prepare('INSERT INTO personal (legajo, nombre, activo, enCapacitacion, sectorPertenencia, cargo_id, es_rotativo) VALUES (?, ?, 1, \'0\', ?, ?, ?)');
-  stmt.run(legajo, nombre, sectorPertenencia, cargo_id, es_rotativo);
+  const stmt = db.prepare('INSERT INTO personal (legajo, nombre, activo, enCapacitacion, sectorPertenencia, cargo_id, es_rotativo) VALUES (?, ?, 1, ?, ?, ?, ?)');
+  stmt.run(legajo, nombre, enCapacitacion ? '1' : '0', sectorPertenencia, cargo_id, es_rotativo);
 }
 
-export function updatePersonal(legajo: string, nombre: string, sectorPertenencia: string, activo: number, cargo_id: number, es_rotativo: number): void {
+export function updatePersonal(legajo: string, nombre: string, sectorPertenencia: string, activo: number, cargo_id: number, es_rotativo: number, enCapacitacion: boolean = false): void {
   const db = getDb();
-  const stmt = db.prepare('UPDATE personal SET nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ?, es_rotativo = ? WHERE legajo = ?');
-  stmt.run(nombre, sectorPertenencia, activo, cargo_id, es_rotativo, legajo);
+  const stmt = db.prepare('UPDATE personal SET nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ?, es_rotativo = ?, enCapacitacion = ? WHERE legajo = ?');
+  stmt.run(nombre, sectorPertenencia, activo, cargo_id, es_rotativo, enCapacitacion ? '1' : '0', legajo);
 }
 
 export function deletePersonal(legajo: string): void {
   const db = getDb();
   const stmt = db.prepare('DELETE FROM personal WHERE legajo = ?');
   stmt.run(legajo);
+}
+
+export function toggleEnCapacitacion(legajo: string, estado: boolean): void {
+  const db = getDb();
+  const stmt = db.prepare('UPDATE personal SET enCapacitacion = ? WHERE legajo = ?');
+  stmt.run(estado ? '1' : '0', legajo);
 }

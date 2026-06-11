@@ -48,6 +48,9 @@ Eres el Agente de Estilos y UI/UX del proyecto "AsistenciaPersonal". Tu objetivo
    - **Micro-interacciones:**
      - `hover:bg-slate-50`, transiciones suaves de opacidad para botones de acciones secundarias (Borrar, Editar).
      - Usar la utilidad `group-hover` de Tailwind para ocultar acciones destructivas y mostrarlas solo cuando el usuario pasa el mouse.
+   - **Patrones de Visualización de Excepciones (Eventos Atípicos):**
+     - Cuando en un listado o tabla deban convivir opciones estándar (ej. "Turno Mañana") con opciones personalizadas/excepcionales (ej. "Horario Excepcional"), estas últimas deben diferenciarse drásticamente a nivel visual para alertar al administrador.
+     - **Técnica:** Emplear insignias (badges) oscuros o colores de advertencia leve (ej. `bg-slate-800 text-white` con íconos color Ámbar o `bg-amber-100`) para el título de la excepción, y justo debajo presentar la metadata adicional (ej. el rango horario exacto `08:30 a 17:30` y el lugar) en texto sutil (`text-xs text-slate-500`), asegurando que no requiera clics adicionales para descubrir esos detalles.
 
 ### Quirks Técnicos (Tailwind & CSS)
 - **Truncamiento en Flexbox vs Grid:** Al usar utilidades de truncamiento (`truncate`, `min-w-0`) dentro de contenedores padre de tipo Flexbox (`flex`), los elementos hijos pueden colapsar dramáticamente (shrink) si el espacio está muy constreñido o si compiten por el ancho con la propiedad `flex-basis`. 

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 export function useAdminNovedades() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   const { data: novedades = [], refetch, isLoading } = trpc.admin.getNovedades.useQuery();
   const { data: personalActivo = [] } = trpc.admin.getPersonal.useQuery();
@@ -19,6 +20,18 @@ export function useAdminNovedades() {
     }
   });
 
+  const updateMutation = trpc.admin.updateNovedad.useMutation({
+    onSuccess: () => {
+      toast.success('Novedad actualizada exitosamente');
+      refetch();
+      setIsModalOpen(false);
+      setEditingId(null);
+    },
+    onError: (err) => {
+      toast.error(`Error al actualizar: ${err.message}`);
+    }
+  });
+
   const removeMutation = trpc.admin.removeNovedad.useMutation({
     onSuccess: () => {
       toast.success('Novedad eliminada');
@@ -30,7 +43,11 @@ export function useAdminNovedades() {
   });
 
   const handleAdd = (data: { legajo: string, tipo: string, fecha_inicio: string, fecha_fin: string, observaciones?: string }) => {
-    addMutation.mutate(data);
+    if (editingId) {
+      updateMutation.mutate({ id_novedad: editingId, ...data });
+    } else {
+      addMutation.mutate(data);
+    }
   };
 
   const handleRemove = (id_novedad: number) => {
@@ -39,14 +56,22 @@ export function useAdminNovedades() {
     }
   };
 
+  const handleEditClick = (novedad: any) => {
+    setEditingId(novedad.id_novedad);
+    setIsModalOpen(true);
+  };
+
   return {
     novedades,
     personalActivo,
     isLoading,
     isModalOpen,
     setIsModalOpen,
+    editingId,
+    setEditingId,
     handleAdd,
     handleRemove,
-    isAdding: addMutation.isPending || removeMutation.isPending
+    handleEditClick,
+    isAdding: addMutation.isPending || removeMutation.isPending || updateMutation.isPending
   };
 }

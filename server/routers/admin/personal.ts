@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { adminProcedure } from "../../_core/trpc";
 import { 
   getActivePersonal, getCargos, insertCargo, updateCargo, deleteCargo, 
-  insertPersonal, updatePersonal, deletePersonal 
+  insertPersonal, updatePersonal, deletePersonal, toggleEnCapacitacion
 } from "../../services/personal.service";
 
 export const personalProcedures = {
@@ -41,16 +41,16 @@ export const personalProcedures = {
     }),
 
   addPerson: adminProcedure
-    .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), cargo_id: z.number(), es_rotativo: z.number().default(0) }))
+    .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), cargo_id: z.number(), es_rotativo: z.number().default(0), en_capacitacion: z.boolean().default(false) }))
     .mutation(({ input }) => {
-      insertPersonal(input.legajo, input.nombre, input.sector, input.cargo_id, input.es_rotativo);
+      insertPersonal(input.legajo, input.nombre, input.sector, input.cargo_id, input.es_rotativo, input.en_capacitacion);
       return { success: true };
     }),
 
   editPerson: adminProcedure
-    .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), activo: z.number(), cargo_id: z.number().nullable().optional(), es_rotativo: z.number().default(0) }))
+    .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), activo: z.number(), cargo_id: z.number().nullable().optional(), es_rotativo: z.number().default(0), en_capacitacion: z.boolean().default(false) }))
     .mutation(({ input }) => {
-      updatePersonal(input.legajo, input.nombre, input.sector, input.activo, input.cargo_id || 1, input.es_rotativo);
+      updatePersonal(input.legajo, input.nombre, input.sector, input.activo, input.cargo_id || 1, input.es_rotativo, input.en_capacitacion);
       return { success: true };
     }),
 
@@ -58,6 +58,13 @@ export const personalProcedures = {
     .input(z.object({ legajo: z.string() }))
     .mutation(({ input }) => {
       deletePersonal(input.legajo);
+      return { success: true };
+    }),
+
+  toggleCapacitacion: adminProcedure
+    .input(z.object({ legajo: z.string(), estado: z.boolean() }))
+    .mutation(({ input }) => {
+      toggleEnCapacitacion(input.legajo, input.estado);
       return { success: true };
     }),
 };

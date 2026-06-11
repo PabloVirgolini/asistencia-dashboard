@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { adminProcedure } from "../../_core/trpc";
-import { getNovedades, insertNovedad, deleteNovedad } from "../../services/novedades.service";
+import { getNovedades, insertNovedad, deleteNovedad, updateNovedad } from "../../services/novedades.service";
 
 export const novedadesProcedures = {
   getNovedades: adminProcedure.query(() => {
@@ -24,5 +24,23 @@ export const novedadesProcedures = {
     .mutation(({ input }) => {
       deleteNovedad(input.id_novedad);
       return { success: true };
+    }),
+
+  updateNovedad: adminProcedure
+    .input(z.object({ 
+      id_novedad: z.number(), 
+      legajo: z.string(), 
+      tipo: z.string(), 
+      fecha_inicio: z.string(), 
+      fecha_fin: z.string(), 
+      observaciones: z.string().optional() 
+    }))
+    .mutation(({ input }) => {
+      try {
+        updateNovedad(input.id_novedad, input.legajo, input.tipo, input.fecha_inicio, input.fecha_fin, input.observaciones);
+        return { success: true };
+      } catch (e: any) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+      }
     }),
 };

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Calendar, FileText, User, Check, ChevronsUpDown } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, Calendar, FileText, User, Check, ChevronsUpDown, Pencil } from 'lucide-react';
 import { useAdminNovedades } from '../../hooks/useAdminNovedades';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -12,7 +12,8 @@ export function AdminNovedades() {
   const { 
     novedades, personalActivo, isLoading, 
     isModalOpen, setIsModalOpen, 
-    handleAdd, handleRemove 
+    editingId, setEditingId,
+    handleAdd, handleRemove, handleEditClick
   } = useAdminNovedades();
 
   const [filterText, setFilterText] = useState('');
@@ -26,6 +27,36 @@ export function AdminNovedades() {
   });
   const [customTipo, setCustomTipo] = useState('');
   const [openCombobox, setOpenCombobox] = useState(false);
+
+  useEffect(() => {
+    if (editingId) {
+      const novedadToEdit = novedades.find(n => n.id_novedad === editingId);
+      if (novedadToEdit) {
+        const isCustomTipo = !['Vacaciones', 'Enfermedad', 'Maternidad/Paternidad', 'Licencia Especial'].includes(novedadToEdit.tipo);
+        
+        setFormData({
+          legajo: novedadToEdit.legajo,
+          tipo: isCustomTipo ? 'Otro' : novedadToEdit.tipo,
+          fecha_inicio: novedadToEdit.fecha_inicio,
+          fecha_fin: novedadToEdit.fecha_fin,
+          observaciones: novedadToEdit.observaciones || ''
+        });
+        
+        if (isCustomTipo) {
+          setCustomTipo(novedadToEdit.tipo);
+        }
+      }
+    } else {
+      setFormData({
+        legajo: '',
+        tipo: 'Vacaciones',
+        fecha_inicio: '',
+        fecha_fin: '',
+        observaciones: ''
+      });
+      setCustomTipo('');
+    }
+  }, [editingId, novedades, isModalOpen]);
 
   const filteredNovedades = novedades.filter(n => 
     n.nombre_empleado?.toLowerCase().includes(filterText.toLowerCase()) ||
@@ -45,6 +76,11 @@ export function AdminNovedades() {
     handleAdd(finalData);
   };
 
+  const handleOpenNew = () => {
+    setEditingId(null);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -52,7 +88,7 @@ export function AdminNovedades() {
           <h2 className="text-2xl font-bold text-slate-800">Gestión de Novedades y Licencias</h2>
           <p className="text-slate-500">Registra ausencias prolongadas para excluirlas del planificador de turnos.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2">
+        <Button onClick={handleOpenNew} className="bg-indigo-600 hover:bg-indigo-700 flex items-center gap-2">
           <Plus size={18} />
           Nueva Novedad
         </Button>
@@ -94,7 +130,7 @@ export function AdminNovedades() {
                     </tr>
                   ) : (
                     filteredNovedades.map((n) => (
-                      <tr key={n.id_novedad} className="hover:bg-slate-50 transition-colors">
+                      <tr key={n.id_novedad} className="hover:bg-slate-50 transition-colors group">
                         <td className="px-4 py-3 font-medium text-slate-800">
                           {n.nombre_empleado} <span className="text-slate-400 font-normal text-xs ml-1">({n.legajo})</span>
                         </td>
@@ -110,13 +146,22 @@ export function AdminNovedades() {
                         <td className="px-4 py-3">{n.fecha_fin}</td>
                         <td className="px-4 py-3 text-slate-500 truncate max-w-[200px]">{n.observaciones || '-'}</td>
                         <td className="px-4 py-3 text-right">
-                          <button 
-                            onClick={() => handleRemove(n.id_novedad)}
-                            className="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-50 transition-colors"
-                            title="Eliminar"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <div className="flex justify-end gap-2">
+                            <button 
+                              onClick={() => handleEditClick(n)}
+                              className="text-slate-400 hover:text-indigo-600 p-1 rounded hover:bg-indigo-50 transition-colors"
+                              title="Editar"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button 
+                              onClick={() => handleRemove(n.id_novedad)}
+                              className="text-slate-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition-colors"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -128,14 +173,14 @@ export function AdminNovedades() {
         </CardContent>
       </Card>
 
-      {/* Modal Alta Novedad */}
+      {/* Modal Alta/Edición Novedad */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <h3 className="font-semibold text-slate-800 flex items-center gap-2">
                 <Calendar size={18} className="text-indigo-600" />
-                Registrar Novedad
+                {editingId ? 'Actualizar Novedad' : 'Registrar Novedad'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">×</button>
             </div>
@@ -263,7 +308,7 @@ export function AdminNovedades() {
                   Cancelar
                 </Button>
                 <Button type="submit" className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white">
-                  Guardar Novedad
+                  {editingId ? 'Guardar Cambios' : 'Guardar Novedad'}
                 </Button>
               </div>
             </form>
