@@ -18,6 +18,8 @@ interface ReglaHorario {
 
 interface WeeklyCalendarProps {
   reglas: ReglaHorario[];
+  onEditRule?: (r: ReglaHorario) => void;
+  onHideTurno?: (turno: string) => void;
 }
 
 const DAYS = [
@@ -40,7 +42,7 @@ const COLOR_PALETTES = [
   { 400: 'bg-rose-400/80 hover:bg-rose-400 border-rose-500', 500: 'bg-rose-500/80 hover:bg-rose-500 border-rose-600', 600: 'bg-rose-600/80 hover:bg-rose-600 border-rose-700', 700: 'bg-rose-700/80 hover:bg-rose-700 border-rose-800' }
 ];
 
-export default function WeeklyCalendar({ reglas }: WeeklyCalendarProps) {
+export default function WeeklyCalendar({ reglas, onEditRule, onHideTurno }: WeeklyCalendarProps) {
   // Convert "HH:MM" to a percentage of 24h
   const timeToPercent = (time: string) => {
     if (!time) return 0;
@@ -254,6 +256,15 @@ export default function WeeklyCalendar({ reglas }: WeeklyCalendarProps) {
                             {block.updated_at ? `Modif. ${block.updated_at?.split(' ')[0]} por ${block.updated_by}` : 'Creado por Sistema'}
                           </span>
                         </div>
+                      )}
+                      {onHideTurno && block.turno && (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); onHideTurno(block.turno!); }}
+                          className="w-full mt-2 pt-2 border-t border-slate-100 text-xs font-medium text-slate-500 hover:text-indigo-600 text-center transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                          Ocultar Turno
+                        </button>
                       )}
                     </div>
                   </HoverCardContent>

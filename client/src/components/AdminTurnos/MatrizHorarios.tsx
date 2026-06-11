@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Search, Trash2, Loader2, Check, Pencil } from 'lucide-react';
+import { Calendar, Search, Trash2, Loader2, Check, Pencil, X } from 'lucide-react';
 import { ReglaHorario } from '@server/db/schema';
 import WeeklyCalendar from '../WeeklyCalendar';
 import MatrizList from './MatrizList';
@@ -170,7 +170,21 @@ export default function MatrizHorarios({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex-1 flex justify-end">
+                <div className="flex-1 flex justify-end gap-2">
+                  {ctx.hiddenTurnos.length > 0 && (
+                    <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-md">
+                      <span className="text-xs text-indigo-700 font-medium">
+                        Ocultos: {ctx.hiddenTurnos.length} turno(s)
+                      </span>
+                      <button 
+                        onClick={() => ctx.setHiddenTurnos([])}
+                        className="text-indigo-400 hover:text-indigo-600 ml-1"
+                        title="Mostrar todos los turnos ocultos"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
                   {(ctx.activeTurno !== 'todos' || ctx.activeSector !== 'todos' || ctx.activeCargo !== 'todos') && (
                     <Button variant="ghost" size="sm" onClick={() => { ctx.setActiveTurno('todos'); ctx.setActiveSector('todos'); ctx.setActiveCargo('todos'); }} className="h-8 text-xs text-indigo-600">
                       Limpiar Filtros
@@ -180,6 +194,7 @@ export default function MatrizHorarios({
               </div>
               <WeeklyCalendar 
                 reglas={ctx.filteredReglas as ReglaHorario[]} 
+                onHideTurno={(turno) => ctx.setHiddenTurnos(prev => Array.from(new Set([...prev, turno])))}
                 onEditRule={(rule) => {
                   ctx.setEditingRuleId(rule.id_horario);
                   ctx.setEditHoraEntrada(rule.hora_entrada);

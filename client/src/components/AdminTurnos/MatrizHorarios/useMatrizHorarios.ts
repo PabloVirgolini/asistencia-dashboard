@@ -27,19 +27,25 @@ export function useMatrizHorarios(reglas: any[], mutations: any) {
   const [activeTurno, setActiveTurno] = useState<string>('todos');
   const [activeSector, setActiveSector] = useState<string>('todos');
   const [activeCargo, setActiveCargo] = useState<string>('todos');
+  const [hiddenTurnos, setHiddenTurnos] = useState<string[]>([]);
 
   const uniqueTurnos = useMemo(() => Array.from(new Set(reglas?.map(r => r.turno).filter(Boolean))), [reglas]);
   const uniqueSectores = useMemo(() => Array.from(new Set(reglas?.map(r => r.sector).filter(Boolean))), [reglas]);
   const uniqueCargos = useMemo(() => Array.from(new Set(reglas?.map(r => r.cargo).filter(Boolean))), [reglas]);
 
   const filteredReglas = useMemo(() => {
-    return filtrarReglas((reglas || []) as ReglaHorario[], {
+    let baseReglas = (reglas || []) as ReglaHorario[];
+    if (hiddenTurnos.length > 0) {
+      baseReglas = baseReglas.filter(r => r.turno && !hiddenTurnos.includes(r.turno));
+    }
+    
+    return filtrarReglas(baseReglas, {
       texto: reglaFilter,
       turno: activeTurno,
       sector: activeSector,
       cargo: activeCargo
     });
-  }, [reglas, reglaFilter, activeTurno, activeSector, activeCargo]);
+  }, [reglas, reglaFilter, activeTurno, activeSector, activeCargo, hiddenTurnos]);
 
   const { groupedGeneral, groupedExceptions } = useMemo(() => {
     return agruparReglas(filteredReglas as ReglaHorario[]);
@@ -137,6 +143,7 @@ export function useMatrizHorarios(reglas: any[], mutations: any) {
     activeTurno, setActiveTurno,
     activeSector, setActiveSector,
     activeCargo, setActiveCargo,
+    hiddenTurnos, setHiddenTurnos,
     uniqueTurnos, uniqueSectores, uniqueCargos,
     filteredReglas, groupedGeneral, groupedExceptions,
     duplicateModalOpen, setDuplicateModalOpen,
