@@ -72,9 +72,9 @@ export default function MatrizList(props: MatrizListProps) {
   } = props;
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
       {/* Reglas Generales */}
-      <div className="w-full xl:w-1/2">
+      <div className="w-full">
         <MatrizListGenerales 
           groupedGeneral={groupedGeneral}
           personal={personal}
@@ -109,7 +109,7 @@ export default function MatrizList(props: MatrizListProps) {
         />
       </div>
 
-      <div className="w-full xl:w-1/2">
+      <div className="w-full">
         <MatrizListExcepciones 
           groupedExceptions={groupedExceptions}
           personal={personal}
