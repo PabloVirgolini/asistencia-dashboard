@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -13,6 +14,8 @@ import { Loader2, Plus, Trash2, Edit2, LogOut, ArrowUpDown, Search, Settings, Pe
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import AdminTurnos from '@/components/AdminTurnos';
+import { AdminNovedades } from '@/components/novedades/AdminNovedades';
+import { PlanificadorTurnos } from '@/components/planificador/PlanificadorTurnos';
 
 export default function AdminPanel() {
   const [, navigate] = useLocation();
@@ -105,6 +108,7 @@ export default function AdminPanel() {
   const [nombre, setNombre] = useState('');
   const [personaSector, setPersonaSector] = useState('');
   const [personaCargo, setPersonaCargo] = useState('1');
+  const [personaEsRotativo, setPersonaEsRotativo] = useState<number>(0);
   const [editingPerson, setEditingPerson] = useState<string | null>(null);
 
   const cargosFiltradosPorSector = React.useMemo(() => {
@@ -322,7 +326,7 @@ export default function AdminPanel() {
       toast.success('Cargo eliminado');
       trpcContext.admin.getCargos.invalidate();
     } catch (err: any) {
-      toast.error(err.message || 'Error al eliminar');
+      toast.error('Error al eliminar');
     }
   };
 
@@ -346,7 +350,8 @@ export default function AdminPanel() {
           nombre,
           sector: personaSector,
           activo: 1,
-          cargo_id: parseInt(personaCargo)
+          cargo_id: parseInt(personaCargo),
+          es_rotativo: personaEsRotativo
         });
         toast.success('Empleado actualizado');
       } else {
@@ -354,7 +359,8 @@ export default function AdminPanel() {
           legajo,
           nombre,
           sector: personaSector,
-          cargo_id: parseInt(personaCargo)
+          cargo_id: parseInt(personaCargo),
+          es_rotativo: personaEsRotativo
         });
         toast.success('Empleado añadido');
       }
@@ -380,6 +386,7 @@ export default function AdminPanel() {
     }
     
     setPersonaCargo(p.cargo_id?.toString() || '1');
+    setPersonaEsRotativo(p.es_rotativo || 0);
     setIsPersonModalOpen(true);
   };
 
@@ -389,6 +396,7 @@ export default function AdminPanel() {
     setNombre('');
     setPersonaSector('');
     setPersonaCargo('');
+    setPersonaEsRotativo(0);
     setIsPersonModalOpen(true);
   };
 
@@ -430,11 +438,13 @@ export default function AdminPanel() {
         </div>
 
         <Tabs defaultValue="personal" className="w-full">
-          <TabsList className="grid w-full max-w-3xl grid-cols-4">
+          <TabsList className="grid w-full max-w-5xl grid-cols-6">
             <TabsTrigger value="personal">Personal</TabsTrigger>
             <TabsTrigger value="sectores">Sectores</TabsTrigger>
             <TabsTrigger value="cargos">Cargos</TabsTrigger>
             <TabsTrigger value="turnos">Reglas de Turnos</TabsTrigger>
+            <TabsTrigger value="novedades">Licencias</TabsTrigger>
+            <TabsTrigger value="planificador">Planificador Semanal</TabsTrigger>
           </TabsList>
 
           {/* TAB: PERSONAL */}
@@ -493,6 +503,18 @@ export default function AdminPanel() {
                             )}
                           </SelectContent>
                         </Select>
+                      </div>
+                      <div className="flex items-center space-x-2 pt-2 pb-2">
+                        <input 
+                          type="checkbox" 
+                          id="es_rotativo" 
+                          className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                          checked={personaEsRotativo === 1}
+                          onChange={(e) => setPersonaEsRotativo(e.target.checked ? 1 : 0)}
+                        />
+                        <Label htmlFor="es_rotativo" className="font-medium cursor-pointer">
+                          Es Personal Rotativo
+                        </Label>
                       </div>
                       <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
                         Guardar
@@ -931,6 +953,16 @@ export default function AdminPanel() {
           {/* TAB: TURNOS Y REGLAS */}
           <TabsContent value="turnos" className="mt-6">
             <AdminTurnos />
+          </TabsContent>
+
+          {/* TAB: NOVEDADES */}
+          <TabsContent value="novedades" className="mt-6">
+            <AdminNovedades />
+          </TabsContent>
+
+          {/* TAB: PLANIFICADOR */}
+          <TabsContent value="planificador" className="mt-6">
+            <PlanificadorTurnos />
           </TabsContent>
         </Tabs>
         

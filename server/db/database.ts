@@ -50,6 +50,22 @@ export function getDb(): Database.Database {
     try {
       db.exec(`ALTER TABLE horarios ADD COLUMN updated_by TEXT`);
     } catch (e) { /* Columna ya existe */ }
+
+    // Fase 10: Planificador de Turnos
+    try {
+      db.exec(`ALTER TABLE personal ADD COLUMN es_rotativo INTEGER DEFAULT 0`);
+    } catch (e) { /* Columna ya existe */ }
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS novedades_licencias (
+        id_novedad INTEGER PRIMARY KEY AUTOINCREMENT,
+        legajo VARCHAR(10) NOT NULL,
+        tipo TEXT NOT NULL,
+        fecha_inicio TEXT NOT NULL,
+        fecha_fin TEXT NOT NULL,
+        observaciones TEXT
+      )
+    `);
   }
   return db;
 }

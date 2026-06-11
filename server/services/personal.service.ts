@@ -7,6 +7,7 @@ export interface PersonalRecord {
   activo: number;
   enCapacitacion: string;
   sectorPertenencia: string;
+  es_rotativo: number;
 }
 
 export interface SectorRecord {
@@ -39,7 +40,8 @@ export function getActivePersonal(sector?: string): PersonalRecord[] {
       p.id, p.legajo, p.nombre, p.activo, p.enCapacitacion, 
       s.descripcion as sectorPertenencia,
       c.descripcion as cargo,
-      p.cargo_id
+      p.cargo_id,
+      p.es_rotativo
     FROM personal p
     LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
     LEFT JOIN cargos c ON p.cargo_id = c.id_cargo
@@ -141,16 +143,16 @@ export function deleteCargo(id_cargo: number): void {
   })();
 }
 
-export function insertPersonal(legajo: string, nombre: string, sectorPertenencia: string, cargo_id: number): void {
+export function insertPersonal(legajo: string, nombre: string, sectorPertenencia: string, cargo_id: number, es_rotativo: number): void {
   const db = getDb();
-  const stmt = db.prepare('INSERT INTO personal (legajo, nombre, activo, enCapacitacion, sectorPertenencia, cargo_id) VALUES (?, ?, 1, \'0\', ?, ?)');
-  stmt.run(legajo, nombre, sectorPertenencia, cargo_id);
+  const stmt = db.prepare('INSERT INTO personal (legajo, nombre, activo, enCapacitacion, sectorPertenencia, cargo_id, es_rotativo) VALUES (?, ?, 1, \'0\', ?, ?, ?)');
+  stmt.run(legajo, nombre, sectorPertenencia, cargo_id, es_rotativo);
 }
 
-export function updatePersonal(legajo: string, nombre: string, sectorPertenencia: string, activo: number, cargo_id: number): void {
+export function updatePersonal(legajo: string, nombre: string, sectorPertenencia: string, activo: number, cargo_id: number, es_rotativo: number): void {
   const db = getDb();
-  const stmt = db.prepare('UPDATE personal SET nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ? WHERE legajo = ?');
-  stmt.run(nombre, sectorPertenencia, activo, cargo_id, legajo);
+  const stmt = db.prepare('UPDATE personal SET nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ?, es_rotativo = ? WHERE legajo = ?');
+  stmt.run(nombre, sectorPertenencia, activo, cargo_id, es_rotativo, legajo);
 }
 
 export function deletePersonal(legajo: string): void {

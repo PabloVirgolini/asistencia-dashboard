@@ -14,6 +14,8 @@ import {
   getHorariosReglas, addHorario, updateHorario, removeHorario, batchUpdateHorarios, 
   duplicateSectorRules, duplicateCargoRules 
 } from "./services/horarios.service";
+import { getNovedades, insertNovedad, deleteNovedad } from './services/novedades.service';
+import { getPersonalPlanificable, savePlanificacionMasiva } from './services/planificador.service';
 import { 
   getFichadasByDate, getPresentesByDate, getAusentesByDate, getAttendanceSummary 
 } from "./services/asistencia.service";
@@ -169,16 +171,16 @@ export const appRouter = router({
       }),
 
     addPerson: adminProcedure
-      .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), cargo_id: z.number() }))
+      .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), cargo_id: z.number(), es_rotativo: z.number().default(0) }))
       .mutation(({ input }) => {
-        insertPersonal(input.legajo, input.nombre, input.sector, input.cargo_id);
+        insertPersonal(input.legajo, input.nombre, input.sector, input.cargo_id, input.es_rotativo);
         return { success: true };
       }),
 
     editPerson: adminProcedure
-      .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), activo: z.number(), cargo_id: z.number().nullable().optional() }))
+      .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), activo: z.number(), cargo_id: z.number().nullable().optional(), es_rotativo: z.number().default(0) }))
       .mutation(({ input }) => {
-        updatePersonal(input.legajo, input.nombre, input.sector, input.activo, input.cargo_id || 1);
+        updatePersonal(input.legajo, input.nombre, input.sector, input.activo, input.cargo_id || 1, input.es_rotativo);
         return { success: true };
       }),
 
@@ -186,6 +188,48 @@ export const appRouter = router({
       .input(z.object({ legajo: z.string() }))
       .mutation(({ input }) => {
         deletePersonal(input.legajo);
+        return { success: true };
+      }),
+
+    getNovedades: adminProcedure.query(() => {
+      return getNovedades();
+    }),
+
+    addNovedad: adminProcedure
+      .input(z.object({ legajo: z.string(), tipo: z.string(), fecha_inicio: z.string(), fecha_fin: z.string(), observaciones: z.string().optional() }))
+      .mutation(({ input }) => {
+        try {
+          insertNovedad(input.legajo, input.tipo, input.fecha_inicio, input.fecha_fin, input.observaciones);
+          return { success: true };
+        } catch (e: any) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
+        }
+      }),
+
+    removeNovedad: adminProcedure
+      .input(z.object({ id_novedad: z.number() }))
+      .mutation(({ input }) => {
+        deleteNovedad(input.id_novedad);
+        return { success: true };
+      }),
+
+    getPlanificable: adminProcedure
+      .input(z.object({ sector: z.string(), fecha_inicio: z.string(), fecha_fin: z.string() }))
+      .query(({ input }) => {
+        return getPersonalPlanificable(input.sector, input.fecha_inicio, input.fecha_fin);
+      }),
+
+    savePlanificacion: adminProcedure
+      .input(z.object({
+        asignaciones: z.array(z.object({
+          legajo: z.string(),
+          id_turno: z.number(),
+          fecha_inicio: z.string(),
+          fecha_fin: z.string()
+        }))
+      }))
+      .mutation(({ input }) => {
+        savePlanificacionMasiva(input.asignaciones);
         return { success: true };
       }),
 
