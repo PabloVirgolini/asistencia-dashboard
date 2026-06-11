@@ -20,6 +20,7 @@ export function AdminNovedades() {
     fecha_fin: '',
     observaciones: ''
   });
+  const [customTipo, setCustomTipo] = useState('');
 
   const filteredNovedades = novedades.filter(n => 
     n.nombre_empleado?.toLowerCase().includes(filterText.toLowerCase()) ||
@@ -28,7 +29,11 @@ export function AdminNovedades() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleAdd(formData);
+    const finalData = {
+      ...formData,
+      tipo: formData.tipo === 'Otro' ? customTipo : formData.tipo
+    };
+    handleAdd(finalData);
   };
 
   return (
@@ -148,14 +153,29 @@ export function AdminNovedades() {
                 <select
                   required
                   value={formData.tipo}
-                  onChange={e => setFormData({...formData, tipo: e.target.value})}
+                  onChange={e => {
+                    setFormData({...formData, tipo: e.target.value});
+                    if (e.target.value !== 'Otro') setCustomTipo('');
+                  }}
                   className="w-full px-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
                   <option value="Vacaciones">Vacaciones</option>
                   <option value="Enfermedad">Enfermedad</option>
-                  <option value="Maternidad">Maternidad/Paternidad</option>
+                  <option value="Maternidad/Paternidad">Maternidad/Paternidad</option>
                   <option value="Licencia Especial">Licencia Especial</option>
+                  <option value="Otro">Otro (Especifique)</option>
                 </select>
+                
+                {formData.tipo === 'Otro' && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Escriba el tipo de novedad..."
+                    value={customTipo}
+                    onChange={e => setCustomTipo(e.target.value)}
+                    className="w-full mt-2 px-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none animate-in fade-in slide-in-from-top-1"
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
