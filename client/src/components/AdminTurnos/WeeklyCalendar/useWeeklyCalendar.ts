@@ -108,7 +108,7 @@ export function useWeeklyCalendar(reglas: ReglaHorario[]) {
       }
 
       // Procesar segundo bloque si es horario cortado
-      if (r.es_cortado === 1 && r.hora_entrada_2 && r.hora_salida_2) {
+      if (!!r.es_cortado && r.hora_entrada_2 && r.hora_salida_2) {
         const startPercent2 = timeToPercent(r.hora_entrada_2);
         const endPercent2 = timeToPercent(r.hora_salida_2);
 

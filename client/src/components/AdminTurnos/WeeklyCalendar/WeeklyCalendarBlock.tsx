@@ -46,7 +46,7 @@ export function WeeklyCalendarBlock({ block, idx, colisionesPrevias, onHideTurno
           <div className="flex items-start justify-between">
             <span className="font-semibold text-slate-900">{turnoName}</span>
             <Badge variant="outline" className="text-[10px] uppercase font-mono bg-slate-50">
-              {block.hora_entrada} - {block.hora_salida}
+              {block.isCortadoPart2 ? `${block.hora_entrada_2} - ${block.hora_salida_2}` : `${block.hora_entrada} - ${block.hora_salida}`}
             </Badge>
           </div>
           

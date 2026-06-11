@@ -152,18 +152,21 @@ export function MatrizListGenerales({
                                     <Input type="time" value={editHoraSalida} onChange={e => setEditHoraSalida(e.target.value)} className="h-7 w-24 text-xs" />
                                   </div>
                                 ) : (
-                                  <div className="flex flex-col gap-1 mt-1">
+                                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                     <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
-                                      <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{r.hora_entrada}</span>
-                                      <span className="text-slate-300">→</span>
-                                      <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{r.hora_salida}</span>
+                                      <span className="text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded shadow-sm">{r.hora_entrada}</span>
+                                      <span className="text-slate-300 font-bold">→</span>
+                                      <span className="text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded shadow-sm">{r.hora_salida}</span>
                                     </div>
-                                    {r.es_cortado === 1 && (
-                                      <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
-                                        <span className="text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{r.hora_entrada_2}</span>
-                                        <span className="text-slate-300">→</span>
-                                        <span className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{r.hora_salida_2}</span>
-                                      </div>
+                                    {!!r.es_cortado && (
+                                      <>
+                                        <div className="w-3 h-[2px] bg-slate-200 mx-0.5 rounded-full"></div>
+                                        <div className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
+                                          <span className="text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded shadow-sm">{r.hora_entrada_2}</span>
+                                          <span className="text-slate-300 font-bold">→</span>
+                                          <span className="text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded shadow-sm">{r.hora_salida_2}</span>
+                                        </div>
+                                      </>
                                     )}
                                   </div>
                                 )}
