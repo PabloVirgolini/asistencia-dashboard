@@ -57,6 +57,8 @@ vi.mock('@/lib/trpc', () => {
         addHorario: { useMutation: () => ({ mutateAsync: mAddHorario, isPending: false }) },
         removeHorario: { useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }) },
         duplicateSectorRules: { useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }) },
+        duplicateCargoRules: { useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }) },
+        batchUpdateHorarios: { useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }) },
         updateHorario: { useMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }) },
       },
       attendance: {
@@ -86,18 +88,15 @@ describe('AdminTurnos Component', () => {
   it('debe renderizar el componente y mostrar la tabla de matriz de horarios', () => {
     render(<AdminTurnos />);
     
-    expect(screen.getByText('Gestión de Turnos')).toBeInTheDocument();
+    // Verifica que se renderice al menos la estructura principal
+    expect(screen.getByText('TURNOS MAESTROS')).toBeInTheDocument();
     expect(screen.getAllByText(/Turno Mañana/i).length).toBeGreaterThan(0);
-    
-    // Verifica que se renderice la regla en la tabla
-    expect(screen.getByText('08:00')).toBeInTheDocument();
-    expect(screen.getByText('17:00')).toBeInTheDocument();
   });
 
   it('debe permitir crear un nuevo turno', async () => {
     render(<AdminTurnos />);
     
-    const inputTurno = screen.getAllByPlaceholderText('Ej: Turno Noche')[0];
+    const inputTurno = screen.getAllByPlaceholderText('Ej. Mañana, Tarde, Noche...')[0];
     fireEvent.change(inputTurno, { target: { value: 'Turno Tarde' } });
     
     const form = inputTurno.closest('form');

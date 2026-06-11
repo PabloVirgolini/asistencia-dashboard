@@ -10,7 +10,7 @@ vi.mock('better-sqlite3', () => {
   return { default: vi.fn(() => mDb) };
 });
 
-import { getTurnosHorarios } from './attendance';
+import { getTurnosHorarios } from './services/horarios.service';
 
 describe('mock test', () => {
   it('works', () => {

@@ -52,7 +52,7 @@ Prioriza archivos que puedan afectar:
 ```
 
 ## Reglas Especificas del Proyecto
-- Prestar especial atención a las consultas manuales en `server/attendance.ts` para evitar SQL Injection.
+- Prestar especial atención a las consultas manuales en `server/services/` (ej. `asistencia.service.ts`, `horarios.service.ts`) para evitar SQL Injection mediante el uso riguroso de prepared statements.
 - Asegurarse de que el frontend React (`client/src/`) no contenga lógica crítica o filtrado de seguridad que debiese estar en el backend Node.js.
 
 ---

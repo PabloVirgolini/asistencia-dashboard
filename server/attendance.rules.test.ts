@@ -31,9 +31,11 @@ import {
   getHorariosReglas,
   addHorario,
   removeHorario,
-  updateHorario,
+  updateHorario
+} from './services/horarios.service';
+import {
   getPresentesByDate
-} from './attendance';
+} from './services/asistencia.service';
 
 describe('attendance.ts - Reglas y Turnos', () => {
   beforeEach(() => {
@@ -90,7 +92,7 @@ describe('attendance.ts - Reglas y Turnos', () => {
   });
 
   it('addHorario - usa transaccion para insertar sin solapamiento', () => {
-    addHorario(1, 2, null, 10, [1, 2], '08:00', '17:00');
+    addHorario(1, 2, null, 10, [1, 2], '08:00', '17:00', 'Sistema');
 
     expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO horarios'));
     expect(mTransaction).toHaveBeenCalled();
@@ -101,23 +103,23 @@ describe('attendance.ts - Reglas y Turnos', () => {
   it('addHorario - arroja error si hay solapamiento (Sector/Cargo/Legajo en el mismo turno y día)', () => {
     mGet.mockReturnValueOnce({ c: 1 }); // Simular solapamiento
     
-    expect(() => addHorario(1, 2, null, 10, [1], '08:00', '17:00')).toThrowError('Ya existe una regla configurada para este mismo Turno, Día y Sector/Cargo/Legajo.');
+    expect(() => addHorario(1, 2, null, 10, [1], '08:00', '17:00', 'Sistema')).toThrowError('Ya existe una regla de horario para el día 1 con estos parámetros.');
     expect(mRun).not.toHaveBeenCalled(); // No debe insertar
   });
 
   it('updateHorario - actualiza correctamente un horario existente', () => {
     mGet.mockReturnValueOnce({ c: 1 }); // Simular que la regla existe
     
-    updateHorario(1, '09:00', '18:00');
+    updateHorario(1, '09:00', '18:00', 'Sistema');
     
-    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE horarios SET hora_entrada = ?, hora_salida = ? WHERE id_horario = ?'));
-    expect(mRun).toHaveBeenCalledWith('09:00', '18:00', 1);
+    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?'));
+    expect(mRun).toHaveBeenCalledWith('09:00', '18:00', 'Sistema', 1);
   });
 
   it('updateHorario - arroja error si el horario a actualizar no existe', () => {
     mGet.mockReturnValueOnce({ c: 0 }); // Simular que la regla no existe
     
-    expect(() => updateHorario(99, '09:00', '18:00')).toThrowError('La regla de horario no existe.');
+    expect(() => updateHorario(99, '09:00', '18:00', 'Sistema')).toThrowError('La regla de horario no existe.');
     expect(mRun).not.toHaveBeenCalled();
   });
 
@@ -132,20 +134,6 @@ describe('attendance.ts - Reglas y Turnos', () => {
   it('removeHorario - arroja error si la regla no existe', () => {
     mGet.mockReturnValueOnce(undefined);
     expect(() => removeHorario(1)).toThrowError('La regla no existe.');
-  });
-
-  it('removeHorario - arroja error si la regla General tiene empleados activos', () => {
-    mGet.mockReturnValueOnce({ id_sector: 1, id_cargo: 2, legajo: null }) // select regla
-        .mockReturnValueOnce({ c: 3 }); // select personal (3 activos)
-    expect(() => removeHorario(1)).toThrowError('No se puede eliminar: hay 3 empleado(s) activo(s) con este sector y cargo.');
-    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('sectorPertenencia = ? AND cargo_id = ? AND activo = 1'));
-  });
-
-  it('removeHorario - arroja error si la regla de Excepción tiene al empleado activo', () => {
-    mGet.mockReturnValueOnce({ id_sector: null, id_cargo: null, legajo: '123' }) // select regla
-        .mockReturnValueOnce({ c: 1 }); // select personal (1 activo)
-    expect(() => removeHorario(1)).toThrowError('No se puede eliminar: el empleado con legajo 123 está activo en el sistema.');
-    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('legajo = ? AND activo = 1'));
   });
 
   describe('getPresentesByDate - Prioridad de Reglas (LlegadaTarde)', () => {

@@ -1,9 +1,9 @@
 {
   "agent": "security_qa_agent",
-  "last_reviewed_at": "2026-06-09",
-  "last_reviewed_commit": null,
+  "last_reviewed_at": "2026-06-10",
+  "last_reviewed_commit": "refactor/arquitectura-limpia",
   "last_reviewed_tree": null,
-  "last_reviewed_status_short": [],
-  "last_reviewed_scope": "initial_setup",
-  "notes": "Inicialización del estado de seguridad para el proyecto AsistenciaPersonal."
+  "last_reviewed_status_short": ["server/services/admin.service.ts", "server/services/asistencia.service.ts", "server/services/horarios.service.ts", "server/services/personal.service.ts"],
+  "last_reviewed_scope": "server_services_refactor",
+  "notes": "Auditoría de nuevos servicios tras división de server/attendance.ts. Revisión de SQL Injection y control de acceso."
 }
