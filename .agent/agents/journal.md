@@ -161,3 +161,11 @@ A partir de este punto del desarrollo (Tras la auditorÃ­a de QA en `AdminTurno
 - **Backend (Fase 1):** El `routers.ts` principal (451 líneas) fue desmembrado en sub-enrutadores (`server/routers/admin`, `auth`, `attendance`). El archivo original quedó como un simple orquestador de 10 líneas. Además, se introdujeron cabeceras JSDoc estándar (`@module` y `@description`) en todos los servicios de la capa de lógica para asegurar la mantenibilidad y el entendimiento a futuro.
 - **Frontend (Fase 2):** El componente `AdminPanel.tsx` (976 líneas) fue particionado. Todo el ABM e interfaces de administración se encapsularon en `<TabPersonal />`, `<TabSectores />` y `<TabCargos />` (ubicados en `client/src/pages/AdminTabs/`). El Panel quedó reducido a 85 líneas, dedicado puramente a Layout y sesión.
 - **Lección Aprendida:** tRPC soporta nativamente el esparcimiento (spread operator `...`) de objetos de procedimientos dentro de un `router({})`, lo que permite organizar el backend de forma horizontal y componible sin perder el tipado fuerte que viaja al frontend. React Query (`useQuery`) comparte el caché entre pestañas de manera automática, por lo que desmembrar componentes grandes no impacta negativamente en el uso de red.
+
+### [2026-06-11] - Fase 3 & 4: Refactorización Profunda de UI (AdminTurnos) y JSDoc
+- **Avance:** Se completó el plan arquitectónico eliminando el resto de las God Classes del frontend y estandarizando la documentación.
+- **Detalle Fase 3:**
+  1. Se dividió `CreadorReglasForm.tsx` separando su estado a `useCreadorReglas.ts` y dividiendo su extensa UI en `<ReglaGeneralCampos />` y `<ReglaExcepcionCampos />`.
+  2. El mega-componente `MatrizHorarios.tsx` fue despojado de sus modales (ahora en `<Modales />`) y su estado complejo y métodos mutadores (replicar, eliminar en lote) fueron migrados a `useMatrizHorarios.ts`.
+  3. El árbol iterativo infinito de `MatrizList.tsx` se separó lógicamente en `<MatrizListGenerales />` y `<MatrizListExcepciones />`.
+- **Detalle Fase 4:** Todos los Custom Hooks abstractos extraídos durante el día (`useMatrizHorarios`, `useCreadorReglas`) fueron equipados con cabeceras de bloque `JSDoc` que detallan estrictamente sus responsabilidades, mejorando el onboarding de futuros agentes y desarrolladores.
