@@ -46,19 +46,12 @@ export function MultiSelect({
         >
           <div className="flex gap-1 items-center overflow-hidden mr-2">
             {selectedValues.length === 0 && <span className="text-slate-500 font-normal truncate">{placeholder}</span>}
-            {selectedValues.length > 0 && selectedValues.length <= 2 && (
-              <div className="flex gap-1">
-                {selectedValues.map((val) => {
-                  const option = options.find((o) => o.value === val);
-                  return (
-                    <Badge key={val} variant="secondary" className="font-normal px-1.5 h-5 truncate max-w-[120px]">
-                      {option?.label || val}
-                    </Badge>
-                  );
-                })}
-              </div>
+            {selectedValues.length === 1 && (
+              <Badge variant="secondary" className="font-normal px-1.5 h-5 truncate max-w-[120px]">
+                {options.find((o) => o.value === selectedValues[0])?.label || selectedValues[0]}
+              </Badge>
             )}
-            {selectedValues.length > 2 && (
+            {selectedValues.length > 1 && (
               <Badge variant="secondary" className="font-normal px-1.5 h-5">
                 {selectedValues.length} seleccionados
               </Badge>
