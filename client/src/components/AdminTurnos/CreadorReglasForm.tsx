@@ -145,9 +145,9 @@ export default function CreadorReglasForm({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
-              <div className="lg:col-span-4">
-                <div className="flex flex-wrap gap-3">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-center">
+              <div className="xl:col-span-5">
+                <div className="flex flex-wrap gap-2 sm:gap-3">
                   {DAYS.map(dia => {
                     const isSelected = selectedDias.includes(dia.value);
                     return (
@@ -155,7 +155,7 @@ export default function CreadorReglasForm({
                         key={dia.value}
                         type="button"
                         onClick={() => handleToggleDia(dia.value)}
-                        className={`w-12 h-12 rounded-full font-bold transition-all duration-300 text-sm flex items-center justify-center ${
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full font-bold transition-all duration-300 text-xs sm:text-sm flex items-center justify-center ${
                           isSelected 
                             ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 scale-110 ring-2 ring-indigo-600 ring-offset-2' 
                             : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 hover:scale-105'
@@ -168,31 +168,31 @@ export default function CreadorReglasForm({
                 </div>
               </div>
               
-              <div className={`lg:col-span-${esCortado ? '6' : '6'} grid grid-cols-2 gap-5`}>
-                <div className="space-y-2.5">
-                  <Label className="text-slate-700 font-semibold">{esCortado ? 'Entrada (1)' : 'Hora Entrada'}</Label>
-                  <Input type="time" value={horaEntrada} onChange={e => setHoraEntrada(e.target.value)} required className="bg-slate-50 border-slate-200" />
+              <div className="xl:col-span-5 grid grid-cols-2 gap-4 sm:gap-5">
+                <div className="space-y-2">
+                  <Label className="text-slate-700 font-semibold whitespace-nowrap">{esCortado ? 'Entrada (1)' : 'Hora Entrada'}</Label>
+                  <Input type="time" value={horaEntrada} onChange={e => setHoraEntrada(e.target.value)} required className="bg-slate-50 border-slate-200 w-full" />
                 </div>
-                <div className="space-y-2.5">
-                  <Label className="text-slate-700 font-semibold">{esCortado ? 'Salida (1)' : 'Hora Salida'}</Label>
-                  <Input type="time" value={horaSalida} onChange={e => setHoraSalida(e.target.value)} required className="bg-slate-50 border-slate-200" />
+                <div className="space-y-2">
+                  <Label className="text-slate-700 font-semibold whitespace-nowrap">{esCortado ? 'Salida (1)' : 'Hora Salida'}</Label>
+                  <Input type="time" value={horaSalida} onChange={e => setHoraSalida(e.target.value)} required className="bg-slate-50 border-slate-200 w-full" />
                 </div>
                 
                 {esCortado && (
                   <>
-                    <div className="space-y-2.5">
-                      <Label className="text-slate-700 font-semibold">Entrada (2)</Label>
-                      <Input type="time" value={horaEntrada2} onChange={e => setHoraEntrada2(e.target.value)} required className="bg-slate-50 border-slate-200" />
+                    <div className="space-y-2">
+                      <Label className="text-slate-700 font-semibold whitespace-nowrap">Entrada (2)</Label>
+                      <Input type="time" value={horaEntrada2} onChange={e => setHoraEntrada2(e.target.value)} required className="bg-slate-50 border-slate-200 w-full" />
                     </div>
-                    <div className="space-y-2.5">
-                      <Label className="text-slate-700 font-semibold">Salida (2)</Label>
-                      <Input type="time" value={horaSalida2} onChange={e => setHoraSalida2(e.target.value)} required className="bg-slate-50 border-slate-200" />
+                    <div className="space-y-2">
+                      <Label className="text-slate-700 font-semibold whitespace-nowrap">Salida (2)</Label>
+                      <Input type="time" value={horaSalida2} onChange={e => setHoraSalida2(e.target.value)} required className="bg-slate-50 border-slate-200 w-full" />
                     </div>
                   </>
                 )}
               </div>
 
-              <div className="lg:col-span-2 flex justify-end">
+              <div className="xl:col-span-2 flex justify-end mt-4 xl:mt-0">
                 <Button type="submit" size="lg" className="w-full bg-slate-900 hover:bg-slate-800 text-white shadow-md hover:shadow-lg transition-all h-[44px]" disabled={isPending}>
                   {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Check className="w-5 h-5 mr-2" />}
                   Guardar
