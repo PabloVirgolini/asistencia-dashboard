@@ -169,3 +169,12 @@ A partir de este punto del desarrollo (Tras la auditorÃ­a de QA en `AdminTurno
   2. El mega-componente `MatrizHorarios.tsx` fue despojado de sus modales (ahora en `<Modales />`) y su estado complejo y métodos mutadores (replicar, eliminar en lote) fueron migrados a `useMatrizHorarios.ts`.
   3. El árbol iterativo infinito de `MatrizList.tsx` se separó lógicamente en `<MatrizListGenerales />` y `<MatrizListExcepciones />`.
 - **Detalle Fase 4:** Todos los Custom Hooks abstractos extraídos durante el día (`useMatrizHorarios`, `useCreadorReglas`) fueron equipados con cabeceras de bloque `JSDoc` que detallan estrictamente sus responsabilidades, mejorando el onboarding de futuros agentes y desarrolladores.
+
+### [2026-06-11] - Corrección de Turnos Cortados y Edición Dinámica
+- **Problema 1 (Fallo en Creación):** Al crear un turno cortado desde el formulario, el sistema no estaba pasando los parámetros `es_cortado`, `hora_entrada_2` y `hora_salida_2` a la mutación en `AdminTurnos.tsx`, causando que se guarden como turnos simples.
+- **Problema 2 (Edición Limitada):** Las funciones `updateHorario` y `batchUpdateHorarios` no permitían alterar la segunda franja del turno, forzando al usuario a borrar y recrear la regla si quería modificarla. Además, un error de tipografía en SQLite (`datetime("now", "localtime")` con comillas dobles) generaba un error al actualizar por referenciar una columna inexistente.
+- **Solución y UX Avanzada:**
+  1. Se modificó el backend para usar literales simples (`'now'`) en la sintaxis SQL.
+  2. Se expandió drásticamente el componente de edición rápida (*inline edit* en el árbol). Al apretar el lápiz, ahora se despliega una casilla *"Cortado"*. Al tildarla, aparece instantáneamente una segunda fila de horarios, permitiendo transformar cualquier turno a formato cortado (y viceversa) sin recargar la página.
+  3. Esta misma lógica dinámica se implementó en el modal de Edición por Lotes (Batch Edit), permitiendo transformar múltiples turnos seleccionados en cortados simultáneamente.
+  4. La regla de UX/UI sigue intacta: mantener todo ágil y *in-place* sin entorpecer visualmente, evitando abrir ventanas grandes a menos que sea necesario.

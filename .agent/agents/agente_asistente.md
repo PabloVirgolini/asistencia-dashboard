@@ -33,7 +33,7 @@ A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones
 - **Quirk del Servidor de Desarrollo (Vite)**: `tsx watch` junto con la inicialización de `createViteServer` puede quedarse "mudo" en consola por 10-15 segundos durante la primera ejecución. No abortar ni asumir falla sin antes revisar si responde el puerto 3000.
 - **Quirk de Autenticación tRPC y Cookies**: Si un usuario tiene un inicio de sesión exitoso ("Success") pero es inmediatamente redirigido de vuelta al login por "Acceso Denegado", la causa raíz siempre suele ser un desajuste entre el nombre de la cookie en la función que lo emite (`res.cookie` en routers) y la función que lo extrae del request (`parse(req.headers.cookie)` en la creación del contexto).
 - **Quirk de SQLite UNIQUE**: SQLite es *case-sensitive* por defecto en sus strings. En los esquemas de Zod para endpoints de registro y login, asegurarse siempre de forzar `.trim().toLowerCase()` en emails, de lo contrario SQLite no encontrará coincidencias entre `PABLO@...` y `pablo@...`, lanzando errores confusos de "Credenciales inválidas" pese a que el usuario recién lo haya tipeado.
-
+- **Quirk de SQLite y Literales**: En sentencias SQL de SQLite, usar siempre comillas simples (`'`) para strings literales (ej. `'now'`). Las comillas dobles (`"`) están reservadas para identificadores de base de datos (nombres de tablas o columnas). Escribir `datetime("now", "localtime")` causa que SQLite intente buscar una columna llamada "now" arrojando el error `no such column: "now"`. Usar siempre `datetime('now', 'localtime')`.
 ---
 ## 🔴 REGLAS MAESTRAS DE ARQUITECTURA Y CALIDAD (INELUDIBLES)
 A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones deben respetar rigurosamente:
