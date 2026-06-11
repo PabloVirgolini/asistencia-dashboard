@@ -10,6 +10,28 @@ import { Loader2, Plus, Trash2, Edit2, ArrowUpDown, Search } from 'lucide-react'
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 
+const getSectorColor = (sector: string) => {
+  const colors = [
+    'bg-blue-100 text-blue-800',
+    'bg-emerald-100 text-emerald-800',
+    'bg-amber-100 text-amber-800',
+    'bg-purple-100 text-purple-800',
+    'bg-pink-100 text-pink-800',
+    'bg-cyan-100 text-cyan-800',
+    'bg-orange-100 text-orange-800',
+    'bg-rose-100 text-rose-800',
+    'bg-teal-100 text-teal-800',
+    'bg-indigo-100 text-indigo-800',
+  ];
+  if (!sector) return 'bg-slate-100 text-slate-800';
+  let hash = 0;
+  for (let i = 0; i < sector.length; i++) {
+    hash = sector.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+};
+
 export function TabPersonal() {
   const trpcContext = trpc.useContext();
   
@@ -255,7 +277,7 @@ export function TabPersonal() {
                   <TableCell className="font-medium">{p.legajo}</TableCell>
                   <TableCell>{p.nombre}</TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getSectorColor(p.sectorPertenencia)}`}>
                       {p.sectorPertenencia}
                     </span>
                   </TableCell>
