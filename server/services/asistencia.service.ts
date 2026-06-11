@@ -67,7 +67,7 @@ export function getPresentesByDate(date: string, sector?: string, toleranciaMinu
       ht.id_turno,
       MIN(f.hora) as primeraFichada
     FROM personal p
-    INNER JOIN fichadas f ON CAST(p.legajo AS INTEGER) = CAST(SUBSTR(f.legajo, 3) AS INTEGER)
+    INNER JOIN fichadas f ON CAST(p.legajo AS INTEGER) = CAST(f.legajo AS INTEGER)
     LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
     LEFT JOIN cargos c ON p.cargo_id = c.id_cargo
     LEFT JOIN sectores_cargos sc ON sc.id_cargo = c.id_cargo AND sc.id_sector = p.sectorPertenencia
@@ -145,7 +145,7 @@ export function getAusentesByDate(date: string, sector?: string): AbsenceRecord[
     LEFT JOIN sectores_cargos sc ON sc.id_cargo = c.id_cargo AND sc.id_sector = p.sectorPertenencia
     WHERE p.activo = 1
       AND p.legajo NOT IN (
-        SELECT CAST(SUBSTR(legajo, 3) AS INTEGER) 
+        SELECT CAST(legajo AS INTEGER) 
         FROM fichadas 
         WHERE hora >= ? AND hora < ?
       )
@@ -176,9 +176,9 @@ export function getAttendanceSummary(date: string): AttendanceSummary {
   const totalActivos = (stmtActivos.get() as { count: number }).count;
 
   const stmtPresentes = db.prepare(`
-    SELECT COUNT(DISTINCT CAST(SUBSTR(f.legajo, 3) AS INTEGER)) as count 
+    SELECT COUNT(DISTINCT CAST(f.legajo AS INTEGER)) as count 
     FROM fichadas f
-    INNER JOIN personal p ON CAST(p.legajo AS INTEGER) = CAST(SUBSTR(f.legajo, 3) AS INTEGER)
+    INNER JOIN personal p ON CAST(p.legajo AS INTEGER) = CAST(f.legajo AS INTEGER)
     WHERE f.hora >= ? AND f.hora < ? AND p.activo = 1
   `);
   const presentes = (stmtPresentes.get(startOfDay, endOfDay) as { count: number }).count;
