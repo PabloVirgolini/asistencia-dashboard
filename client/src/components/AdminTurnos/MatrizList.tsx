@@ -37,13 +37,111 @@ interface MatrizListProps {
 }
 
 export default function MatrizList(props: MatrizListProps) {
+  const {
+    groupedGeneral,
+    groupedExceptions,
+    personal,
+    cargosData,
+    isBatchMode,
+    setIsBatchMode,
+    selectedRules,
+    setSelectedRules,
+    collapseToken,
+    setCollapseToken,
+    editingRuleId,
+    setEditingRuleId,
+    editHoraEntrada,
+    setEditHoraEntrada,
+    editHoraSalida,
+    setEditHoraSalida,
+    editEsCortado,
+    setEditEsCortado,
+    editHoraEntrada2,
+    setEditHoraEntrada2,
+    editHoraSalida2,
+    setEditHoraSalida2,
+    updateHorario,
+    handleRemoveRegla,
+    renderBatchDelete,
+    getDiaName,
+    setDuplicateSource,
+    setDuplicateModalOpen,
+    setDuplicateCargoSource,
+    setDuplicateCargoTarget,
+    setDuplicateCargoModalOpen
+  } = props;
+
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
       {/* Reglas Generales */}
-      <MatrizListGenerales {...props} />
+      <div className="w-full xl:w-1/2">
+        <MatrizListGenerales 
+          groupedGeneral={groupedGeneral}
+          personal={personal}
+          cargosData={cargosData}
+          isBatchMode={isBatchMode}
+          setIsBatchMode={setIsBatchMode}
+          selectedRules={selectedRules}
+          setSelectedRules={setSelectedRules}
+          collapseToken={collapseToken}
+          setCollapseToken={setCollapseToken}
+          editingRuleId={editingRuleId}
+          setEditingRuleId={setEditingRuleId}
+          editHoraEntrada={editHoraEntrada}
+          setEditHoraEntrada={setEditHoraEntrada}
+          editHoraSalida={editHoraSalida}
+          setEditHoraSalida={setEditHoraSalida}
+          editEsCortado={editEsCortado}
+          setEditEsCortado={setEditEsCortado}
+          editHoraEntrada2={editHoraEntrada2}
+          setEditHoraEntrada2={setEditHoraEntrada2}
+          editHoraSalida2={editHoraSalida2}
+          setEditHoraSalida2={setEditHoraSalida2}
+          updateHorario={updateHorario}
+          handleRemoveRegla={handleRemoveRegla}
+          renderBatchDelete={renderBatchDelete}
+          getDiaName={getDiaName}
+          setDuplicateSource={setDuplicateSource}
+          setDuplicateModalOpen={setDuplicateModalOpen}
+          setDuplicateCargoSource={setDuplicateCargoSource}
+          setDuplicateCargoTarget={setDuplicateCargoTarget}
+          setDuplicateCargoModalOpen={setDuplicateCargoModalOpen}
+        />
+      </div>
 
-      {/* Excepciones */}
-      <MatrizListExcepciones {...props} />
+      <div className="w-full xl:w-1/2">
+        <MatrizListExcepciones 
+          groupedExceptions={groupedExceptions}
+          personal={personal}
+          isBatchMode={isBatchMode}
+          setIsBatchMode={setIsBatchMode}
+          selectedRules={selectedRules}
+          setSelectedRules={setSelectedRules}
+          collapseToken={collapseToken}
+          setCollapseToken={setCollapseToken}
+          editingRuleId={editingRuleId}
+          setEditingRuleId={setEditingRuleId}
+          editHoraEntrada={editHoraEntrada}
+          setEditHoraEntrada={setEditHoraEntrada}
+          editHoraSalida={editHoraSalida}
+          setEditHoraSalida={setEditHoraSalida}
+          editEsCortado={editEsCortado}
+          setEditEsCortado={setEditEsCortado}
+          editHoraEntrada2={editHoraEntrada2}
+          setEditHoraEntrada2={setEditHoraEntrada2}
+          editHoraSalida2={editHoraSalida2}
+          setEditHoraSalida2={setEditHoraSalida2}
+          updateHorario={updateHorario}
+          handleRemoveRegla={handleRemoveRegla}
+          renderBatchDelete={renderBatchDelete}
+          getDiaName={getDiaName}
+          setDuplicateSource={setDuplicateSource}
+          setDuplicateModalOpen={setDuplicateModalOpen}
+          setDuplicateCargoSource={setDuplicateCargoSource}
+          setDuplicateCargoTarget={setDuplicateCargoTarget}
+          setDuplicateCargoModalOpen={setDuplicateCargoModalOpen}
+        />
+      </div>
     </div>
   );
 }
