@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Search, Trash2, Loader2, Check, Pencil, X } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { ReglaHorario } from '@server/db/schema';
 import WeeklyCalendar from './WeeklyCalendar';
@@ -158,18 +159,50 @@ export default function MatrizHorarios({
                 </div>
                 <div className="flex-1 flex justify-end gap-2">
                   {ctx.hiddenRules.length > 0 && (
-                    <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-md">
-                      <span className="text-xs text-indigo-700 font-medium">
-                        Ocultos: {ctx.hiddenRules.length} horario(s)
-                      </span>
-                      <button 
-                        onClick={() => ctx.setHiddenRules([])}
-                        className="text-indigo-400 hover:text-indigo-600 ml-1"
-                        title="Mostrar todos los horarios ocultos"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-md hover:bg-indigo-100 transition-colors">
+                          <span className="text-xs text-indigo-700 font-medium">
+                            Ocultos: {ctx.hiddenRules.length} horario(s)
+                          </span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent align="end" className="w-64 p-2 shadow-xl">
+                        <div className="flex items-center justify-between mb-2 px-1">
+                          <span className="text-xs font-semibold text-slate-500 uppercase">Horarios Ocultos</span>
+                          <button 
+                            onClick={() => ctx.setHiddenRules([])}
+                            className="text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                          >
+                            Mostrar Todos
+                          </button>
+                        </div>
+                        <div className="max-h-60 overflow-y-auto space-y-1">
+                          {ctx.hiddenRules.map(id => {
+                            const regla = reglas.find((r: any) => (r.id_horario || r.id) === id);
+                            if (!regla) return null;
+                            return (
+                              <div key={id} className="flex items-center justify-between text-xs p-1.5 hover:bg-slate-50 rounded group">
+                                <div className="truncate pr-2 flex-1">
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-medium text-slate-700 truncate">{regla.turno || 'Sin Turno'}</span>
+                                    <span className="text-slate-400 shrink-0">({regla.hora_entrada}-{regla.hora_salida})</span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-500 truncate">{regla.sector || 'Todos los sectores'} • {regla.cargo || 'Todos los cargos'}</div>
+                                </div>
+                                <button 
+                                  onClick={() => ctx.setHiddenRules(prev => prev.filter(hid => hid !== id))}
+                                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-800 transition-all shrink-0"
+                                  title="Volver a mostrar"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   )}
                   {(ctx.activeTurnos.length > 0 || ctx.activeSectores.length > 0 || ctx.activeCargos.length > 0) && (
                     <Button variant="ghost" size="sm" onClick={() => { ctx.setActiveTurnos([]); ctx.setActiveSectores([]); ctx.setActiveCargos([]); }} className="h-8 text-xs text-indigo-600">
