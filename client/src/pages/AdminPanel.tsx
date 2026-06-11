@@ -353,7 +353,8 @@ export default function AdminPanel() {
         await addPersonMutation.mutateAsync({
           legajo,
           nombre,
-          sector: personaSector
+          sector: personaSector,
+          cargo_id: parseInt(personaCargo)
         });
         toast.success('Empleado añadido');
       }
@@ -387,7 +388,7 @@ export default function AdminPanel() {
     setLegajo('');
     setNombre('');
     setPersonaSector('');
-    setPersonaCargo('1');
+    setPersonaCargo('');
     setIsPersonModalOpen(true);
   };
 
@@ -464,9 +465,7 @@ export default function AdminPanel() {
                         <Label>Sector</Label>
                         <Select value={personaSector} onValueChange={(val) => {
                           setPersonaSector(val);
-                          if (editingPerson) {
-                            setPersonaCargo('');
-                          }
+                          setPersonaCargo('');
                         }} required>
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccione un sector" />
@@ -478,25 +477,23 @@ export default function AdminPanel() {
                           </SelectContent>
                         </Select>
                       </div>
-                      {editingPerson && (
-                        <div>
-                          <Label>Cargo / Función</Label>
-                          <Select value={personaCargo} onValueChange={setPersonaCargo} required>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccione un cargo" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {cargosFiltradosPorSector.length > 0 ? (
-                                cargosFiltradosPorSector.map((c: any) => (
-                                  <SelectItem key={c.id_cargo} value={c.id_cargo.toString()}>{c.descripcion}</SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem value="0" disabled>No hay cargos habilitados en este sector</SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
+                      <div>
+                        <Label>Cargo / Función</Label>
+                        <Select value={personaCargo} onValueChange={setPersonaCargo} required>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione un cargo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {cargosFiltradosPorSector.length > 0 ? (
+                              cargosFiltradosPorSector.map((c: any) => (
+                                <SelectItem key={c.id_cargo} value={c.id_cargo.toString()}>{c.descripcion}</SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="0" disabled>No hay cargos habilitados en este sector</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
                         Guardar
                       </Button>

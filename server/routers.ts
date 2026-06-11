@@ -169,9 +169,9 @@ export const appRouter = router({
       }),
 
     addPerson: adminProcedure
-      .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string() }))
+      .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), cargo_id: z.number() }))
       .mutation(({ input }) => {
-        insertPersonal(input.legajo, input.nombre, input.sector);
+        insertPersonal(input.legajo, input.nombre, input.sector, input.cargo_id);
         return { success: true };
       }),
 
@@ -336,7 +336,7 @@ export const appRouter = router({
       .query(({ input }) => {
         const presentes = getPresentesByDate(input.date, input.sector, input.toleranciaMinutos);
         const ausentes = getAusentesByDate(input.date, input.sector);
-        const summary = getAttendanceSummary(input.date, input.sector, input.toleranciaMinutos);
+        const summary = getAttendanceSummary(input.date);
 
         return {
           presentes,
@@ -356,7 +356,7 @@ export const appRouter = router({
         })
       )
       .query(({ input }) => {
-        return getAttendanceSummary(input.date, input.sector, input.toleranciaMinutos);
+        return getAttendanceSummary(input.date);
       }),
 
     getTodayDate: publicProcedure.query(() => {

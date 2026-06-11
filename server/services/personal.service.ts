@@ -141,10 +141,10 @@ export function deleteCargo(id_cargo: number): void {
   })();
 }
 
-export function insertPersonal(legajo: string, nombre: string, sectorPertenencia: string): void {
+export function insertPersonal(legajo: string, nombre: string, sectorPertenencia: string, cargo_id: number): void {
   const db = getDb();
-  const stmt = db.prepare('INSERT INTO personal (legajo, nombre, activo, enCapacitacion, sectorPertenencia) VALUES (?, ?, 1, "0", ?)');
-  stmt.run(legajo, nombre, sectorPertenencia);
+  const stmt = db.prepare('INSERT INTO personal (legajo, nombre, activo, enCapacitacion, sectorPertenencia, cargo_id) VALUES (?, ?, 1, \'0\', ?, ?)');
+  stmt.run(legajo, nombre, sectorPertenencia, cargo_id);
 }
 
 export function updatePersonal(legajo: string, nombre: string, sectorPertenencia: string, activo: number, cargo_id: number): void {
