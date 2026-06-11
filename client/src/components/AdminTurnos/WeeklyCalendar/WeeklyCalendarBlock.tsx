@@ -80,9 +80,12 @@ export function WeeklyCalendarBlock({ block, idx, colisionesPrevias, onHideTurno
           {onHideTurno && (
             <button 
               onClick={(e) => { 
+                e.preventDefault();
                 e.stopPropagation(); 
-                if (block.id_horario || block.id) {
-                  onHideTurno(block.id_horario || block.id); 
+                const idToHide = block.id_horario || (block as any).id;
+                console.log("Ocultando regla ID:", idToHide);
+                if (idToHide) {
+                  onHideTurno(idToHide); 
                 }
               }}
               className="w-full mt-2 pt-2 border-t border-slate-100 text-xs font-medium text-slate-500 hover:text-indigo-600 text-center transition-colors flex items-center justify-center gap-1.5"

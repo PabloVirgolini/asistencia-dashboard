@@ -29,7 +29,10 @@ export function filtrarReglas(reglas: ReglaHorario[] | undefined, filtros: Filtr
   let result = [...reglas];
 
   if (hiddenRules.length > 0) {
-    result = result.filter(r => !hiddenRules.includes(r.id_horario || r.id)); // Assuming id_horario or id is available. (I'll check ReglaHorario: it has 'id')
+    result = result.filter(r => {
+      const rId = r.id_horario || r.id;
+      return rId ? !hiddenRules.includes(Number(rId)) : true;
+    });
   }
   
   if (filtros.texto) {
