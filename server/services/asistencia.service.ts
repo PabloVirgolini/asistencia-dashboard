@@ -184,8 +184,8 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
         id_turno = exceptionHorario.id_turno;
       } else {
         const matchingHorarios = horarios.filter(h => 
-          h.id_sector === p.sectorPertenencia && 
-          (h.id_cargo === p.cargo_id || h.id_cargo === null)
+          h.id_sector == p.sectorPertenencia && 
+          (h.id_cargo == p.cargo_id || h.id_cargo === null)
         );
         if (matchingHorarios.length > 0) {
           id_turno = matchingHorarios[0].id_turno;
