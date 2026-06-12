@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { CheckCircle2, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp, User, Filter } from 'lucide-react';
 import { Badge } from './ui/badge';
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
@@ -198,50 +197,46 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados, date, inco
 
       {isExpanded && (
         <CardContent className="p-0">
-          <div className="bg-slate-100/50 px-4 py-2 border-b border-slate-100 flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 border-dashed flex items-center gap-2">
-                  <Filter size={14} className="text-slate-500" />
-                  <span className="text-slate-600 font-medium">Filtrar por Sector</span>
-                  {selectedSectors.length > 0 && (
-                    <Badge variant="secondary" className="ml-1 px-1.5 py-0 bg-indigo-100 text-indigo-700 hover:bg-indigo-100">
-                      {selectedSectors.length}
-                    </Badge>
+          <div className="bg-slate-50 px-4 py-3 border-b border-slate-100 flex items-center flex-wrap gap-2">
+            <div className="flex items-center gap-2 mr-2">
+              <Filter size={14} className="text-slate-400" />
+              <span className="text-sm font-medium text-slate-600">Sectores:</span>
+            </div>
+            {uniqueSectors.map(sector => {
+              const isSelected = selectedSectors.includes(sector) || selectedSectors.length === 0;
+              return (
+                <Badge
+                  key={sector}
+                  variant={isSelected ? "default" : "outline"}
+                  className={cn(
+                    "cursor-pointer transition-colors px-3 py-1 text-xs font-medium border",
+                    isSelected 
+                      ? "bg-indigo-100 text-indigo-700 border-indigo-200 hover:bg-indigo-200" 
+                      : "bg-white text-slate-500 border-slate-200 hover:bg-slate-100"
                   )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 bg-white z-50">
-                <DropdownMenuLabel>Sectores</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {uniqueSectors.map(sector => (
-                  <DropdownMenuCheckboxItem
-                    key={sector}
-                    checked={selectedSectors.includes(sector)}
-                    onCheckedChange={() => toggleSector(sector)}
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    {sector}
-                  </DropdownMenuCheckboxItem>
-                ))}
-                {selectedSectors.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={false}
-                      onCheckedChange={() => setSelectedSectors([])}
-                      className="justify-center font-medium text-slate-500 cursor-pointer"
-                    >
-                      Limpiar Filtros
-                    </DropdownMenuCheckboxItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (selectedSectors.length === 0) {
+                      // Si no había filtro (mostrando todos), al clickear uno, lo aisla
+                      setSelectedSectors([sector]);
+                    } else {
+                      toggleSector(sector);
+                    }
+                  }}
+                >
+                  {sector}
+                </Badge>
+              );
+            })}
             {selectedSectors.length > 0 && (
-              <span className="text-xs text-slate-500">
-                Mostrando {activeSectors.length} de {uniqueSectors.length} sectores
-              </span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={(e) => { e.stopPropagation(); setSelectedSectors([]); }}
+                className="h-6 px-2 text-xs text-slate-500 hover:text-slate-700 ml-auto"
+              >
+                Mostrar todos
+              </Button>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
