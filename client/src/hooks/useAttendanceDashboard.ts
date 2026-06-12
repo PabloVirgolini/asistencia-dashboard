@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
+import { UI_CONSTANTS } from "../config/constants";
 
 export function useAttendanceDashboard() {
   const [selectedDate, setSelectedDate] = useState<string>("");
@@ -32,19 +33,15 @@ export function useAttendanceDashboard() {
   useEffect(() => {
     const calculateNextUpdateTime = () => {
       const now = new Date();
-      const nextHour = new Date(now);
-      nextHour.setHours(nextHour.getHours() + 1);
-      nextHour.setMinutes(0);
-      nextHour.setSeconds(0);
-      nextHour.setMilliseconds(0);
-      return nextHour;
+      const nextRefresh = new Date(now.getTime() + UI_CONSTANTS.DASHBOARD_REFRESH_INTERVAL_MS);
+      return nextRefresh;
     };
 
     const scheduleNextUpdate = () => {
       const nextUpdate = calculateNextUpdateTime();
       setNextUpdateTime(nextUpdate);
 
-      const timeUntilNextHour = nextUpdate.getTime() - Date.now();
+      const timeUntilNextRefresh = nextUpdate.getTime() - Date.now();
 
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
@@ -53,7 +50,7 @@ export function useAttendanceDashboard() {
       updateTimeoutRef.current = setTimeout(() => {
         attendanceQuery.refetch();
         scheduleNextUpdate();
-      }, timeUntilNextHour);
+      }, timeUntilNextRefresh);
     };
 
     scheduleNextUpdate();

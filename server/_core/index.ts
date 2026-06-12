@@ -10,6 +10,7 @@ import { createContext } from "./context.js";
 import { serveStatic, setupVite } from "./vite.js";
 import type { Request, Response } from "express";
 import { startAutoSync } from "../services/sync.service.js";
+import { config } from "../config.js";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -78,7 +79,7 @@ async function startServer() {
     res.status(404).json({ error: "Not found" });
   });
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
+  const preferredPort = config.port;
   const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {

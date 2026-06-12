@@ -1,3 +1,5 @@
+import { config } from '../config.js';
+
 export interface ReglaBase {
   id_sector: string | number;
   id_cargo: number;
@@ -21,7 +23,7 @@ export function calcularLlegadaTarde(
   fichada: FichadaData,
   reglasDelDia: ReglaBase[],
   jsDate: Date,
-  toleranciaMinutos: number = 10
+  toleranciaMinutos: number = config.toleranciaLlegadaTardeDefault
 ): boolean {
   if (reglasDelDia.length === 0) return false;
 

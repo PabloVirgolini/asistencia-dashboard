@@ -6,6 +6,8 @@ import fs from 'fs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import { config } from '../config.js';
+
 let db: Database.Database | null = null;
 
 export function setDbForTesting(mockDb: Database.Database | null) {
@@ -14,26 +16,7 @@ export function setDbForTesting(mockDb: Database.Database | null) {
 
 export function getDb(): Database.Database {
   if (!db) {
-    // Intentar múltiples rutas posibles
-    const possiblePaths = [
-      path.join(__dirname, '../../data2.db'), // Adjust path because we are inside server/db/
-      path.join(process.cwd(), 'data2.db'),
-      '/home/ubuntu/asistencia-dashboard/data2.db',
-    ];
-
-    let dbPath: string | null = null;
-    for (const p of possiblePaths) {
-      if (fs.existsSync(p)) {
-        dbPath = p;
-        break;
-      }
-    }
-
-    if (!dbPath) {
-      dbPath = possiblePaths[0]; // Usar la primera ruta por defecto
-    }
-
-    db = new Database(dbPath);
+    db = new Database(config.localDbPath);
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
     
