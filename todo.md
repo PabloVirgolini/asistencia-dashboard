@@ -63,3 +63,8 @@
 - [ ] Analizar estructura de la base de datos para mapear turnos y horarios de entrada.
 - [ ] Implementar cruce de cargos, horarios y días para determinar si la fichada representa una llegada tarde.
 - [ ] Reflejar visualmente en el Dashboard el estado de tardanza de cada persona.
+
+## Fase 9: Reportes y Estadísticas (Backlog)
+- [ ] Implementar módulo de análisis estadístico basado en la tabla `novedades_licencias`.
+- [ ] Crear gráficos de ausentismo (vacaciones, enfermedad, etc.) por mes y por sector.
+- [ ] Generar reportes históricos de incidencias por empleado.
