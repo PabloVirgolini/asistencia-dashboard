@@ -105,11 +105,12 @@ export function duplicateSectorRules(id_turno: number, sourceSectorId: number, t
   `);
 
   const transaction = db.transaction((rulesToInsert: any[]) => {
+    const checkStmt = db.prepare(`
+      SELECT COUNT(*) as c FROM horarios 
+      WHERE id_turno = ? AND dia_semana = ? AND id_sector = ? AND id_cargo = ? AND (legajo IS NULL OR legajo = ?)
+    `);
+
     for (const rule of rulesToInsert) {
-      const checkStmt = db.prepare(`
-        SELECT COUNT(*) as c FROM horarios 
-        WHERE id_turno = ? AND dia_semana = ? AND id_sector = ? AND id_cargo = ? AND (legajo IS NULL OR legajo = ?)
-      `);
       const res = checkStmt.get(id_turno, rule.dia_semana, targetSectorId, rule.id_cargo, rule.legajo) as { c: number };
       
       if (res.c === 0) {
@@ -154,11 +155,12 @@ export function duplicateCargoRules(id_turno: number, id_sector: number, source_
   `);
 
   const transaction = db.transaction((rulesToInsert: any[]) => {
+    const checkStmt = db.prepare(`
+      SELECT COUNT(*) as c FROM horarios 
+      WHERE id_turno = ? AND dia_semana = ? AND id_sector = ? AND id_cargo = ? AND (legajo IS NULL OR legajo = ?)
+    `);
+
     for (const rule of rulesToInsert) {
-      const checkStmt = db.prepare(`
-        SELECT COUNT(*) as c FROM horarios 
-        WHERE id_turno = ? AND dia_semana = ? AND id_sector = ? AND id_cargo = ? AND (legajo IS NULL OR legajo = ?)
-      `);
       const res = checkStmt.get(id_turno, rule.dia_semana, id_sector, target_cargo, rule.legajo) as { c: number };
       
       if (res.c === 0) {

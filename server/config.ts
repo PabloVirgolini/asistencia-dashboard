@@ -1,5 +1,6 @@
 import path from "path";
 import { fileURLToPath } from "url";
+import crypto from "crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -65,7 +66,7 @@ export const config = {
    * Riesgo: CRÍTICO. Si se cambia, TODOS los administradores perderán su sesión actual y deberán volver a loguearse. 
    * NUNCA subir la clave real a Git.
    */
-  cookieSecret: process.env.JWT_SECRET || "default_unsafe_secret",
+  cookieSecret: process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex'),
   
   // APIs Externas
   appId: process.env.VITE_APP_ID || "",

@@ -41,28 +41,28 @@ export const personalProcedures = {
     }),
 
   addPerson: adminProcedure
-    .input(z.object({ legajo: z.string(), nombre: z.string(), sector: z.string(), cargo_id: z.number(), es_rotativo: z.number().default(0), en_capacitacion: z.boolean().default(false) }))
+    .input(z.object({ legajo: z.string().trim().toLowerCase(), nombre: z.string(), sector: z.string(), cargo_id: z.number(), es_rotativo: z.number().default(0), en_capacitacion: z.boolean().default(false) }))
     .mutation(({ input }) => {
       insertPersonal(input.legajo, input.nombre, input.sector, input.cargo_id, input.es_rotativo, input.en_capacitacion);
       return { success: true };
     }),
 
   editPerson: adminProcedure
-    .input(z.object({ originalLegajo: z.string(), legajo: z.string(), nombre: z.string(), sector: z.string(), activo: z.number(), cargo_id: z.number().nullable().optional(), es_rotativo: z.number().default(0), en_capacitacion: z.boolean().default(false) }))
+    .input(z.object({ originalLegajo: z.string().trim().toLowerCase(), legajo: z.string().trim().toLowerCase(), nombre: z.string(), sector: z.string(), activo: z.number(), cargo_id: z.number().nullable().optional(), es_rotativo: z.number().default(0), en_capacitacion: z.boolean().default(false) }))
     .mutation(({ input }) => {
       updatePersonal(input.originalLegajo, input.legajo, input.nombre, input.sector, input.activo, input.cargo_id || 1, input.es_rotativo, input.en_capacitacion);
       return { success: true };
     }),
 
   removePerson: adminProcedure
-    .input(z.object({ legajo: z.string() }))
+    .input(z.object({ legajo: z.string().trim().toLowerCase() }))
     .mutation(({ input }) => {
       deletePersonal(input.legajo);
       return { success: true };
     }),
 
   toggleCapacitacion: adminProcedure
-    .input(z.object({ legajo: z.string(), estado: z.boolean() }))
+    .input(z.object({ legajo: z.string().trim().toLowerCase(), estado: z.boolean() }))
     .mutation(({ input }) => {
       toggleEnCapacitacion(input.legajo, input.estado);
       return { success: true };

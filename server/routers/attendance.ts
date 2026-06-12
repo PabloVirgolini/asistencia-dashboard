@@ -52,7 +52,7 @@ export const attendanceRouter = router({
   getFichadasByLegajo: publicProcedure
     .input(
       z.object({
-        legajo: z.string(),
+        legajo: z.string().trim().toLowerCase(),
         date: z.string().refine(isValidDate, "Fecha inválida. Use formato YYYY-MM-DD"),
       })
     )

@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { adminProcedure } from "../../_core/trpc";
 import { getPersonalPlanificable, savePlanificacionMasiva, getPlanificacionGuardada, getListaPlanesGuardados, deletePlanGuardado } from "../../services/planificador.service";
+import { isValidDate } from "../../services/admin.service";
 import { exec } from "child_process";
 
 export const planificadorProcedures = {
   getPlanificable: adminProcedure
-    .input(z.object({ sector: z.string(), fecha_inicio: z.string(), fecha_fin: z.string() }))
+    .input(z.object({ sector: z.string(), fecha_inicio: z.string().refine(isValidDate, "Fecha inválida"), fecha_fin: z.string().refine(isValidDate, "Fecha inválida") }))
     .query(({ input }) => {
       return getPersonalPlanificable(input.sector, input.fecha_inicio, input.fecha_fin);
     }),
@@ -13,10 +14,10 @@ export const planificadorProcedures = {
   savePlanificacion: adminProcedure
     .input(z.object({
       asignaciones: z.array(z.object({
-        legajo: z.string(),
+        legajo: z.string().trim().toLowerCase(),
         id_turno: z.number().nullable(),
-        fecha_inicio: z.string(),
-        fecha_fin: z.string(),
+        fecha_inicio: z.string().refine(isValidDate, "Fecha inválida"),
+        fecha_fin: z.string().refine(isValidDate, "Fecha inválida"),
         es_excepcional: z.number().nullable().optional(),
         hora_entrada_excepcional: z.string().nullable().optional(),
         hora_salida_excepcional: z.string().nullable().optional(),
@@ -36,7 +37,7 @@ export const planificadorProcedures = {
     }),
 
   getPlanificacionGuardada: adminProcedure
-    .input(z.object({ sector: z.string(), fecha_inicio: z.string(), fecha_fin: z.string() }))
+    .input(z.object({ sector: z.string(), fecha_inicio: z.string().refine(isValidDate, "Fecha inválida"), fecha_fin: z.string().refine(isValidDate, "Fecha inválida") }))
     .query(({ input }) => {
       return getPlanificacionGuardada(input.sector, input.fecha_inicio, input.fecha_fin);
     }),
@@ -47,7 +48,7 @@ export const planificadorProcedures = {
     }),
 
   deletePlanGuardado: adminProcedure
-    .input(z.object({ sector: z.string(), fecha_inicio: z.string(), fecha_fin: z.string().optional() }))
+    .input(z.object({ sector: z.string(), fecha_inicio: z.string().refine(isValidDate, "Fecha inválida"), fecha_fin: z.string().optional() }))
     .mutation(({ input }) => {
       deletePlanGuardado(input.sector, input.fecha_inicio, input.fecha_fin || '');
       

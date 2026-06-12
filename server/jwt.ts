@@ -3,7 +3,7 @@ import { ENV } from './_core/env';
 
 // Helper to get secret key
 function getSecret() {
-  const secret = ENV.cookieSecret || 'default_super_secret_for_development_only';
+  const secret = ENV.cookieSecret;
   return new TextEncoder().encode(secret);
 }
 

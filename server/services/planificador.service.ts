@@ -67,17 +67,19 @@ export function savePlanificacionMasiva(asignaciones: { legajo: string, id_turno
   
   // Realizar inserción en lote (Transaction)
   const insert = db.transaction((asignacionesList) => {
-    const stmt = db.prepare('INSERT INTO historial_turnos (legajo, id_turno, fecha_inicio, fecha_fin, es_excepcional, hora_entrada_excepcional, hora_salida_excepcional, id_sector_excepcional, nombre_plan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    const insertStmt = db.prepare('INSERT INTO historial_turnos (legajo, id_turno, fecha_inicio, fecha_fin, es_excepcional, hora_entrada_excepcional, hora_salida_excepcional, id_sector_excepcional, nombre_plan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
     
+    const deleteStmt = db.prepare(`
+      DELETE FROM historial_turnos 
+      WHERE legajo = ? AND fecha_inicio = ? AND fecha_fin = ?
+    `);
+
     for (const asig of asignacionesList) {
       // 1. Borrar cualquier planificación previa que este empleado pudiera tener en estas fechas para no duplicar
-      db.prepare(`
-        DELETE FROM historial_turnos 
-        WHERE legajo = ? AND fecha_inicio = ? AND fecha_fin = ?
-      `).run(asig.legajo, asig.fecha_inicio, asig.fecha_fin);
+      deleteStmt.run(asig.legajo, asig.fecha_inicio, asig.fecha_fin);
 
       // 2. Insertar la nueva
-      stmt.run(
+      insertStmt.run(
         asig.legajo, 
         asig.id_turno, 
         asig.fecha_inicio, 
