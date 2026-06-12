@@ -26,6 +26,7 @@ export const attendanceRouter = router({
       return {
         grupos: result.grupos,
         summary: result.summary,
+        novedades_compartidas: result.novedades_compartidas,
         date: input.date,
         sector: input.sector || "todos",
       };

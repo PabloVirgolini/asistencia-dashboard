@@ -31,11 +31,11 @@ export default function ResumenDia({ summary, date, sector, grupos }: ResumenDia
         list.forEach(p => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno }));
       } else if (type === 'presentes') {
         [...g.presentes, ...g.fichadas_inesperadas].forEach(p => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno, extra: 'A tiempo' }));
-        g.tarde.forEach(p => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno, extra: 'Llegada Tarde' }));
+        g.tarde.forEach((p: any) => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno, extra: 'Llegada Tarde' }));
       } else if (type === 'ausentes') {
-        g.ausentes.forEach(p => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno }));
+        g.ausentes.forEach((p: any) => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno }));
       } else if (type === 'licencias') {
-        g.licencias.forEach(p => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno, extra: p.novedad_activa?.tipo, fecha_fin: p.novedad_activa?.fecha_fin }));
+        g.licencias.forEach((p: any) => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno, extra: p.novedad_activa?.tipo, fecha_fin: p.novedad_activa?.fecha_fin }));
       }
     });
     

@@ -50,6 +50,12 @@ export const planificadorProcedures = {
     .input(z.object({ sector: z.string(), fecha_inicio: z.string(), fecha_fin: z.string().optional() }))
     .mutation(({ input }) => {
       deletePlanGuardado(input.sector, input.fecha_inicio, input.fecha_fin || '');
+      
+      // Disparar motor de inconsistencias en background para recalcular tras borrar plan
+      exec('npx tsx scripts/calculate-inconsistencies.ts', (error) => {
+        if (error) console.error('[Planificador] Error al disparar motor de inconsistencias tras borrado:', error);
+      });
+
       return { success: true };
     }),
 };

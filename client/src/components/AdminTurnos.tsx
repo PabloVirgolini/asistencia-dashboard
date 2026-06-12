@@ -6,7 +6,7 @@ import MatrizHorarios from './AdminTurnos/MatrizHorarios';
 
 export default function AdminTurnos() {
   const { queries, mutations } = useAdminTurnos();
-  const { turnos, isTurnosLoading, reglas, isReglasLoading, sectores, sectoresCargos, cargosData, personal } = queries;
+  const { turnos = [], isTurnosLoading, reglas = [], isReglasLoading, sectores = [], sectoresCargos = [], cargosData = [], personal = [] } = queries;
   const { addTurno, removeTurno, updateTurnoHorario, addRegla, removeRegla, updateHorario, batchUpdate, duplicateSector, duplicateCargo } = mutations;
 
   return (
@@ -54,7 +54,7 @@ export default function AdminTurnos() {
                 dias: params.dias,
                 hora_entrada: params.hora_entrada,
                 hora_salida: params.hora_salida,
-                es_cortado: params.es_cortado,
+                es_cortado: params.es_cortado ? 1 : 0,
                 hora_entrada_2: params.hora_entrada_2,
                 hora_salida_2: params.hora_salida_2
               });
@@ -63,12 +63,12 @@ export default function AdminTurnos() {
             await addRegla.mutateAsync({
               id_sector: null,
               id_cargo: null,
-              legajo: params.legajo,
+              legajo: params.legajo !== null ? String(params.legajo) : null,
               id_turno: params.id_turno,
               dias: params.dias,
               hora_entrada: params.hora_entrada,
               hora_salida: params.hora_salida,
-              es_cortado: params.es_cortado,
+              es_cortado: params.es_cortado ? 1 : 0,
               hora_entrada_2: params.hora_entrada_2,
               hora_salida_2: params.hora_salida_2
             });
