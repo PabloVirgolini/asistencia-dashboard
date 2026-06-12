@@ -28,7 +28,7 @@ export default function HistorialFichadasModal({ isOpen, onOpenChange, legajo, n
             Historial de Fichadas
           </DialogTitle>
           <DialogDescription>
-            Mostrando registros de <strong>{nombre}</strong> (Legajo: {legajo}) para la fecha {date.split('-').reverse().join('/')}.
+            Mostrando la última semana de registros de <strong>{nombre}</strong> (Legajo: {legajo}) hasta la fecha {date.split('-').reverse().join('/')}.
           </DialogDescription>
         </DialogHeader>
 
@@ -39,48 +39,67 @@ export default function HistorialFichadasModal({ isOpen, onOpenChange, legajo, n
             </div>
           ) : !fichadas || fichadas.length === 0 ? (
             <div className="text-center py-12 bg-slate-50 rounded-md border border-dashed border-slate-200">
-              <p className="text-slate-500 italic">No hay registros de entradas o salidas para este día.</p>
+              <p className="text-slate-500 italic">No hay registros de entradas o salidas en los últimos 7 días.</p>
             </div>
-          ) : (
+          ) : (() => {
+            // Agrupar por día para determinar primera y última de cada jornada
+            const fichadasByDay = fichadas.reduce((acc: any, f: any) => {
+              const d = f.hora.split(' ')[0];
+              if (!acc[d]) acc[d] = [];
+              acc[d].push(f);
+              return acc;
+            }, {});
+
+            return (
             <div className="border rounded-md overflow-hidden">
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow>
-                    <TableHead>Hora</TableHead>
+                    <TableHead>Fecha y Hora</TableHead>
                     <TableHead>ID Reloj</TableHead>
                     <TableHead>Nro Fichada</TableHead>
                     <TableHead className="text-right">Estado</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {fichadas.map((fichada, idx) => (
-                    <TableRow key={fichada.nroFichada} className="hover:bg-slate-50">
-                      <TableCell className="font-semibold text-slate-700">
-                        {fichada.hora.split(' ')[1]}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-slate-500 text-sm">
-                          <MapPin className="w-3 h-3" /> Reloj {fichada.reloj}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-slate-500 font-mono text-sm">
-                        #{fichada.nroFichada}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {idx === 0 ? (
-                          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-none">Primera Entrada</Badge>
-                        ) : idx === fichadas.length - 1 && fichadas.length % 2 === 0 ? (
-                          <Badge className="bg-slate-100 text-slate-800 hover:bg-slate-200 border-none">Salida</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-slate-500">Intermedia</Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {fichadas.map((fichada: any) => {
+                    const [fDate, fTime] = fichada.hora.split(' ');
+                    const [y, m, d] = fDate.split('-');
+                    const timeShort = fTime.substring(0, 5);
+                    const dayFichadas = fichadasByDay[fDate];
+                    const isFirst = dayFichadas[0].nroFichada === fichada.nroFichada;
+                    const isLast = dayFichadas.length > 1 && dayFichadas[dayFichadas.length - 1].nroFichada === fichada.nroFichada;
+
+                    return (
+                      <TableRow key={fichada.nroFichada} className="hover:bg-slate-50">
+                        <TableCell className="font-semibold text-slate-700 whitespace-nowrap">
+                          {d}/{m} <span className="text-slate-500 font-normal ml-1">{timeShort}</span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-slate-500 text-sm">
+                            <MapPin className="w-3 h-3" /> Reloj {fichada.reloj}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-slate-500 font-mono text-sm">
+                          #{fichada.nroFichada}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isFirst ? (
+                            <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border-none">Entrada</Badge>
+                          ) : isLast ? (
+                            <Badge className="bg-slate-100 text-slate-800 hover:bg-slate-200 border-none">Salida</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-slate-500">Intermedia</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
-          )}
+            );
+          })}
         </div>
       </DialogContent>
     </Dialog>

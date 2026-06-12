@@ -62,21 +62,23 @@ export function getFichadasByDate(date: string): FichadaRecord[] {
 }
 
 /**
- * Obtiene todas las fichadas de un empleado específico para un día específico
+ * Obtiene todas las fichadas de un empleado específico para los últimos 7 días hasta la fecha seleccionada
  */
 export function getFichadasByLegajo(legajo: string, date: string): FichadaRecord[] {
   const db = getDb();
   // Los relojes pueden usar legajo literal o con prefijo (ej. 10411)
-  // Como no sabemos exactamente el formato en fichadas, buscamos los que terminen en el legajo
-  // o coincidan exactamente.
+  // Buscamos 7 días hacia atrás para tener el historial semanal
+  const startOfPeriod = db.prepare("SELECT date(?, '-6 days') as d").get(date) as { d: string };
+  const startOfDay = `${startOfPeriod.d} 00:00:00`;
+  const endOfDay = `${date} 23:59:59`;
+
   const stmt = db.prepare(
     `SELECT nroFichada, reloj, hora, legajo, fichadaRepetida 
      FROM fichadas 
      WHERE (legajo = ? OR legajo LIKE ?) AND hora >= ? AND hora <= ? 
      ORDER BY hora ASC`
   );
-  const startOfDay = `${date} 00:00:00`;
-  const endOfDay = `${date} 23:59:59`;
+  
   return stmt.all(legajo, `%${legajo}`, startOfDay, endOfDay) as FichadaRecord[];
 }
 
