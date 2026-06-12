@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { 
-  getFichadasByDate, getAttendanceGroupedByTurno 
+  getFichadasByDate, getAttendanceGroupedByTurno, getFichadasByLegajo 
 } from "../services/asistencia.service";
 import { getSectors } from "../services/personal.service";
 import { isValidDate, getTodayDate } from "../services/admin.service";
@@ -46,4 +46,15 @@ export const attendanceRouter = router({
   getTodayDate: publicProcedure.query(() => {
     return { date: getTodayDate() };
   }),
+
+  getFichadasByLegajo: publicProcedure
+    .input(
+      z.object({
+        legajo: z.string(),
+        date: z.string().refine(isValidDate, "Fecha inválida. Use formato YYYY-MM-DD"),
+      })
+    )
+    .query(({ input }) => {
+      return getFichadasByLegajo(input.legajo, input.date);
+    }),
 });

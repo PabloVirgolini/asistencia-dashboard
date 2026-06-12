@@ -374,3 +374,15 @@ A partir de este punto del desarrollo (Tras la auditoría de QA en `AdminTurnos.
   3. **Corrección de UX en ABM (Scroll Reset):** Se identificó un patrón molesto donde el componente `Loader2` de React Query desmontaba prematuramente el grid de datos al momento de guardar cambios (tras invalidar cache), ocasionando que el navegador resetease el scroll del usuario al top de la pantalla. Se corrigió en todos los tabs (Personal, Sectores, Cargos) ajustando las comprobaciones para que el spinner solo se muestre en initial load.
   4. **Cascada de Actualizaciones (Legajo Único):** Se habilitó la edición libre del número de legajo en el ABM de Personal. Para mantener integridad referencial a pesar de no usar Foreign Keys explícitos con `ON UPDATE CASCADE` en este diseño inicial, se implementó una actualización manual transaccional (`db.transaction`) sobre las tablas asociadas (`historial_turnos`, `novedades_licencias`).
   5. **Filtros Relacionales Dinámicos:** Se ajustó la ventana modal de Replicación de Reglas (por cargo) para que su lista desplegable cruce información con la tabla `sectores_cargos` e impida clonar reglas hacia cargos inhabilitados para ese sector en particular.
+
+### [2026-06-12] - Correcci�n de Bugs: Duplicados en Dashboard y Scroll Jump en Modales
+- **Avance:** Se corrigieron dos bugs molestos reportados por el usuario.
+- **Detalle Arquitect�nico y UX:**
+  1. **Duplicaci�n de Personal:** El empleado aparec�a dos veces (en 'Presentes' y en 'Fuera de Turno'). El origen era un \LEFT JOIN\ multiplicativo en \queryPersonal\ (\sistencia.service.ts\) provocado por duplicados o sobreposiciones en \sectores_cargos\. Se solucion� aplicando \GROUP BY p.legajo\ y \MAX(sc.nivel_criticidad)\ para asegurar unicidad de registros antes de procesarlos en memoria.
+  2. **Salto de Scroll (Scroll Jump) en Dialogs:** Al editar un empleado, el modal cerraba y la p�gina se reiniciaba hacia arriba. Esto es un 'quirk' conocido de Radix UI (usado por shadcn/ui), donde al no estar envuelto el bot�n de edici�n en un \DialogTrigger\, Radix retorna el foco a la fuerza al �nico \DialogTrigger\ existente (el bot�n superior 'A�adir Empleado'). Se corrigi� pasando \onCloseAutoFocus={(e) => e.preventDefault()}\ al \DialogContent\.
+
+
+### [2026-06-12] - Historial de Fichadas y Blindaje de Base de Datos
+- **Avance Arquitectónico:** Se migró el esquema de SQLite para utilizar `PRAGMA foreign_keys = ON` y `ON UPDATE CASCADE ON DELETE CASCADE` en las tablas de `historial_turnos` y `novedades_licencias`, removiendo la frágil gestión manual de cascadas en código.
+- **Avance Testing:** Se implementaron pruebas unitarias completas con Vitest y una base de datos `:memory:` simulada para los servicios de personal, novedades y administración, garantizando el SRP y la fiabilidad de las operaciones ABM.
+- **Avance Funcional (Fase 2):** Se construyó e integró el `HistorialFichadasModal` en el Dashboard. Ahora las filas de empleados son interactivas (clicables) y despliegan una bitácora detallada de entradas/salidas puras consumidas directamente desde el servicio de asistencia.

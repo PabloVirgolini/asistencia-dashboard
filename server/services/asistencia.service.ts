@@ -62,6 +62,25 @@ export function getFichadasByDate(date: string): FichadaRecord[] {
 }
 
 /**
+ * Obtiene todas las fichadas de un empleado específico para un día específico
+ */
+export function getFichadasByLegajo(legajo: string, date: string): FichadaRecord[] {
+  const db = getDb();
+  // Los relojes pueden usar legajo literal o con prefijo (ej. 10411)
+  // Como no sabemos exactamente el formato en fichadas, buscamos los que terminen en el legajo
+  // o coincidan exactamente.
+  const stmt = db.prepare(
+    `SELECT nroFichada, reloj, hora, legajo, fichadaRepetida 
+     FROM fichadas 
+     WHERE (legajo = ? OR legajo LIKE ?) AND hora >= ? AND hora <= ? 
+     ORDER BY hora ASC`
+  );
+  const startOfDay = `${date} 00:00:00`;
+  const endOfDay = `${date} 23:59:59`;
+  return stmt.all(legajo, `%${legajo}`, startOfDay, endOfDay) as FichadaRecord[];
+}
+
+/**
  * Obtiene la asistencia estructurada y agrupada por Turnos
  */
 export function getAttendanceGroupedByTurno(date: string, sector?: string, toleranciaMinutos: number = 0): { grupos: TurnoGroup[], summary: AttendanceSummary } {
@@ -76,12 +95,13 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
   let queryPersonal = `
     SELECT 
       p.legajo, p.nombre, p.es_rotativo, p.sectorPertenencia, p.cargo_id,
-      s.descripcion as sector, c.descripcion as cargo, sc.nivel_criticidad
+      s.descripcion as sector, c.descripcion as cargo, MAX(sc.nivel_criticidad) as nivel_criticidad
     FROM personal p
     LEFT JOIN sectores s ON p.sectorPertenencia = s.idSector
     LEFT JOIN cargos c ON p.cargo_id = c.id_cargo
     LEFT JOIN sectores_cargos sc ON sc.id_cargo = c.id_cargo AND sc.id_sector = p.sectorPertenencia
     WHERE p.activo = 1
+    GROUP BY p.legajo
   `;
   const paramsPersonal: any[] = [];
   if (sector && sector !== 'todos') {

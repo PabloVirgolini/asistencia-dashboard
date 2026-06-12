@@ -157,18 +157,9 @@ export function insertPersonal(legajo: string, nombre: string, sectorPertenencia
 
 export function updatePersonal(originalLegajo: string, legajo: string, nombre: string, sectorPertenencia: string, activo: number, cargo_id: number, es_rotativo: number, enCapacitacion: boolean = false): void {
   const db = getDb();
-  if (originalLegajo !== legajo) {
-    db.transaction(() => {
-      db.prepare('UPDATE personal SET legajo = ?, nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ?, es_rotativo = ?, enCapacitacion = ? WHERE legajo = ?')
-        .run(legajo, nombre, sectorPertenencia, activo, cargo_id, es_rotativo, enCapacitacion ? '1' : '0', originalLegajo);
-      
-      db.prepare('UPDATE historial_turnos SET legajo = ? WHERE legajo = ?').run(legajo, originalLegajo);
-      db.prepare('UPDATE novedades_licencias SET legajo = ? WHERE legajo = ?').run(legajo, originalLegajo);
-    })();
-  } else {
-    const stmt = db.prepare('UPDATE personal SET nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ?, es_rotativo = ?, enCapacitacion = ? WHERE legajo = ?');
-    stmt.run(nombre, sectorPertenencia, activo, cargo_id, es_rotativo, enCapacitacion ? '1' : '0', originalLegajo);
-  }
+  // SQLite handles ON UPDATE CASCADE automatically now for foreign keys referencing legajo
+  const stmt = db.prepare('UPDATE personal SET legajo = ?, nombre = ?, sectorPertenencia = ?, activo = ?, cargo_id = ?, es_rotativo = ?, enCapacitacion = ? WHERE legajo = ?');
+  stmt.run(legajo, nombre, sectorPertenencia, activo, cargo_id, es_rotativo, enCapacitacion ? '1' : '0', originalLegajo);
 }
 
 export function deletePersonal(legajo: string): void {

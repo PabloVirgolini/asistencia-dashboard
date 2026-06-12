@@ -6,7 +6,7 @@
 import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import { filtrarReglas, agruparReglas } from '@/utils/horariosFormatter';
-import { ReglaHorario } from '@server/db/schema';
+type ReglaHorario = any;
 
 export function useMatrizHorarios(reglas: any[], mutations: any) {
   const { removeRegla, updateHorario, duplicateSector, duplicateCargo, batchUpdate } = mutations;

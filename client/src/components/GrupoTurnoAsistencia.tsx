@@ -31,10 +31,14 @@ interface TurnoGroup {
 interface Props {
   grupo: TurnoGroup;
   showEncargados: boolean;
+  date: string;
 }
 
-export default function GrupoTurnoAsistencia({ grupo, showEncargados }: Props) {
+import HistorialFichadasModal from './HistorialFichadasModal';
+
+export default function GrupoTurnoAsistencia({ grupo, showEncargados, date }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [modalPerson, setModalPerson] = useState<{ legajo: string, nombre: string } | null>(null);
 
   const isFueraDeTurno = grupo.id_turno === null;
 
@@ -43,10 +47,13 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados }: Props) {
     const highlight = showEncargados && isEncargado;
 
     return (
-      <tr key={`${p.legajo}-${tipo}`} className={cn(
-        "border-b border-slate-100 hover:bg-slate-50 transition-colors",
-        highlight ? "bg-amber-50/30" : ""
-      )}>
+      <tr key={`${p.legajo}-${tipo}`} 
+          className={cn(
+            "border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer",
+            highlight ? "bg-amber-50/30" : ""
+          )}
+          onClick={() => setModalPerson({ legajo: p.legajo, nombre: p.nombre })}
+      >
         <td className="px-4 py-3">
           <div className="flex items-center gap-2">
             <span className="font-medium text-slate-800">
@@ -208,6 +215,16 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados }: Props) {
             )}
           </div>
         </CardContent>
+      )}
+
+      {modalPerson && (
+        <HistorialFichadasModal
+          isOpen={!!modalPerson}
+          onOpenChange={(open) => !open && setModalPerson(null)}
+          legajo={modalPerson.legajo}
+          nombre={modalPerson.nombre}
+          date={date}
+        />
       )}
     </Card>
   );

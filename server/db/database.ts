@@ -35,6 +35,7 @@ export function getDb(): Database.Database {
 
     db = new Database(dbPath);
     db.pragma('journal_mode = WAL');
+    db.pragma('foreign_keys = ON');
     
     // Inicializar tabla de administradores si no existe
     db.exec(`

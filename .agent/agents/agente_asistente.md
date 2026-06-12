@@ -41,3 +41,7 @@ A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones
 2. **Principio de Responsabilidad Ãšnica (SRP):** Cada archivo, funciÃ³n y componente debe cumplir con UN Ãºnico objetivo claramente definido. Si una funciÃ³n hace dos o mÃ¡s cosas, DEBE ser dividida.
 3. **Cobertura con Unit Tests:** TODO objetivo principal (funciÃ³n pura o regla de negocio) debe estar respaldado por un Unit Test robusto (Vitest). Queda estrictamente prohibido programar lÃ³gica sin su respectivo arnÃ©s de prueba.
 4. **Cero God Classes:** Prohibido crear o expandir componentes React masivos o archivos backend monolÃ­ticos. Emplear siempre PatrÃ³n Repositorio / Servicios y delegar responsabilidades en hooks o utilidades puras.
+
+### Quirks Conocidos y Soluciones (UI/UX - Radix UI)
+- **Radix UI Dialog (shadcn/ui) Scroll Jumps:** Al manejar el estado de los diálogos de manera programática (\isModalOpen\, \setModalOpen\) y usar botones desencadenantes que NO son explícitamente \DialogTrigger\, Radix UI intentará devolver el foco al único \DialogTrigger\ que encuentre en el DOM cuando se cierre el modal. Si ese trigger está en la parte superior de la página, provocará un salto repentino del scroll hacia arriba que resulta muy molesto. Para solucionar este 'quirk', siempre agregar \onCloseAutoFocus={(e) => e.preventDefault()}\ al \DialogContent\.
+

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, Search, Trash2, Loader2, Check, Pencil, X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { MultiSelect } from '@/components/ui/multi-select';
-import { ReglaHorario } from '@server/db/schema';
+type ReglaHorario = any;
 import WeeklyCalendar from './WeeklyCalendar';
 import MatrizList from './MatrizList';
 import { useMatrizHorarios } from './MatrizHorarios/useMatrizHorarios';
