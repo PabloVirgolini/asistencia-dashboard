@@ -6,6 +6,7 @@
  */
 import { getDb } from '../db/database';
 import { calcularLlegadaTarde } from '../utils/calculadoraTardanzas';
+import { getVentanaTurno, parseFichadaStr } from '../utils/turnos';
 
 export interface FichadaRecord {
   nroFichada: number;
@@ -95,10 +96,16 @@ export interface NovedadCompartida {
 export function getAttendanceGroupedByTurno(date: string, sector?: string, toleranciaMinutos: number = 0): { grupos: TurnoGroup[], summary: AttendanceSummary, novedades_compartidas: NovedadCompartida[] } {
   const db = getDb();
   
-  const jsDate = new Date(date + 'T00:00:00');
-  const dayOfWeek = jsDate.getDay(); // 0 a 6
-  const startOfDay = `${date} 00:00:00`;
-  const endOfDay = `${date} 23:59:59`;
+  const jsDate = new Date(`${date}T12:00:00`);
+  const dayOfWeek = jsDate.getDay();
+  
+  const jsYesterday = new Date(jsDate.getTime() - 86400000);
+  const yesterdayStr = jsYesterday.toISOString().split('T')[0];
+  const yesterdayDayOfWeek = jsYesterday.getDay();
+
+  const windowStart = `${yesterdayStr} 12:00:00`;
+  const nextDay = new Date(jsDate.getTime() + 86400000).toISOString().split('T')[0];
+  const windowEnd = `${nextDay} 12:00:00`;
 
   // 1. Obtener todo el personal activo
   let queryPersonal = `
@@ -121,14 +128,11 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
   const personal = db.prepare(queryPersonal).all(...paramsPersonal) as any[];
 
   // 2. Obtener Historial de Turnos (para rotativos)
-  const historialTurnos = db.prepare(`
-    SELECT legajo, id_turno 
-    FROM historial_turnos 
-    WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?)
-  `).all(date, date) as any[];
+  const historialHoy = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?)`).all(date, date) as any[];
+  const historialAyer = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?)`).all(yesterdayStr, yesterdayStr) as any[];
 
-  // 3. Obtener Horarios base (para no rotativos y cálculo de llegadas tarde)
-  const horarios = db.prepare(`SELECT * FROM horarios WHERE dia_semana = ?`).all(dayOfWeek) as any[];
+  // 3. Obtener Horarios base
+  const horariosAll = db.prepare(`SELECT * FROM horarios`).all() as any[];
 
   // 4. Obtener Novedades (Licencias)
   const novedades = db.prepare(`
@@ -137,18 +141,19 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
     WHERE fecha_inicio <= ? AND fecha_fin >= ?
   `).all(date, date) as any[];
 
-  // 5. Obtener Fichadas
+  // 5. Obtener Fichadas con ventana ampliada para cruces de medianoche
   const fichadas = db.prepare(`
     SELECT legajo, hora 
     FROM fichadas 
     WHERE hora >= ? AND hora <= ?
     ORDER BY hora ASC
-  `).all(startOfDay, endOfDay) as any[];
+  `).all(windowStart, windowEnd) as any[];
 
   // Diccionarios
   const turnosDict = db.prepare(`SELECT id_turno, descripcion FROM turnos_horarios`).all() as any[];
   
-  const historialMap = new Map(historialTurnos.map(h => [h.legajo, h.id_turno]));
+  const historialHoyMap = new Map(historialHoy.map(h => [h.legajo, h.id_turno]));
+  const historialAyerMap = new Map(historialAyer.map(h => [h.legajo, h.id_turno]));
   
   const novedadesMap = new Map();
   novedades.forEach(n => {
@@ -174,32 +179,65 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
   // Procesar cada empleado
   const procesados: AttendancePerson[] = personal.map(p => {
     const legajoStr = p.legajo.toString();
-    let id_turno: number | null = null;
-
-    if (p.es_rotativo === 1 || p.es_rotativo === '1') {
-      id_turno = historialMap.get(legajoStr) || null;
-    } else {
-      const exceptionHorario = horarios.find(h => h.legajo === legajoStr);
-      if (exceptionHorario) {
-        id_turno = exceptionHorario.id_turno;
+    
+    // Función helper para encontrar el turno y regla de un día específico
+    const getReglaParaDia = (dSemana: number, hMap: Map<string, number>) => {
+      let t_id: number | null = null;
+      if (p.es_rotativo === 1 || p.es_rotativo === '1') {
+        t_id = hMap.get(legajoStr) || null;
       } else {
-        const matchingHorarios = horarios.filter(h => 
-          h.id_sector == p.sectorPertenencia && 
-          (h.id_cargo == p.cargo_id || h.id_cargo === null)
-        );
-        if (matchingHorarios.length > 0) {
-          id_turno = matchingHorarios[0].id_turno;
+        const matchingDia = horariosAll.filter(h => h.dia_semana === dSemana);
+        const exc = matchingDia.find(h => h.legajo === legajoStr);
+        if (exc) { t_id = exc.id_turno; } 
+        else {
+          const matching = matchingDia.filter(h => h.id_sector == p.sectorPertenencia && (h.id_cargo == p.cargo_id || h.id_cargo === null));
+          if (matching.length > 0) t_id = matching[0].id_turno;
         }
       }
-    }
+      const hs = horariosAll.filter(h => h.id_turno === t_id && h.dia_semana === dSemana);
+      let r = hs.find(h => h.legajo === legajoStr);
+      if (!r) r = hs.find(h => h.id_sector == p.sectorPertenencia && (h.id_cargo == p.cargo_id || h.id_cargo === null));
+      return { id_turno: t_id, regla: r };
+    };
 
-    const susFichadas = fichadasMap.get(legajoStr) || [];
+    const hoy = getReglaParaDia(dayOfWeek, historialHoyMap);
+    const ayer = getReglaParaDia(yesterdayDayOfWeek, historialAyerMap);
+
+    const susFichadasAll = fichadasMap.get(legajoStr) || [];
+    
+    let ventanaHoy = hoy.regla ? getVentanaTurno(date, hoy.regla) : null;
+    let ventanaAyer = ayer.regla ? getVentanaTurno(yesterdayStr, ayer.regla) : null;
+
+    let fichadasHoy: string[] = [];
+    let fichadasInesperadasHoy: string[] = [];
+
+    susFichadasAll.forEach(fStr => {
+      const fDate = parseFichadaStr(fStr);
+      
+      // Pertenece al turno de ayer?
+      if (ventanaAyer && fDate >= ventanaAyer.windowStartTurno && fDate <= ventanaAyer.windowEndTurno) {
+        return; // Absorbida por el turno de ayer, ignorar para el dashboard de hoy
+      }
+
+      // Pertenece al turno de hoy?
+      if (ventanaHoy && fDate >= ventanaHoy.windowStartTurno && fDate <= ventanaHoy.windowEndTurno) {
+        fichadasHoy.push(fStr);
+        return;
+      }
+
+      // Si no cae en ninguna ventana, pero es del dia consultado (date), es inesperada
+      if (fStr.startsWith(date)) {
+        fichadasInesperadasHoy.push(fStr);
+      }
+    });
+
     let llegadaTarde = false;
+    let id_turno_final = hoy.id_turno;
 
-    if (id_turno !== null && susFichadas.length > 0) {
-      const susHorarios = horarios.filter(h => h.id_turno === id_turno);
+    if (id_turno_final !== null && fichadasHoy.length > 0) {
+      const susHorarios = horariosAll.filter(h => h.id_turno === id_turno_final && h.dia_semana === dayOfWeek);
       llegadaTarde = calcularLlegadaTarde(
-        { legajo: legajoStr, sectorPertenencia: p.sectorPertenencia, cargo_id: p.cargo_id, primeraFichada: susFichadas[0] },
+        { legajo: legajoStr, sectorPertenencia: p.sectorPertenencia, cargo_id: p.cargo_id, primeraFichada: fichadasHoy[0] },
         susHorarios,
         new Date(jsDate),
         toleranciaMinutos
@@ -213,8 +251,8 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
       cargo: p.cargo || 'Sin Cargo',
       nivel_criticidad: p.nivel_criticidad || 0,
       es_rotativo: p.es_rotativo === 1 || p.es_rotativo === '1',
-      id_turno,
-      fichadas: susFichadas,
+      id_turno: id_turno_final,
+      fichadas: fichadasHoy.length > 0 ? fichadasHoy : fichadasInesperadasHoy,
       llegadaTarde,
       novedad_activa: novedadesMap.get(legajoStr) || null
     };

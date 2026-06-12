@@ -1,5 +1,6 @@
 import { getDb } from '../db/database.js';
 import { config } from '../config.js';
+import { getVentanaTurno, parseFichadaStr } from '../utils/turnos.js';
 
 export interface Inconsistencia {
   legajo: string;
@@ -24,29 +25,26 @@ export function calcularInconsistenciasPorFecha(fechaStr: string) {
   // Obtener Horarios
   const horarios = db.prepare('SELECT * FROM horarios').all() as any[];
   
-  // Obtener Historial de Turnos activos
-  const historialTurnos = db.prepare(`
-    SELECT legajo, id_turno 
-    FROM historial_turnos 
-    WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?)
-  `).all(fechaStr, fechaStr) as any[];
+  const jsDate = new Date(`${fechaStr}T12:00:00`); // Usar mediodía para evitar problemas de timezone
+  const diaSemana = jsDate.getDay(); // 0 = Domingo, 1 = Lunes...
 
-  // Obtener Novedades activas
-  const novedades = db.prepare(`
-    SELECT legajo, tipo, observaciones, fecha_fin 
-    FROM novedades_licencias 
-    WHERE fecha_inicio <= ? AND fecha_fin >= ?
-  `).all(fechaStr, fechaStr) as any[];
+  const jsYesterday = new Date(jsDate.getTime() - 86400000);
+  const yesterdayStr = jsYesterday.toISOString().split('T')[0];
+  const yesterdayDiaSemana = jsYesterday.getDay();
+
+  // Historiales para hoy y ayer
+  const historialHoy = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?)`).all(fechaStr, fechaStr) as any[];
+  const historialAyer = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?)`).all(yesterdayStr, yesterdayStr) as any[];
+
+  const historialHoyMap = new Map();
+  historialHoy.forEach(h => historialHoyMap.set(h.legajo, h.id_turno));
   
-  const novedadesMap = new Map();
-  novedades.forEach(n => novedadesMap.set(n.legajo, n));
+  const historialAyerMap = new Map();
+  historialAyer.forEach(h => historialAyerMap.set(h.legajo, h.id_turno));
 
-  const historialMap = new Map();
-  historialTurnos.forEach(h => historialMap.set(h.legajo, h.id_turno));
-
-  // Ventana de búsqueda: Desde las 00:00 del día hasta las 12:00 del día siguiente (para cubrir nocturnos)
-  const windowStart = `${fechaStr} 00:00:00`;
-  const nextDay = new Date(new Date(fechaStr).getTime() + 86400000).toISOString().split('T')[0];
+  // Ventana de búsqueda extendida para cruces
+  const windowStart = `${yesterdayStr} 12:00:00`;
+  const nextDay = new Date(jsDate.getTime() + 86400000).toISOString().split('T')[0];
   const windowEnd = `${nextDay} 12:00:00`;
 
   const fichadasStmt = db.prepare(
@@ -65,87 +63,69 @@ export function calcularInconsistenciasPorFecha(fechaStr: string) {
 
   const inconsistencias: Inconsistencia[] = [];
 
-  const jsDate = new Date(`${fechaStr}T12:00:00`); // Usar mediodía para evitar problemas de timezone
-  const diaSemana = jsDate.getDay(); // 0 = Domingo, 1 = Lunes...
-
   personal.forEach(p => {
-    // Determinar qué turno le corresponde hoy
-    let id_turno: number | null = null;
-    if (p.es_rotativo === 1 || p.es_rotativo === '1') {
-      id_turno = historialMap.get(p.legajo) || null;
-    } else {
-      const match = horarios.find(h => 
-        h.sector_id === p.sectorPertenencia && 
-        (h.cargo_id === p.cargo_id || h.cargo_id === null) &&
-        h.dia_semana === diaSemana
-      );
-      if (match) id_turno = match.id_turno;
-    }
+    // Helper
+    const getReglaParaDia = (dSemana: number, hMap: Map<string, number>) => {
+      let t_id: number | null = null;
+      if (p.es_rotativo === 1 || p.es_rotativo === '1') {
+        t_id = hMap.get(p.legajo) || null;
+      } else {
+        const matchingDia = horarios.filter(h => h.dia_semana === dSemana);
+        const exc = matchingDia.find(h => h.legajo === p.legajo);
+        if (exc) { t_id = exc.id_turno; } 
+        else {
+          const matching = matchingDia.filter(h => h.sector_id == p.sectorPertenencia && (h.cargo_id == p.cargo_id || h.cargo_id === null));
+          if (matching.length > 0) t_id = matching[0].id_turno;
+        }
+      }
+      const hs = horarios.filter(h => h.id_turno === t_id && h.dia_semana === dSemana);
+      let r = hs.find(h => h.legajo === p.legajo);
+      if (!r) r = hs.find(h => h.sector_id == p.sectorPertenencia && (h.cargo_id == p.cargo_id || h.cargo_id === null));
+      return { id_turno: t_id, regla: r };
+    };
 
-    const susHorarios = horarios.filter(h => h.id_turno === id_turno && h.dia_semana === diaSemana);
-    
-    // Si hay horarios generales y hay excepción por legajo, priorizar excepción
-    let reglaHoraria = susHorarios.find(h => h.legajo === p.legajo);
-    if (!reglaHoraria) {
-      reglaHoraria = susHorarios.find(h => h.sector_id === p.sectorPertenencia && (h.cargo_id === p.cargo_id || h.cargo_id === null));
-    }
+    const hoy = getReglaParaDia(diaSemana, historialHoyMap);
+    const ayer = getReglaParaDia(yesterdayDiaSemana, historialAyerMap);
 
     const tieneNovedad = novedadesMap.has(p.legajo);
     const susFichadasAll = fichadasMap.get(p.legajo) || [];
 
-    if (!reglaHoraria) {
-      // No tiene turno esperado hoy.
-      // Si hay fichadas, pero son estrictamente del 'fechaStr' (no del día siguiente), es inesperada
-      const fichadasHoy = susFichadasAll.filter(f => f.startsWith(fechaStr));
-      if (fichadasHoy.length > 0 && !tieneNovedad) {
+    let ventanaHoy = hoy.regla ? getVentanaTurno(fechaStr, hoy.regla) : null;
+    let ventanaAyer = ayer.regla ? getVentanaTurno(yesterdayStr, ayer.regla) : null;
+
+    let fichadasHoy: string[] = [];
+    let fichadasInesperadasHoy: string[] = [];
+
+    susFichadasAll.forEach(fStr => {
+      const fDate = parseFichadaStr(fStr);
+      
+      if (ventanaAyer && fDate >= ventanaAyer.windowStartTurno && fDate <= ventanaAyer.windowEndTurno) {
+        return; // Absorbida ayer
+      }
+
+      if (ventanaHoy && fDate >= ventanaHoy.windowStartTurno && fDate <= ventanaHoy.windowEndTurno) {
+        fichadasHoy.push(fStr);
+        return;
+      }
+
+      if (fStr.startsWith(fechaStr)) {
+        fichadasInesperadasHoy.push(fStr);
+      }
+    });
+
+    if (!hoy.regla) {
+      if (fichadasInesperadasHoy.length > 0 && !tieneNovedad) {
         inconsistencias.push({
           legajo: p.legajo,
           fecha: fechaStr,
           tipo: 'Fichada Inesperada',
-          detalles: `Fichó ${fichadasHoy.length} veces en un día sin turno asignado.`
+          detalles: `Fichó ${fichadasInesperadasHoy.length} veces en un día sin turno asignado.`
         });
       }
       return;
     }
 
-    // Tiene turno. Veamos su ventana teórica
-    const horaEntradaStr = reglaHoraria.hora_entrada; // "22:00"
-    const horaSalidaStr = reglaHoraria.hora_salida;   // "06:00" o nulo
-
-    if (!horaEntradaStr) return; // Regla mal armada
-
-    // Convertir a Date objects
-    const [hE, mE] = horaEntradaStr.split(':').map(Number);
-    const expectedEntrada = new Date(jsDate);
-    expectedEntrada.setHours(hE, mE, 0, 0);
-
-    let expectedSalida: Date | null = null;
-    let cruzaMedianoche = false;
-
-    if (horaSalidaStr) {
-      const [hS, mS] = horaSalidaStr.split(':').map(Number);
-      expectedSalida = new Date(jsDate);
-      expectedSalida.setHours(hS, mS, 0, 0);
-
-      if (expectedSalida < expectedEntrada) {
-        expectedSalida.setDate(expectedSalida.getDate() + 1);
-        cruzaMedianoche = true;
-      }
-    }
-
-    // Filtrar susFichadasAll para tomar solo las que caigan "cerca" de este turno
-    // Ejemplo: desde Entrada - 4 hs hasta Salida + 4hs
-    const windowStartTurno = new Date(expectedEntrada.getTime() - 4 * 3600000);
-    const windowEndTurno = expectedSalida ? new Date(expectedSalida.getTime() + 4 * 3600000) : new Date(expectedEntrada.getTime() + 16 * 3600000);
-
-    const fichadasDelTurno = susFichadasAll.filter(fStr => {
-      // fStr formato: "YYYY-MM-DD HH:MM:SS"
-      const [fd, ft] = fStr.split(' ');
-      const [y, m, d] = fd.split('-').map(Number);
-      const [H, M, S] = ft.split(':').map(Number);
-      const fDate = new Date(y, m - 1, d, H, M, S);
-      return fDate >= windowStartTurno && fDate <= windowEndTurno;
-    });
+    const fichadasDelTurno = fichadasHoy;
 
     if (fichadasDelTurno.length === 0) {
       if (!tieneNovedad) {
@@ -153,7 +133,7 @@ export function calcularInconsistenciasPorFecha(fechaStr: string) {
           legajo: p.legajo,
           fecha: fechaStr,
           tipo: 'Ausencia',
-          detalles: `No registra fichadas para su turno de ${horaEntradaStr} a ${horaSalidaStr || '?'}.`
+          detalles: `No registra fichadas para su turno de ${hoy.regla.hora_entrada} a ${hoy.regla.hora_salida || '?'}.`
         });
       }
       return;
@@ -174,42 +154,29 @@ export function calcularInconsistenciasPorFecha(fechaStr: string) {
     }
 
     // Llegada Tarde
-    const [fd, ft] = firstFichadaStr.split(' ');
-    const [H, M, S] = ft.split(':').map(Number);
-    const actualEntrada = new Date(jsDate);
-    if (cruzaMedianoche && fd === nextDay) {
-      actualEntrada.setDate(actualEntrada.getDate() + 1);
-    }
-    actualEntrada.setHours(H, M, S, 0);
-
-    const limiteTarde = new Date(expectedEntrada.getTime() + config.toleranciaLlegadaTardeDefault * 60000);
+    const actualEntrada = parseFichadaStr(firstFichadaStr);
+    const limiteTarde = new Date(ventanaHoy!.expectedEntrada.getTime() + config.toleranciaLlegadaTardeDefault * 60000);
 
     if (actualEntrada > limiteTarde) {
       inconsistencias.push({
         legajo: p.legajo,
         fecha: fechaStr,
         tipo: 'Llegada Tarde',
-        detalles: `Debía ingresar a las ${horaEntradaStr}. Fichó a las ${ft.substring(0, 5)}.`
+        detalles: `Debía ingresar a las ${hoy.regla.hora_entrada}. Fichó a las ${ft.substring(0, 5)}.`
       });
     }
 
     // Salida Anticipada
-    if (expectedSalida && fichadasDelTurno.length > 1) { // Necesita al menos entrada y salida
-      const [ld, lt] = lastFichadaStr.split(' ');
-      const [lH, lM, lS] = lt.split(':').map(Number);
-      const actualSalida = new Date(jsDate);
-      if (cruzaMedianoche && ld === nextDay) {
-        actualSalida.setDate(actualSalida.getDate() + 1);
-      }
-      actualSalida.setHours(lH, lM, lS, 0);
+    if (ventanaHoy!.expectedSalida && fichadasDelTurno.length > 1) { // Necesita al menos entrada y salida
+      const actualSalida = parseFichadaStr(lastFichadaStr);
 
       // Usamos estricto 0 tolerancia
-      if (actualSalida < expectedSalida) {
+      if (actualSalida < ventanaHoy!.expectedSalida) {
         inconsistencias.push({
           legajo: p.legajo,
           fecha: fechaStr,
           tipo: 'Salida Anticipada',
-          detalles: `Debía salir a las ${horaSalidaStr}. Fichó salida a las ${lt.substring(0, 5)}.`
+          detalles: `Debía salir a las ${hoy.regla.hora_salida}. Fichó salida a las ${lastFichadaStr.split(' ')[1].substring(0, 5)}.`
         });
       }
     }
