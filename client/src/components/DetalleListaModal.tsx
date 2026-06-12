@@ -27,7 +27,7 @@ interface Props {
 export default function DetalleListaModal({ isOpen, onOpenChange, title, people }: Props) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" onCloseAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{title} ({people.length})</DialogTitle>
         </DialogHeader>

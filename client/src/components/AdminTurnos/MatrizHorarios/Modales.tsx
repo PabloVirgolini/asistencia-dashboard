@@ -38,7 +38,7 @@ export function Modales({
     <>
       {/* Modal Edición en Lote */}
       <Dialog open={batchModalOpen} onOpenChange={setBatchModalOpen}>
-        <DialogContent>
+        <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Editar {selectedRules.length} reglas en lote</DialogTitle>
             <DialogDescription>
@@ -86,7 +86,7 @@ export function Modales({
 
       {/* Modal Replicar por Sector */}
       <Dialog open={duplicateModalOpen} onOpenChange={setDuplicateModalOpen}>
-        <DialogContent>
+        <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Replicar reglas de sector</DialogTitle>
             <DialogDescription>
@@ -113,7 +113,7 @@ export function Modales({
 
       {/* Modal Replicar por Cargo */}
       <Dialog open={duplicateCargoModalOpen} onOpenChange={setDuplicateCargoModalOpen}>
-        <DialogContent>
+        <DialogContent onCloseAutoFocus={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Replicar reglas de cargo</DialogTitle>
             <DialogDescription>
