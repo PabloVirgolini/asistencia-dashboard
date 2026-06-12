@@ -30,6 +30,11 @@ vi.mock('@/hooks/useAttendanceDashboard', () => ({
   useAttendanceDashboard: vi.fn(),
 }));
 
+import { useInconsistencias } from '@/hooks/useInconsistencias';
+vi.mock('@/hooks/useInconsistencias', () => ({
+  useInconsistencias: vi.fn(() => ({ inconsistencias: [], isLoading: false, error: null, refetch: vi.fn() })),
+}));
+
 import AttendanceDashboard from './AttendanceDashboard';
 
 describe('AttendanceDashboard Component', () => {

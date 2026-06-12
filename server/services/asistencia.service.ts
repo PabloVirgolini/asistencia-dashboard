@@ -277,12 +277,16 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
     g.esperados > 0 || g.fichadas_inesperadas.length > 0
   );
 
-  const totalActivos = personal.length;
-  const porcentajePresentes = totalActivos > 0 ? Math.round((totalPresentes / totalActivos) * 100) : 0;
-  const porcentajeAusentes = totalActivos > 0 ? 100 - porcentajePresentes : 0;
+  const totalEsperados = procesados.filter(p => p.id_turno !== null).length;
+  // We use totalEsperados as the base for percentages
+  // However, totalPresentes might include unexpected punches, so percentage might exceed 100% if we don't handle it.
+  const presentesEsperados = totalPresentes - gruposMap.get(null)!.fichadas_inesperadas.length;
+  
+  const porcentajePresentes = totalEsperados > 0 ? Math.round((presentesEsperados / totalEsperados) * 100) : 0;
+  const porcentajeAusentes = totalEsperados > 0 ? Math.round((totalAusentes / totalEsperados) * 100) : 0;
 
   const summary: AttendanceSummary = {
-    totalActivos,
+    totalActivos: totalEsperados, // We reuse this field but it now means Total Esperados
     presentes: totalPresentes,
     ausentes: totalAusentes,
     licencias: totalLicencias,

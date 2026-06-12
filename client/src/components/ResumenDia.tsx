@@ -41,7 +41,7 @@ export default function ResumenDia({ summary, date, sector }: ResumenDiaProps) {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-600 mb-1">
-                  Total de Personal
+                  Esperados en Turno
                 </p>
                 <p className="text-3xl font-bold text-slate-900">
                   {summary.totalActivos}

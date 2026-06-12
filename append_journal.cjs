@@ -1,7 +1,7 @@
 const fs = require('fs');
 const content = `
-### [2026-06-12] - Configuraciones y Novedades Compartidas
-- **Avance Arquitectónico:** Se migró la configuración estática a un archivo central \`server/config.ts\` y variables UI al \`constants.ts\` del frontend para evitar "números mágicos" hardcodeados en los servicios y hooks.
-- **Avance Funcional (Fase 2):** Se añadió la opción de "Compartir en Dashboard" en el administrador de novedades. Ahora las licencias públicas se pueden visualizar en una tabla de sólo lectura al pie del Dashboard Público sin exponer información sensible o controles administrativos.
+### [2026-06-12] - Motor de Inconsistencias Independiente
+- **Decisión Arquitectónica:** Se implementó el 'Motor de Inconsistencias' como un servicio en segundo plano que se alimenta de la inmutabilidad de la tabla \`fichadas\`. Los cálculos (llegadas tarde, salidas anticipadas, faltas) se depositan en el modelo de lectura \`inconsistencias_calculadas\`.
+- **Beneficio Operativo:** Esto evita recálculos masivos de turnos nocturnos y rotativos en cada render del Dashboard, manteniendo la UI extremadamente rápida y habilitando futuros flujos para "justificar/revisar" inconsistencias sin alterar el dato crudo.
 `;
 fs.appendFileSync('.agent/agents/journal.md', content);

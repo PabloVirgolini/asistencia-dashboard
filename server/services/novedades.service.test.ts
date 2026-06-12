@@ -22,6 +22,8 @@ beforeEach(() => {
       fecha_inicio TEXT NOT NULL,
       fecha_fin TEXT NOT NULL,
       observaciones TEXT,
+      mostrar_en_dashboard INTEGER DEFAULT 1,
+      fecha_carga DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (legajo) REFERENCES personal(legajo) ON UPDATE CASCADE ON DELETE CASCADE
     );
   `);

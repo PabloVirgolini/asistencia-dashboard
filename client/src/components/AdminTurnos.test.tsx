@@ -60,6 +60,7 @@ vi.mock('@/lib/trpc', () => {
         duplicateCargoRules: { useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }) },
         batchUpdateHorarios: { useMutation: () => ({ mutateAsync: vi.fn(), isPending: false }) },
         updateHorario: { useMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }) },
+        updateTurnoHorario: { useMutation: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }) },
       },
       attendance: {
         getSectors: { useQuery: (...args: any[]) => mGetSectors(...args) }

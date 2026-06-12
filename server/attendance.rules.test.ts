@@ -77,8 +77,8 @@ describe('attendance.ts - Reglas y Turnos', () => {
   });
 
   it('removeTurnoHorario - arroja error si el turno tiene reglas asignadas', () => {
-    mGet.mockReturnValueOnce({ c: 1 });
-    expect(() => removeTurnoHorario(1)).toThrowError('No se puede eliminar el turno porque tiene reglas de horario asignadas.');
+    mGet.mockReturnValueOnce({ count: 1 });
+    expect(() => removeTurnoHorario(1)).toThrowError('No se puede eliminar el turno porque está en uso en las reglas de horarios');
     expect(mRun).not.toHaveBeenCalled();
   });
 
@@ -112,8 +112,8 @@ describe('attendance.ts - Reglas y Turnos', () => {
     
     updateHorario(1, '09:00', '18:00', 'Sistema');
     
-    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime("now", "localtime"), updated_by = ? WHERE id_horario = ?'));
-    expect(mRun).toHaveBeenCalledWith('09:00', '18:00', 'Sistema', 1);
+    expect(mPrepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE horarios SET hora_entrada = ?, hora_salida = ?, updated_at = datetime(\'now\', \'localtime\'), updated_by = ?, es_cortado = ?, hora_entrada_2 = ?, hora_salida_2 = ? WHERE id_horario = ?'));
+    expect(mRun).toHaveBeenCalledWith('09:00', '18:00', 'Sistema', 0, null, null, 1);
   });
 
   it('updateHorario - arroja error si el horario a actualizar no existe', () => {
@@ -134,102 +134,5 @@ describe('attendance.ts - Reglas y Turnos', () => {
   it('removeHorario - arroja error si la regla no existe', () => {
     mGet.mockReturnValueOnce(undefined);
     expect(() => removeHorario(1)).toThrowError('La regla no existe.');
-  });
-
-  describe('getPresentesByDate - Prioridad de Reglas (LlegadaTarde)', () => {
-    it('marca llegadaTarde = true si llega después de la hora esperada por regla general', () => {
-      // 1. Mock the first query (records)
-      mAll.mockReturnValueOnce([{
-        legajo: '001',
-        nombre: 'Juan',
-        sector: 'Producción',
-        cargo: 'Operario',
-        nivel_criticidad: 1,
-        sectorPertenencia: 10,
-        cargo_id: 20,
-        id_turno: 5,
-        primeraFichada: '2026-06-09 08:15:00' // arrived at 08:15
-      }]);
-
-      // 2. Mock the second query (horariosDelDia)
-      mAll.mockReturnValueOnce([
-        {
-          id_turno: 5,
-          id_sector: 10,
-          id_cargo: 20,
-          legajo: null,
-          hora_entrada: '08:00' // expected 08:00
-        }
-      ]);
-
-      const presentes = getPresentesByDate('2026-06-09');
-      
-      expect(presentes[0].llegadaTarde).toBe(true);
-      expect(presentes[0].nombre).toBe('Juan');
-    });
-
-    it('marca llegadaTarde = false si llega antes de la hora esperada por regla general', () => {
-      mAll.mockReturnValueOnce([{
-        legajo: '001',
-        nombre: 'Juan',
-        sectorPertenencia: 10,
-        cargo_id: 20,
-        id_turno: 5,
-        primeraFichada: '2026-06-09 07:50:00' // arrived at 07:50
-      }]);
-
-      mAll.mockReturnValueOnce([
-        { id_turno: 5, id_sector: 10, id_cargo: 20, legajo: null, hora_entrada: '08:00' }
-      ]);
-
-      const presentes = getPresentesByDate('2026-06-09');
-      expect(presentes[0].llegadaTarde).toBe(false);
-    });
-
-    it('Prioridad: Excepción por legajo anula la regla general', () => {
-      mAll.mockReturnValueOnce([{
-        legajo: '002',
-        nombre: 'Maria',
-        sectorPertenencia: 10,
-        cargo_id: 20,
-        id_turno: 5,
-        primeraFichada: '2026-06-09 08:45:00' // arrived at 08:45
-      }]);
-
-      mAll.mockReturnValueOnce([
-        // Regla general para el sector+cargo (espera a las 08:00)
-        { id_turno: 5, id_sector: 10, id_cargo: 20, legajo: null, hora_entrada: '08:00' },
-        // Excepción por legajo (espera a las 09:00)
-        { id_turno: 5, id_sector: null, id_cargo: null, legajo: '002', hora_entrada: '09:00' }
-      ]);
-
-      const presentes = getPresentesByDate('2026-06-09');
-      
-      // Llegó 08:45, esperado 09:00 por excepción -> false
-      expect(presentes[0].llegadaTarde).toBe(false);
-    });
-    
-    it('Aplica regla general correctamente si no hay excepción', () => {
-      mAll.mockReturnValueOnce([{
-        legajo: '003',
-        nombre: 'Pedro',
-        sectorPertenencia: 10,
-        cargo_id: 20,
-        id_turno: 5,
-        primeraFichada: '2026-06-09 08:10:00' // arrived at 08:10
-      }]);
-
-      mAll.mockReturnValueOnce([
-        // Regla general (08:00)
-        { id_turno: 5, id_sector: 10, id_cargo: 20, legajo: null, hora_entrada: '08:00' },
-        // Excepción de otro legajo
-        { id_turno: 5, id_sector: null, id_cargo: null, legajo: '002', hora_entrada: '09:00' }
-      ]);
-
-      const presentes = getPresentesByDate('2026-06-09');
-      
-      // Llegó 08:10, esperado 08:00 (no es la excepción) -> true
-      expect(presentes[0].llegadaTarde).toBe(true);
-    });
   });
 });

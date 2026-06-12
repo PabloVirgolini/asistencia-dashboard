@@ -19,18 +19,18 @@ describe('horariosFormatter', () => {
 
   describe('filtrarReglas', () => {
     it('debería retornar todas las reglas si no hay filtros', () => {
-      const result = filtrarReglas(mockReglas, { texto: '', turno: 'todos', sector: 'todos', cargo: 'todos' });
+      const result = filtrarReglas(mockReglas, { texto: '', turnos: [], sectores: [], cargos: [] });
       expect(result.length).toBe(3);
     });
 
     it('debería filtrar por texto', () => {
-      const result = filtrarReglas(mockReglas, { texto: 'Mantenimiento', turno: 'todos', sector: 'todos', cargo: 'todos' });
+      const result = filtrarReglas(mockReglas, { texto: 'Mantenimiento', turnos: [], sectores: [], cargos: [] });
       expect(result.length).toBe(1);
       expect(result[0].sector).toBe('Mantenimiento');
     });
 
     it('debería filtrar por turno exacto', () => {
-      const result = filtrarReglas(mockReglas, { texto: '', turno: 'Mañana', sector: 'todos', cargo: 'todos' });
+      const result = filtrarReglas(mockReglas, { texto: '', turnos: ['Mañana'], sectores: [], cargos: [] });
       expect(result.length).toBe(2);
       expect(result[0].turno).toBe('Mañana');
     });
