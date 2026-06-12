@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,10 +35,17 @@ export default function AttendanceDashboard() {
 
   const { inconsistencias } = useInconsistencias(selectedDate);
 
+  const [, navigate] = useLocation();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
+          <div className="flex justify-end mb-2">
+            <Button variant="ghost" size="sm" className="text-slate-600 hover:text-indigo-600" onClick={() => navigate('/admin')}>
+              Gestionar Licencias / Panel Admin
+            </Button>
+          </div>
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-4xl font-bold text-slate-900 mb-2">

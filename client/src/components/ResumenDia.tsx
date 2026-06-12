@@ -7,6 +7,7 @@ interface ResumenDiaProps {
     totalActivos: number;
     presentes: number;
     ausentes: number;
+    licencias: number;
     porcentajePresentes: number;
     porcentajeAusentes: number;
   };
@@ -34,7 +35,7 @@ export default function ResumenDia({ summary, date, sector }: ResumenDiaProps) {
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Total de Personal */}
         <Card className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="pt-6">
@@ -93,6 +94,25 @@ export default function ResumenDia({ summary, date, sector }: ResumenDiaProps) {
               </div>
               <div className="p-3 bg-red-100 rounded-lg">
                 <UserX className="h-6 w-6 text-red-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Licencias */}
+        <Card className="border-amber-200 shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-600 mb-1">
+                  Licencias
+                </p>
+                <p className="text-3xl font-bold text-amber-600">
+                  {summary.licencias}
+                </p>
+              </div>
+              <div className="p-3 bg-amber-100 rounded-lg">
+                <Users className="h-6 w-6 text-amber-600" />
               </div>
             </div>
           </CardContent>
