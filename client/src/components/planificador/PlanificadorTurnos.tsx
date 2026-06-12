@@ -12,6 +12,7 @@ export function PlanificadorTurnos() {
     sector, setSector,
     fechaInicio, setFechaInicio,
     fechaFin, setFechaFin,
+    nombrePlan, setNombrePlan,
     asignaciones,
     handleSelectTurno,
     handleSelectMasivo,
@@ -90,6 +91,18 @@ export function PlanificadorTurnos() {
                   className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
                 />
               </div>
+            </div>
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-6">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Nombre del Plan (Opcional)</label>
+              <input
+                type="text"
+                placeholder="Ej. Cambio de turno, Refuerzo fin de semana..."
+                value={nombrePlan}
+                onChange={(e) => setNombrePlan(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-md bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+              />
             </div>
           </div>
         </CardContent>

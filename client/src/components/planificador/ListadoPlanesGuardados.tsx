@@ -46,8 +46,11 @@ export function ListadoPlanesGuardados({ onEditPlan }: { onEditPlan?: (sector: s
                   <Calendar className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-slate-800 text-lg">Sector {plan.sector_descripcion}</h4>
+                  <h4 className="font-semibold text-slate-800 text-lg">
+                    {plan.nombre_plan ? plan.nombre_plan : `Sector ${plan.sector_descripcion}`}
+                  </h4>
                   <p className="text-sm text-slate-500">
+                    {plan.nombre_plan && <span className="mr-2 text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-xs font-medium border border-indigo-100">Sector {plan.sector_descripcion}</span>}
                     Planificación del <span className="font-medium text-slate-700">{fechaInicioFormatted}</span> al <span className="font-medium text-slate-700">{fechaFinFormatted}</span>
                   </p>
                 </div>

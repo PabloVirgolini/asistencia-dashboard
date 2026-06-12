@@ -19,7 +19,8 @@ export const planificadorProcedures = {
         es_excepcional: z.number().nullable().optional(),
         hora_entrada_excepcional: z.string().nullable().optional(),
         hora_salida_excepcional: z.string().nullable().optional(),
-        id_sector_excepcional: z.number().nullable().optional()
+        id_sector_excepcional: z.number().nullable().optional(),
+        nombre_plan: z.string().nullable().optional()
       }))
     }))
     .mutation(({ input }) => {

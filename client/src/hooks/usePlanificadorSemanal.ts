@@ -6,6 +6,7 @@ export function usePlanificadorSemanal() {
   const [sector, setSector] = useState<string>('');
   const [fechaInicio, setFechaInicio] = useState<string>('');
   const [fechaFin, setFechaFin] = useState<string>('');
+  const [nombrePlan, setNombrePlan] = useState<string>('');
   
   type AsignacionType = {
     id_turno: number | null,
@@ -72,7 +73,8 @@ export function usePlanificadorSemanal() {
       es_excepcional: asig.es_excepcional ? 1 : 0,
       hora_entrada_excepcional: asig.hora_entrada_excepcional,
       hora_salida_excepcional: asig.hora_salida_excepcional,
-      id_sector_excepcional: asig.id_sector_excepcional
+      id_sector_excepcional: asig.id_sector_excepcional,
+      nombre_plan: nombrePlan || null
     }));
 
     if (payload.length === 0) {
@@ -87,6 +89,7 @@ export function usePlanificadorSemanal() {
     setSector('');
     setFechaInicio('');
     setFechaFin('');
+    setNombrePlan('');
     setAsignaciones({});
   };
 
@@ -95,6 +98,7 @@ export function usePlanificadorSemanal() {
     setSector(editSector);
     setFechaInicio(editFechaInicio);
     setFechaFin(editFechaFin);
+    setNombrePlan(''); // Reset nombre_plan for edit to avoid confusion or populate if existing
     
     try {
       const existingPlan = await trpcContext.client.admin.getPlanificacionGuardada.query({
@@ -128,6 +132,7 @@ export function usePlanificadorSemanal() {
     sector, setSector,
     fechaInicio, setFechaInicio,
     fechaFin, setFechaFin,
+    nombrePlan, setNombrePlan,
     personalPlanificable,
     isLoading,
     asignaciones,

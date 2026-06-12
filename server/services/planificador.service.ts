@@ -62,12 +62,12 @@ export function getPersonalPlanificable(sector: string, fecha_inicio: string, fe
   }));
 }
 
-export function savePlanificacionMasiva(asignaciones: { legajo: string, id_turno: number | null, fecha_inicio: string, fecha_fin: string, es_excepcional?: number | null, hora_entrada_excepcional?: string | null, hora_salida_excepcional?: string | null, id_sector_excepcional?: number | null }[]): void {
+export function savePlanificacionMasiva(asignaciones: { legajo: string, id_turno: number | null, fecha_inicio: string, fecha_fin: string, es_excepcional?: number | null, hora_entrada_excepcional?: string | null, hora_salida_excepcional?: string | null, id_sector_excepcional?: number | null, nombre_plan?: string | null }[]): void {
   const db = getDb();
   
   // Realizar inserción en lote (Transaction)
   const insert = db.transaction((asignacionesList) => {
-    const stmt = db.prepare('INSERT INTO historial_turnos (legajo, id_turno, fecha_inicio, fecha_fin, es_excepcional, hora_entrada_excepcional, hora_salida_excepcional, id_sector_excepcional) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    const stmt = db.prepare('INSERT INTO historial_turnos (legajo, id_turno, fecha_inicio, fecha_fin, es_excepcional, hora_entrada_excepcional, hora_salida_excepcional, id_sector_excepcional, nombre_plan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
     
     for (const asig of asignacionesList) {
       // 1. Borrar cualquier planificación previa que este empleado pudiera tener en estas fechas para no duplicar
@@ -85,7 +85,8 @@ export function savePlanificacionMasiva(asignaciones: { legajo: string, id_turno
         asig.es_excepcional || 0, 
         asig.hora_entrada_excepcional || null, 
         asig.hora_salida_excepcional || null, 
-        asig.id_sector_excepcional || null
+        asig.id_sector_excepcional || null,
+        asig.nombre_plan || null
       );
     }
   });
@@ -131,7 +132,8 @@ export function getListaPlanesGuardados(): any[] {
       p.sectorPertenencia as sector,
       s.descripcion as sector_descripcion,
       ht.fecha_inicio, 
-      ht.fecha_fin 
+      ht.fecha_fin,
+      ht.nombre_plan
     FROM historial_turnos ht
     JOIN personal p ON ht.legajo = p.legajo
     JOIN sectores s ON p.sectorPertenencia = s.idSector

@@ -44,8 +44,8 @@ export function calcularInconsistenciasPorFecha(fechaStr: string) {
   const yesterdayDiaSemana = jsYesterday.getDay();
 
   // Historiales para hoy y ayer
-  const historialHoy = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?)`).all(fechaStr, fechaStr) as any[];
-  const historialAyer = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?)`).all(yesterdayStr, yesterdayStr) as any[];
+  const historialHoy = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?) ORDER BY (julianday(COALESCE(fecha_fin, '2099-12-31')) - julianday(fecha_inicio)) DESC`).all(fechaStr, fechaStr) as any[];
+  const historialAyer = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?) ORDER BY (julianday(COALESCE(fecha_fin, '2099-12-31')) - julianday(fecha_inicio)) DESC`).all(yesterdayStr, yesterdayStr) as any[];
 
   const historialHoyMap = new Map();
   historialHoy.forEach(h => historialHoyMap.set(h.legajo, h.id_turno));

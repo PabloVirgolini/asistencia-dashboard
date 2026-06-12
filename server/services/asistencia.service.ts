@@ -128,8 +128,8 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
   const personal = db.prepare(queryPersonal).all(...paramsPersonal) as any[];
 
   // 2. Obtener Historial de Turnos (para rotativos)
-  const historialHoy = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?)`).all(date, date) as any[];
-  const historialAyer = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?)`).all(yesterdayStr, yesterdayStr) as any[];
+  const historialHoy = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?) ORDER BY (julianday(COALESCE(fecha_fin, '2099-12-31')) - julianday(fecha_inicio)) DESC`).all(date, date) as any[];
+  const historialAyer = db.prepare(`SELECT legajo, id_turno FROM historial_turnos WHERE fecha_inicio <= ? AND (fecha_fin IS NULL OR fecha_fin >= ?) ORDER BY (julianday(COALESCE(fecha_fin, '2099-12-31')) - julianday(fecha_inicio)) DESC`).all(yesterdayStr, yesterdayStr) as any[];
 
   // 3. Obtener Horarios base
   const horariosAll = db.prepare(`SELECT * FROM horarios`).all() as any[];
