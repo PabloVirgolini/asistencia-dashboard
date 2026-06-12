@@ -179,12 +179,17 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
     if (p.es_rotativo === 1 || p.es_rotativo === '1') {
       id_turno = historialMap.get(legajoStr) || null;
     } else {
-      const matchingHorarios = horarios.filter(h => 
-        h.sector_id === p.sectorPertenencia && 
-        (h.cargo_id === p.cargo_id || h.cargo_id === null)
-      );
-      if (matchingHorarios.length > 0) {
-        id_turno = matchingHorarios[0].id_turno;
+      const exceptionHorario = horarios.find(h => h.legajo === legajoStr);
+      if (exceptionHorario) {
+        id_turno = exceptionHorario.id_turno;
+      } else {
+        const matchingHorarios = horarios.filter(h => 
+          h.id_sector === p.sectorPertenencia && 
+          (h.id_cargo === p.cargo_id || h.id_cargo === null)
+        );
+        if (matchingHorarios.length > 0) {
+          id_turno = matchingHorarios[0].id_turno;
+        }
       }
     }
 
