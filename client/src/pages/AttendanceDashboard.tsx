@@ -17,6 +17,7 @@ import { AlertCircle } from "lucide-react";
 import SelectorFecha from "@/components/SelectorFecha";
 import ResumenDia from "@/components/ResumenDia";
 import GrupoTurnoAsistencia from "@/components/GrupoTurnoAsistencia";
+import { NovedadesAcordeon } from "@/components/NovedadesAcordeon";
 import { useAttendanceDashboard } from '@/hooks/useAttendanceDashboard';
 import { useInconsistencias } from '@/hooks/useInconsistencias';
 
@@ -169,50 +170,7 @@ export default function AttendanceDashboard() {
               )}
             </div>
 
-            {attendanceQuery.data.novedades_compartidas && attendanceQuery.data.novedades_compartidas.length > 0 && (
-              <div className="mt-8">
-                <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-indigo-500" /> Novedades del Personal
-                </h3>
-                <Card className="border-slate-200 shadow-sm overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                      <thead className="text-xs text-slate-500 uppercase bg-slate-50">
-                        <tr>
-                          <th className="px-6 py-3">Empleado</th>
-                          <th className="px-6 py-3">Tipo de Novedad</th>
-                          <th className="px-6 py-3 text-right">Hasta (Inclusive)</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {attendanceQuery.data.novedades_compartidas.map((nov: any, idx: number) => {
-                          const [y, m, d] = nov.fecha_fin.split('-').map(Number);
-                          const fechaParseada = new Date(y, m - 1, d).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
-                          return (
-                            <tr key={`${nov.legajo}-${idx}`} className="hover:bg-slate-50 transition-colors bg-white">
-                              <td className="px-6 py-3 font-medium text-slate-800">
-                                {nov.nombre} <span className="text-slate-400 font-normal text-xs ml-1">({nov.legajo})</span>
-                              </td>
-                              <td className="px-6 py-3">
-                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                                  nov.tipo === 'Vacaciones' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
-                                  nov.tipo === 'Enfermedad' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'bg-blue-50 text-blue-700 border-blue-200'
-                                }`}>
-                                  {nov.tipo}
-                                </span>
-                              </td>
-                              <td className="px-6 py-3 text-right text-slate-600 font-medium">
-                                {fechaParseada}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
-              </div>
-            )}
+            <NovedadesAcordeon novedades={attendanceQuery.data.novedades_compartidas} />
           </>
         ) : null}
       </div>

@@ -3,9 +3,9 @@ import { TRPCError } from "@trpc/server";
 import { adminProcedure } from "../../_core/trpc";
 import { 
   getTurnosHorarios, getTurnosPorSector, addTurnoHorario, removeTurnoHorario, updateTurnoHorario,
-  getHorariosReglas, duplicateSectorRules, duplicateCargoRules 
+  getHorariosReglas, duplicateSectorRules, duplicateCargoRules,
+  addHorario, updateHorario, removeHorario, batchUpdateHorarios
 } from "../../services/horarios.service";
-import { addReglaHorario, updateReglaHorario, removeReglaHorario, batchUpdateReglasHorarios } from "../../services/admin.service";
 import { exec } from "child_process";
 
 export const horariosProcedures = {
@@ -103,14 +103,14 @@ export const horariosProcedures = {
     }))
     .mutation(({ input, ctx }) => {
       try {
-        addReglaHorario(
+        addHorario(
           input.id_sector, 
           input.id_cargo, 
+          input.legajo?.trim().toLowerCase() || null,
           input.id_turno,
           input.dias,
           input.hora_entrada, 
           input.hora_salida,
-          input.legajo?.trim().toLowerCase() || null,
           ctx.user?.name || 'Sistema',
           input.es_cortado,
           input.hora_entrada_2 || null,
@@ -127,7 +127,7 @@ export const horariosProcedures = {
     .input(z.object({ id_horario: z.number() }))
     .mutation(({ input }) => {
       try {
-        removeReglaHorario(input.id_horario);
+        removeHorario(input.id_horario);
         exec('npx tsx scripts/calculate-inconsistencies.ts');
         return { success: true };
       } catch (e: any) {
