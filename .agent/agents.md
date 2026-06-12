@@ -10,6 +10,7 @@ Este documento es la **Base de Conocimiento Central** de las IAs. Su lectura es 
 4. **DOCUMENTARÁS TUS PASOS (Sostenibilidad y Aprendizaje)**: 
    - Si realizas un cambio de *lógica de negocio*, agrega una entrada corta en `.agent/agents/journal.md`.
    - Si descubres un *"quirk"* técnico importante o una regla de diseño, actualiza permanentemente el archivo del agente correspondiente en la carpeta `.agent/agents/`.
+5. **AISLAMIENTO DE COMPONENTES UI (Testability)**: **SIEMPRE** debes extraer la lógica de datos (tRPC/BD) a *Custom Hooks* para aislar los componentes visuales. Debes probarlos mediante Vitest mockeando dichos hooks para no consultar la base de datos real en pruebas de interfaz.
 
 *(Nota: Las reglas de Sostenibilidad y Prevención de Bucles rigen a todos los agentes desde este archivo central, anulando cualquier instrucción redundante en sus perfiles individuales).*
 

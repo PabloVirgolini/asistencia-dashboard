@@ -6,6 +6,7 @@ A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones
 2. **Principio de Responsabilidad Única (SRP):** Cada archivo, función y componente debe cumplir con UN único objetivo claramente definido. Si una función hace dos o más cosas, DEBE ser dividida.
 3. **Cobertura con Unit Tests:** TODO objetivo principal (función pura o regla de negocio) debe estar respaldado por un Unit Test robusto (Vitest). Queda estrictamente prohibido programar lógica sin su respectivo arnés de prueba.
 4. **Cero God Classes:** Prohibido crear o expandir componentes React masivos o archivos backend monolíticos. Emplear siempre Patrón Repositorio / Servicios y delegar responsabilidades en hooks o utilidades puras.
+5. **Aislamiento de Componentes UI (Testability):** SIEMPRE debes extraer la lógica de datos (tRPC/BD) a Custom Hooks para aislar los componentes visuales. Debes probarlos mediante Vitest mockeando dichos hooks para no consultar la base de datos real en pruebas de interfaz.
 ---
 
 # Systems Analyst Agent - Knowledge Base
@@ -41,3 +42,4 @@ A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones
 2. **Principio de Responsabilidad Única (SRP):** Cada archivo, función y componente debe cumplir con UN único objetivo claramente definido. Si una función hace dos o más cosas, DEBE ser dividida.
 3. **Cobertura con Unit Tests:** TODO objetivo principal (función pura o regla de negocio) debe estar respaldado por un Unit Test robusto (Vitest). Queda estrictamente prohibido programar lógica sin su respectivo arnés de prueba.
 4. **Cero God Classes:** Prohibido crear o expandir componentes React masivos o archivos backend monolíticos. Emplear siempre Patrón Repositorio / Servicios y delegar responsabilidades en hooks o utilidades puras.
+5. **Aislamiento de Componentes UI (Testability):** SIEMPRE debes extraer la lógica de datos (tRPC/BD) a Custom Hooks para aislar los componentes visuales. Debes probarlos mediante Vitest mockeando dichos hooks para no consultar la base de datos real en pruebas de interfaz.
