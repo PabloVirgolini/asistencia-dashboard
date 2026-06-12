@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { adminProcedure } from "../../_core/trpc";
 import { getPersonalPlanificable, savePlanificacionMasiva, getPlanificacionGuardada, getListaPlanesGuardados, deletePlanGuardado } from "../../services/planificador.service";
+import { exec } from "child_process";
 
 export const planificadorProcedures = {
   getPlanificable: adminProcedure
@@ -25,6 +26,12 @@ export const planificadorProcedures = {
     }))
     .mutation(({ input }) => {
       savePlanificacionMasiva(input.asignaciones);
+      
+      // Disparar motor de inconsistencias en background para recalcular con el nuevo plan
+      exec('npx tsx scripts/calculate-inconsistencies.ts', (error) => {
+        if (error) console.error('[Planificador] Error al disparar motor de inconsistencias:', error);
+      });
+      
       return { success: true };
     }),
 
