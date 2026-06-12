@@ -15,7 +15,7 @@ export function AdminNovedades() {
     novedades, personalActivo, isLoading, 
     isModalOpen, setIsModalOpen, 
     editingId, setEditingId,
-    handleAdd, handleRemove, handleEditClick
+    handleAdd, handleRemove, handleEditClick, handleToggleVisibility
   } = useAdminNovedades();
 
   const [filterText, setFilterText] = useState('');
@@ -122,6 +122,7 @@ export function AdminNovedades() {
                     <th className="px-4 py-3">Tipo</th>
                     <th className="px-4 py-3">Inicio</th>
                     <th className="px-4 py-3">Fin</th>
+                    <th className="px-4 py-3 text-center">Dashboard</th>
                     <th className="px-4 py-3">Observaciones</th>
                     <th className="px-4 py-3 text-right">Acciones</th>
                   </tr>
@@ -129,7 +130,7 @@ export function AdminNovedades() {
                 <tbody className="divide-y divide-slate-100">
                   {filteredNovedades.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                      <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
                         No hay novedades registradas.
                       </td>
                     </tr>
@@ -146,14 +147,16 @@ export function AdminNovedades() {
                           }`}>
                             {n.tipo}
                           </span>
-                          {!n.mostrar_en_dashboard && (
-                            <span className="ml-2 text-[10px] text-slate-400 border border-slate-200 px-1 rounded" title="Oculto en Dashboard">
-                              Oculto
-                            </span>
-                          )}
                         </td>
                         <td className="px-4 py-3">{n.fecha_inicio}</td>
                         <td className="px-4 py-3">{n.fecha_fin}</td>
+                        <td className="px-4 py-3 text-center">
+                          <Switch 
+                            checked={n.mostrar_en_dashboard} 
+                            onCheckedChange={(checked) => handleToggleVisibility(n, checked)}
+                            className="scale-75"
+                          />
+                        </td>
                         <td className="px-4 py-3 text-slate-500 truncate max-w-[200px]">{n.observaciones || '-'}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="flex justify-end gap-2">

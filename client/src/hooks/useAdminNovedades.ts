@@ -61,6 +61,18 @@ export function useAdminNovedades() {
     setIsModalOpen(true);
   };
 
+  const handleToggleVisibility = (novedad: any, mostrar_en_dashboard: boolean) => {
+    updateMutation.mutate({
+      id_novedad: novedad.id_novedad,
+      legajo: novedad.legajo,
+      tipo: novedad.tipo,
+      fecha_inicio: novedad.fecha_inicio,
+      fecha_fin: novedad.fecha_fin,
+      observaciones: novedad.observaciones,
+      mostrar_en_dashboard
+    });
+  };
+
   return {
     novedades,
     personalActivo,
@@ -72,6 +84,7 @@ export function useAdminNovedades() {
     handleAdd,
     handleRemove,
     handleEditClick,
+    handleToggleVisibility,
     isAdding: addMutation.isPending || removeMutation.isPending || updateMutation.isPending
   };
 }
