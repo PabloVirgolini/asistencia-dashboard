@@ -22,7 +22,7 @@ export function AdminNovedades() {
 
   const [formData, setFormData] = useState({
     legajo: '',
-    tipo: 'Vacaciones',
+    tipo: 'Enfermedad',
     fecha_inicio: '',
     fecha_fin: '',
     observaciones: '',
@@ -53,7 +53,7 @@ export function AdminNovedades() {
     } else {
       setFormData({
         legajo: '',
-        tipo: 'Vacaciones',
+        tipo: 'Enfermedad',
         fecha_inicio: '',
         fecha_fin: '',
         observaciones: '',
@@ -221,7 +221,19 @@ export function AdminNovedades() {
                   </PopoverTrigger>
                   <PopoverContent className="w-[380px] p-0" align="start">
                     <Command>
-                      <CommandInput placeholder="Buscar por nombre o legajo..." />
+                      <CommandInput 
+                        autoFocus 
+                        placeholder="Buscar por nombre o legajo..." 
+                        onKeyDown={(e) => {
+                          if (e.key === 'Tab') {
+                            const selectedItem = document.querySelector('[cmdk-item][data-selected="true"]') as HTMLElement;
+                            if (selectedItem) {
+                              e.preventDefault();
+                              selectedItem.click();
+                            }
+                          }
+                        }}
+                      />
                       <CommandList>
                         <CommandEmpty>No se encontraron empleados.</CommandEmpty>
                         <CommandGroup>
