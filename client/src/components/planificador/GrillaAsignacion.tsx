@@ -31,10 +31,68 @@ interface Props {
 
 const COLORS = ['bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-emerald-300', 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-indigo-300', 'bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-300', 'bg-sky-100 text-sky-700 hover:bg-sky-200 border-sky-300', 'bg-fuchsia-100 text-fuchsia-700 hover:bg-fuchsia-200 border-fuchsia-300'];
 
+const getShortcutInfo = (descripcion: string) => {
+  const match = descripcion.match(/^Turno\s+(.*)/i);
+  if (match) {
+    const rest = match[1];
+    return {
+      prefix: descripcion.substring(0, descripcion.length - rest.length),
+      letter: rest.charAt(0),
+      suffix: rest.slice(1)
+    };
+  }
+  return {
+    prefix: '',
+    letter: descripcion.charAt(0),
+    suffix: descripcion.slice(1)
+  };
+};
+
 export function GrillaAsignacion({ personal, turnosBase, sectores, asignaciones, onSelectTurno, onSelectMasivo, onToggleCapacitacion, isLoading }: Props) {
   const [filterText, setFilterText] = useState('');
+  const [quickAssignTurno, setQuickAssignTurno] = useState<number | ''>('');
   const [excepcionalModal, setExcepcionalModal] = useState<string | null>(null); // legajo
   const [excepForm, setExcepForm] = useState({ entrada: '08:00', salida: '17:00', sector: '' });
+
+  const filtered = personal.filter(p => 
+    p.nombre.toLowerCase().includes(filterText.toLowerCase()) || 
+    p.legajo.includes(filterText)
+  );
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (quickAssignTurno !== '' && filtered.length > 0) {
+        filtered.forEach(p => {
+          onSelectTurno(p.legajo, { id_turno: Number(quickAssignTurno) });
+        });
+        // Limpiamos el filtro para que puedan seguir cargando la siguiente persona de inmediato
+        setFilterText('');
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!e.ctrlKey) return;
+
+      const key = e.key.toLowerCase();
+      const turnoMatch = turnosBase.find(t => {
+        const info = getShortcutInfo(t.descripcion);
+        return info.letter.toLowerCase() === key;
+      });
+      
+      if (turnoMatch && filtered.length > 0) {
+        e.preventDefault();
+        filtered.forEach(p => {
+          onSelectTurno(p.legajo, { id_turno: turnoMatch.id_turno });
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [filtered, turnosBase, onSelectTurno]);
 
   if (isLoading) {
     return <div className="text-center py-12 text-slate-500">Cargando personal...</div>;
@@ -50,11 +108,6 @@ export function GrillaAsignacion({ personal, turnosBase, sectores, asignaciones,
       </Card>
     );
   }
-
-  const filtered = personal.filter(p => 
-    p.nombre.toLowerCase().includes(filterText.toLowerCase()) || 
-    p.legajo.includes(filterText)
-  );
 
   const saveExcepcional = () => {
     if (excepcionalModal) {
@@ -81,6 +134,8 @@ export function GrillaAsignacion({ personal, turnosBase, sectores, asignaciones,
       return !p.enCapacitacion;
     }).length;
   };
+
+
 
   return (
     <div className="space-y-4 animate-in fade-in duration-300">
@@ -134,13 +189,29 @@ export function GrillaAsignacion({ personal, turnosBase, sectores, asignaciones,
       )}
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-lg shadow-sm border border-slate-100">
-        <input
-          type="text"
-          placeholder="Filtrar empleado..."
-          className="px-3 py-2 border border-slate-200 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
-          value={filterText}
-          onChange={e => setFilterText(e.target.value)}
-        />
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-600 whitespace-nowrap">Asignación Rápida con Enter:</span>
+            <select
+              value={quickAssignTurno}
+              onChange={(e) => setQuickAssignTurno(e.target.value === '' ? '' : Number(e.target.value))}
+              className="px-3 py-2 border border-slate-200 rounded-md text-sm bg-indigo-50/50 hover:bg-indigo-50 transition-colors focus:ring-2 focus:ring-indigo-500 min-w-[140px]"
+            >
+              <option value="">Apagado</option>
+              {turnosBase.map(t => (
+                <option key={t.id_turno} value={t.id_turno}>{t.descripcion}</option>
+              ))}
+            </select>
+          </div>
+          <input
+            type="text"
+            placeholder="Filtrar y presionar Enter..."
+            className="px-3 py-2 border border-slate-200 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
+            value={filterText}
+            onChange={e => setFilterText(e.target.value)}
+            onKeyDown={handleInputKeyDown}
+          />
+        </div>
 
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-slate-600">Asignación Masiva:</span>
@@ -163,16 +234,20 @@ export function GrillaAsignacion({ personal, turnosBase, sectores, asignaciones,
             <tr>
               <th className="px-4 py-3 font-semibold text-slate-700 w-64">Empleado / Cargo</th>
               <th className="px-4 py-3 font-semibold text-slate-700 w-40 text-center">Estado</th>
-              {turnosBase.map((t, i) => (
+              {turnosBase.map((t, i) => {
+                const info = getShortcutInfo(t.descripcion);
+                return (
                 <th key={t.id_turno} className="px-2 py-3 font-semibold text-slate-700 text-center min-w-[120px]">
                   <div className="flex flex-col items-center">
-                    <span>{t.descripcion}</span>
+                    <span title={`Atajo: Ctrl + ${info.letter.toUpperCase()}`}>
+                      {info.prefix}<u className="decoration-indigo-400 decoration-2 underline-offset-2">{info.letter}</u>{info.suffix}
+                    </span>
                     <span className="text-xs mt-1 px-2 py-0.5 rounded-full bg-slate-200 text-slate-700" title="Empleados efectivos asignados">
                       {getAssignedCount(t.id_turno)} asignados
                     </span>
                   </div>
                 </th>
-              ))}
+              )})}
               <th className="px-2 py-3 font-semibold text-slate-700 text-center min-w-[120px]">
                 <div className="flex flex-col items-center">
                   <span>Excepcional</span>
@@ -221,6 +296,7 @@ export function GrillaAsignacion({ personal, turnosBase, sectores, asignaciones,
                   {turnosBase.map((t, i) => {
                     const isSelected = currentAsig && !currentAsig.es_excepcional && currentAsig.id_turno === t.id_turno;
                     const colorClass = COLORS[i % COLORS.length];
+                    const info = getShortcutInfo(t.descripcion);
                     
                     return (
                       <td key={t.id_turno} className="px-2 py-3 text-center">
@@ -233,7 +309,7 @@ export function GrillaAsignacion({ personal, turnosBase, sectores, asignaciones,
                           `}
                         >
                           {isSelected && <Check className="w-3.5 h-3.5 mr-1" />}
-                          {t.descripcion}
+                          <span>{info.prefix}<u className="decoration-2 underline-offset-2 opacity-70">{info.letter}</u>{info.suffix}</span>
                         </button>
                       </td>
                     );

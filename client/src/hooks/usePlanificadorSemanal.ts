@@ -29,10 +29,13 @@ export function usePlanificadorSemanal() {
     { enabled: !!sector && !!fechaInicio && !!fechaFin }
   );
 
+  const trpcContext = trpc.useContext();
+
   const saveMutation = trpc.admin.savePlanificacion.useMutation({
     onSuccess: () => {
       toast.success('Planificación guardada exitosamente');
       refetch();
+      trpcContext.admin.getListaPlanesGuardados.invalidate();
     },
     onError: (err) => {
       toast.error(`Error al guardar: ${err.message}`);
@@ -87,7 +90,6 @@ export function usePlanificadorSemanal() {
     setAsignaciones({});
   };
 
-  const trpcContext = trpc.useContext();
   
   const handleEditPlan = async (editSector: string, editFechaInicio: string, editFechaFin: string) => {
     setSector(editSector);

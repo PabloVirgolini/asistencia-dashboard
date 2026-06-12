@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Users, UserCheck, UserX } from "lucide-react";
 

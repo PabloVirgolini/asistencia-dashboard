@@ -31,7 +31,19 @@ export default function AdminTurnos() {
         sectoresCargos={sectoresCargos}
         personal={personal}
         isPending={addRegla.isPending}
-        onAddRegla={async (params) => {
+        onAddRegla={async (params: { 
+          tipoRegla: string; 
+          selectedCargos: string[]; 
+          id_sector: number; 
+          id_turno: number; 
+          dias: any; 
+          hora_entrada: string; 
+          hora_salida: string; 
+          es_cortado: boolean; 
+          hora_entrada_2: string | null; 
+          hora_salida_2: string | null; 
+          legajo: number | null 
+        }) => {
           if (params.tipoRegla === 'general') {
             for (const cargo of params.selectedCargos) {
               await addRegla.mutateAsync({

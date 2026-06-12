@@ -386,3 +386,7 @@ A partir de este punto del desarrollo (Tras la auditor铆a de QA en `AdminTurnos.
 - **Avance Arquitect贸nico:** Se migr贸 el esquema de SQLite para utilizar `PRAGMA foreign_keys = ON` y `ON UPDATE CASCADE ON DELETE CASCADE` en las tablas de `historial_turnos` y `novedades_licencias`, removiendo la fr谩gil gesti贸n manual de cascadas en c贸digo.
 - **Avance Testing:** Se implementaron pruebas unitarias completas con Vitest y una base de datos `:memory:` simulada para los servicios de personal, novedades y administraci贸n, garantizando el SRP y la fiabilidad de las operaciones ABM.
 - **Avance Funcional (Fase 2):** Se construy贸 e integr贸 el `HistorialFichadasModal` en el Dashboard. Ahora las filas de empleados son interactivas (clicables) y despliegan una bit谩cora detallada de entradas/salidas puras consumidas directamente desde el servicio de asistencia.
+
+### [2026-06-12] - Mejoras de UX y Flujos Rapidos de Carga
+- **Avance UX:** Se redise駉 el flujo de carga manual en la Grilla del Planificador. Se a馻dio un selector de 'Asignacion Rapida con Enter' que, combinado con la limpieza automatica del filtro de texto, permite asignar turnos masivamente a alta velocidad sin quitar las manos del teclado.
+- **Avance UX (Atajos):** Se habilitaron atajos de teclado dinamicos (Ctrl + Letra) basados en el primer caracter distintivo del turno (ej. M para Ma馻na), ignorando prefijos estaticos como 'Turno'.
