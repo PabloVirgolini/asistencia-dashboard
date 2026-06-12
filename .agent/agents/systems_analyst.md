@@ -22,7 +22,8 @@ Eres el Analista de Sistemas del proyecto "AsistenciaPersonal". Tu objetivo prin
 
 ## Decisiones Arquitectónicas Registradas
 - **Naturaleza Híbrida de la Base de Datos (`data2.db`)**: 
-  - La tabla `fichadas` es de **solo lectura** para la app web. Su única fuente de verdad y escritura son los scripts locales en Python (`ImportarFichadas.py`, `DetectarDobleFichada.py`) ejecutados cada hora vía `.bat`.
+  - La tabla `fichadas` es de **solo lectura** para la interfaz web. Su única fuente de verdad y escritura proviene de la base maestra del reloj biométrico. Esta sincronización ya no se hace mediante scripts masivos externos, sino mediante una **Arquitectura de Sincronización Automática (Delta Sync)** integrada en el backend Node.js (`sync.service.ts`). El Worker se conecta periódicamente mediante `ATTACH DATABASE`, extrae únicamente los registros nuevos (`nroFichada > MAX(local)`) y evita bloqueos de la base de datos.
+  - Las configuraciones de este Worker (intervalos, rutas) se centralizan en `server/config.ts`.
   - Las tablas `personal`, `sectores` y `admins` son de **lectura/escritura exclusiva** de la app web a través del Panel de Administración protegido por JWT, garantizando que el reloj biométrico no sobrescriba a los empleados dados de alta.
 - **Lógica Temporal y de Cargos**: 
   - La arquitectura evita codificar el turno directamente en el empleado. En su lugar, existe un `historial_turnos` y una tabla maestra de `horarios`. Esto permite que el sistema responda a la pregunta: *"El martes pasado, a qué hora debía entrar esta persona y cuál era su nivel de criticidad?"* cruzando `Sector + Cargo + Turno + Día de la Semana`.

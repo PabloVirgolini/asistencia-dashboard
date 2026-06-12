@@ -42,6 +42,17 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados, date }: Pr
 
   const isFueraDeTurno = grupo.id_turno === null;
 
+  const allExpected = [...grupo.presentes, ...grupo.tarde, ...grupo.ausentes, ...grupo.licencias];
+  const expectedBySector = allExpected.reduce((acc, p) => {
+    acc[p.sector] = (acc[p.sector] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const breakdownText = Object.entries(expectedBySector)
+    .sort((a, b) => b[1] - a[1]) // Sort by count descending
+    .map(([sector, count]) => `${count} ${sector}`)
+    .join(', ');
+
   const renderFila = (p: AttendancePerson, tipo: 'presente' | 'ausente' | 'licencia' | 'tarde' | 'inesperada') => {
     const isEncargado = p.cargo.toLowerCase().includes('encargado') || p.nivel_criticidad >= 4;
     const highlight = showEncargados && isEncargado;
@@ -119,8 +130,8 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados, date }: Pr
             {grupo.nombre_turno}
           </h3>
           {!isFueraDeTurno && (
-            <Badge variant="secondary" className="ml-2 bg-white text-indigo-700 border-indigo-100">
-              {grupo.esperados} Esperados
+            <Badge variant="secondary" className="ml-2 bg-white text-indigo-700 border-indigo-100 font-medium">
+              {grupo.esperados} Esperados {breakdownText ? `(${breakdownText})` : ''}
             </Badge>
           )}
         </div>

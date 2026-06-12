@@ -50,14 +50,26 @@ const getShortcutInfo = (descripcion: string) => {
 
 export function GrillaAsignacion({ personal, turnosBase, sectores, asignaciones, onSelectTurno, onSelectMasivo, onToggleCapacitacion, isLoading }: Props) {
   const [filterText, setFilterText] = useState('');
+  const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
   const [quickAssignTurno, setQuickAssignTurno] = useState<number | ''>('');
   const [excepcionalModal, setExcepcionalModal] = useState<string | null>(null); // legajo
   const [excepForm, setExcepForm] = useState({ entrada: '08:00', salida: '17:00', sector: '' });
 
-  const filtered = personal.filter(p => 
-    p.nombre.toLowerCase().includes(filterText.toLowerCase()) || 
-    p.legajo.includes(filterText)
-  );
+  const filtered = personal.filter(p => {
+    // 1. Text filter
+    const matchesText = p.nombre.toLowerCase().includes(filterText.toLowerCase()) || p.legajo.includes(filterText);
+    if (!matchesText) return false;
+
+    // 2. Unassigned filter
+    if (showUnassignedOnly) {
+      const currentAsig = asignaciones[p.legajo];
+      // Has an active assignment (either a standard turno or an exception)
+      const hasAssignment = currentAsig && (currentAsig.id_turno !== null || currentAsig.es_excepcional);
+      if (hasAssignment) return false;
+    }
+
+    return true;
+  });
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -189,28 +201,40 @@ export function GrillaAsignacion({ personal, turnosBase, sectores, asignaciones,
       )}
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-lg shadow-sm border border-slate-100">
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-600 whitespace-nowrap">Asignación Rápida con Enter:</span>
-            <select
-              value={quickAssignTurno}
-              onChange={(e) => setQuickAssignTurno(e.target.value === '' ? '' : Number(e.target.value))}
-              className="px-3 py-2 border border-slate-200 rounded-md text-sm bg-indigo-50/50 hover:bg-indigo-50 transition-colors focus:ring-2 focus:ring-indigo-500 min-w-[140px]"
-            >
-              <option value="">Apagado</option>
-              {turnosBase.map(t => (
-                <option key={t.id_turno} value={t.id_turno}>{t.descripcion}</option>
-              ))}
-            </select>
+        <div className="flex flex-col gap-3 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-start sm:items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-slate-600 whitespace-nowrap">Asignación Rápida con Enter:</span>
+              <select
+                value={quickAssignTurno}
+                onChange={(e) => setQuickAssignTurno(e.target.value === '' ? '' : Number(e.target.value))}
+                className="px-3 py-2 border border-slate-200 rounded-md text-sm bg-indigo-50/50 hover:bg-indigo-50 transition-colors focus:ring-2 focus:ring-indigo-500 min-w-[140px]"
+              >
+                <option value="">Apagado</option>
+                {turnosBase.map(t => (
+                  <option key={t.id_turno} value={t.id_turno}>{t.descripcion}</option>
+                ))}
+              </select>
+            </div>
+            <input
+              type="text"
+              placeholder="Filtrar y presionar Enter..."
+              className="px-3 py-2 border border-slate-200 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
+              value={filterText}
+              onChange={e => setFilterText(e.target.value)}
+              onKeyDown={handleInputKeyDown}
+            />
           </div>
-          <input
-            type="text"
-            placeholder="Filtrar y presionar Enter..."
-            className="px-3 py-2 border border-slate-200 rounded-md text-sm focus:ring-2 focus:ring-indigo-500 w-full sm:w-64"
-            value={filterText}
-            onChange={e => setFilterText(e.target.value)}
-            onKeyDown={handleInputKeyDown}
-          />
+          
+          <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors">
+            <input 
+              type="checkbox" 
+              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer"
+              checked={showUnassignedOnly}
+              onChange={(e) => setShowUnassignedOnly(e.target.checked)}
+            />
+            Ocultar personal con turno ya asignado
+          </label>
         </div>
 
         <div className="flex items-center gap-2">

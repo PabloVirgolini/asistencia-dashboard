@@ -65,10 +65,18 @@ export function useAttendanceDashboard() {
     };
   }, []);
 
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const calculateTimeRemaining = () => {
     if (!nextUpdateTime) return { minutes: 0, seconds: 0 };
-    const now = new Date();
-    const diff = nextUpdateTime.getTime() - now.getTime();
+    const diff = nextUpdateTime.getTime() - currentTime.getTime();
     if (diff <= 0) return { minutes: 0, seconds: 0 };
     return {
       minutes: Math.floor(diff / 60000),

@@ -5,10 +5,11 @@ import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 
 import { registerStorageProxy } from "./storageProxy";
-import { appRouter } from "../routers";
-import { createContext } from "./context";
-import { serveStatic, setupVite } from "./vite";
+import { appRouter } from "../routers.js";
+import { createContext } from "./context.js";
+import { serveStatic, setupVite } from "./vite.js";
 import type { Request, Response } from "express";
+import { startAutoSync } from "../services/sync.service.js";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -83,6 +84,9 @@ async function startServer() {
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  // Arrancar el Worker de Sincronización Incremental
+  startAutoSync();
 
   server.listen(port, () => {
     console.log(`[Attendance Dashboard] Server running on http://localhost:${port}/`);

@@ -390,3 +390,9 @@ A partir de este punto del desarrollo (Tras la auditorÃ­a de QA en `AdminTurnos.
 ### [2026-06-12] - Mejoras de UX y Flujos Rapidos de Carga
 - **Avance UX:** Se rediseño el flujo de carga manual en la Grilla del Planificador. Se añadio un selector de 'Asignacion Rapida con Enter' que, combinado con la limpieza automatica del filtro de texto, permite asignar turnos masivamente a alta velocidad sin quitar las manos del teclado.
 - **Avance UX (Atajos):** Se habilitaron atajos de teclado dinamicos (Ctrl + Letra) basados en el primer caracter distintivo del turno (ej. M para Mañana), ignorando prefijos estaticos como 'Turno'.
+
+### [2026-06-12] - Arquitectura de Auto-Sincronizacion (Delta Sync)
+- **Avance Arquitectonico:** Se reemplazo el viejo sistema de importacion manual/externa por un Worker de Delta Sync integrado en el backend de Node.js (sync.service.ts).
+- **Detalle:** El Worker hace polling cada 15 segundos mediante ATTACH DATABASE hacia la unidad remota, extrayendo unicamente los registros donde 
+roFichada es mayor al maximo local. Esto elimina bloqueos y asegura latencia casi en tiempo real.
+- **Configuracion:** Se extrajeron todas las variables duras (rutas de red, intervalos de timer) a server/config.ts para facilitar futuros cambios en el despliegue.
