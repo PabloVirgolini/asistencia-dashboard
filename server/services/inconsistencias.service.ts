@@ -24,6 +24,17 @@ export function calcularInconsistenciasPorFecha(fechaStr: string) {
   
   // Obtener Horarios
   const horarios = db.prepare('SELECT * FROM horarios').all() as any[];
+
+  // Obtener Novedades activas
+  const novedades = db.prepare(`
+    SELECT legajo, tipo, observaciones, fecha_fin 
+    FROM novedades_licencias 
+    WHERE fecha_inicio <= ? AND fecha_fin >= ?
+  `).all(fechaStr, fechaStr) as any[];
+  
+  const novedadesMap = new Map();
+  novedades.forEach(n => novedadesMap.set(n.legajo, n));
+  
   
   const jsDate = new Date(`${fechaStr}T12:00:00`); // Usar mediodía para evitar problemas de timezone
   const diaSemana = jsDate.getDay(); // 0 = Domingo, 1 = Lunes...
@@ -162,7 +173,7 @@ export function calcularInconsistenciasPorFecha(fechaStr: string) {
         legajo: p.legajo,
         fecha: fechaStr,
         tipo: 'Llegada Tarde',
-        detalles: `Debía ingresar a las ${hoy.regla.hora_entrada}. Fichó a las ${ft.substring(0, 5)}.`
+        detalles: `Debía ingresar a las ${hoy.regla.hora_entrada}. Fichó a las ${firstFichadaStr.split(' ')[1].substring(0, 5)}.`
       });
     }
 
