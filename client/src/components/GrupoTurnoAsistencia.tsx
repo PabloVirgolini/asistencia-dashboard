@@ -14,7 +14,7 @@ interface AttendancePerson {
   id_turno: number | null;
   fichadas: string[];
   llegadaTarde: boolean;
-  novedad_activa: { tipo: string; observaciones: string } | null;
+  novedad_activa: { tipo: string; observaciones: string; fecha_fin?: string } | null;
 }
 
 interface TurnoGroup {

@@ -35,7 +35,7 @@ export default function ResumenDia({ summary, date, sector, grupos }: ResumenDia
       } else if (type === 'ausentes') {
         g.ausentes.forEach(p => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno }));
       } else if (type === 'licencias') {
-        g.licencias.forEach(p => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno, extra: p.novedad_activa?.tipo }));
+        g.licencias.forEach(p => people.push({ legajo: p.legajo, nombre: p.nombre, sector: p.sector, cargo: p.cargo, turno: g.nombre_turno, extra: p.novedad_activa?.tipo, fecha_fin: p.novedad_activa?.fecha_fin }));
       }
     });
     

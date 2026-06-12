@@ -14,6 +14,7 @@ export interface PersonDetail {
   cargo: string;
   turno?: string;
   extra?: string; // used to show "Llegada Tarde" or "Vacaciones"
+  fecha_fin?: string; // date string for end of license
 }
 
 interface Props {
@@ -42,11 +43,18 @@ export default function DetalleListaModal({ isOpen, onOpenChange, title, people 
                     <p className="text-xs text-slate-500">{p.sector} - {p.cargo}</p>
                     {p.turno && <p className="text-xs text-indigo-600 font-medium mt-0.5">Turno: {p.turno}</p>}
                   </div>
-                  {p.extra && (
-                    <Badge variant="secondary" className="bg-white">
-                      {p.extra}
-                    </Badge>
-                  )}
+                  <div className="text-right flex flex-col items-end gap-1">
+                    {p.extra && (
+                      <Badge variant="secondary" className="bg-white">
+                        {p.extra}
+                      </Badge>
+                    )}
+                    {p.fecha_fin && (
+                      <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">
+                        Hasta: {new Date(p.fecha_fin + 'T12:00:00').toLocaleDateString("es-ES", { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
