@@ -146,6 +146,7 @@ export default function AttendanceDashboard() {
               summary={attendanceQuery.data.summary}
               date={attendanceQuery.data.date}
               sector={attendanceQuery.data.sector}
+              grupos={attendanceQuery.data.grupos}
             />
 
             <div className="flex items-center justify-end mb-4">
