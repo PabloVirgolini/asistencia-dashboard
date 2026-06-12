@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
-import { CheckCircle2, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp, User } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, AlertTriangle, ChevronDown, ChevronUp, User, Filter } from 'lucide-react';
 import { Badge } from './ui/badge';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 
 interface AttendancePerson {
@@ -40,10 +42,13 @@ import HistorialFichadasModal from './HistorialFichadasModal';
 export default function GrupoTurnoAsistencia({ grupo, showEncargados, date, inconsistencias = [] }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [modalPerson, setModalPerson] = useState<{ legajo: string, nombre: string } | null>(null);
+  const [selectedSectors, setSelectedSectors] = useState<string[]>([]);
 
   const isFueraDeTurno = grupo.id_turno === null;
 
   const allExpected = [...grupo.presentes, ...grupo.tarde, ...grupo.ausentes, ...grupo.licencias];
+  const allPeople = [...allExpected, ...grupo.fichadas_inesperadas];
+  
   const expectedBySector = allExpected.reduce((acc, p) => {
     acc[p.sector] = (acc[p.sector] || 0) + 1;
     return acc;
@@ -53,6 +58,23 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados, date, inco
     .sort((a, b) => b[1] - a[1]) // Sort by count descending
     .map(([sector, count]) => `${count} ${sector}`)
     .join(', ');
+
+  const uniqueSectors = Array.from(new Set(allPeople.map(p => p.sector))).sort();
+  const activeSectors = selectedSectors.length > 0 ? selectedSectors : uniqueSectors;
+
+  const toggleSector = (sector: string) => {
+    setSelectedSectors(prev => 
+      prev.includes(sector) ? prev.filter(s => s !== sector) : [...prev, sector]
+    );
+  };
+
+  const filterPerson = (p: AttendancePerson) => activeSectors.includes(p.sector);
+
+  const filteredInesperadas = grupo.fichadas_inesperadas.filter(filterPerson);
+  const filteredPresentes = grupo.presentes.filter(filterPerson);
+  const filteredTarde = grupo.tarde.filter(filterPerson);
+  const filteredAusentes = grupo.ausentes.filter(filterPerson);
+  const filteredLicencias = grupo.licencias.filter(filterPerson);
 
   const renderFila = (p: AttendancePerson, tipo: 'presente' | 'ausente' | 'licencia' | 'tarde' | 'inesperada') => {
     const isEncargado = p.cargo.toLowerCase().includes('encargado') || p.nivel_criticidad >= 4;
@@ -176,6 +198,52 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados, date, inco
 
       {isExpanded && (
         <CardContent className="p-0">
+          <div className="bg-slate-100/50 px-4 py-2 border-b border-slate-100 flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 border-dashed flex items-center gap-2">
+                  <Filter size={14} className="text-slate-500" />
+                  <span className="text-slate-600 font-medium">Filtrar por Sector</span>
+                  {selectedSectors.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 px-1.5 py-0 bg-indigo-100 text-indigo-700 hover:bg-indigo-100">
+                      {selectedSectors.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56 bg-white z-50">
+                <DropdownMenuLabel>Sectores</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {uniqueSectors.map(sector => (
+                  <DropdownMenuCheckboxItem
+                    key={sector}
+                    checked={selectedSectors.includes(sector)}
+                    onCheckedChange={() => toggleSector(sector)}
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    {sector}
+                  </DropdownMenuCheckboxItem>
+                ))}
+                {selectedSectors.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem
+                      checked={false}
+                      onCheckedChange={() => setSelectedSectors([])}
+                      className="justify-center font-medium text-slate-500 cursor-pointer"
+                    >
+                      Limpiar Filtros
+                    </DropdownMenuCheckboxItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {selectedSectors.length > 0 && (
+              <span className="text-xs text-slate-500">
+                Mostrando {activeSectors.length} de {uniqueSectors.length} sectores
+              </span>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
             {/* Columna Izquierda: Presentes / Inesperados */}
             <div className="p-0">
@@ -186,18 +254,18 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados, date, inco
                 <table className="w-full text-sm text-left">
                   <tbody>
                     {/* Fichadas Inesperadas */}
-                    {grupo.fichadas_inesperadas.map(p => renderFila(p, 'inesperada'))}
-                    {grupo.fichadas_inesperadas.length > 0 && (
+                    {filteredInesperadas.map(p => renderFila(p, 'inesperada'))}
+                    {filteredInesperadas.length > 0 && (
                       <tr><td colSpan={2} className="px-4 py-1 bg-slate-50 text-center text-xs text-slate-400 font-medium uppercase tracking-wider">--- Fichadas Inesperadas ---</td></tr>
                     )}
                     
                     {/* Presentes a tiempo */}
-                    {grupo.presentes.map(p => renderFila(p, 'presente'))}
+                    {filteredPresentes.map(p => renderFila(p, 'presente'))}
                     
                     {/* Llegadas Tarde */}
-                    {grupo.tarde.map(p => renderFila(p, 'tarde'))}
+                    {filteredTarde.map(p => renderFila(p, 'tarde'))}
 
-                    {grupo.presentes.length === 0 && grupo.tarde.length === 0 && grupo.fichadas_inesperadas.length === 0 && (
+                    {filteredPresentes.length === 0 && filteredTarde.length === 0 && filteredInesperadas.length === 0 && (
                       <tr>
                         <td colSpan={2} className="px-4 py-8 text-center text-slate-400 italic">
                           No hay fichadas registradas
@@ -218,16 +286,16 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados, date, inco
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
                     <tbody>
-                      {/* Ausentes */}
-                      {grupo.ausentes.map(p => renderFila(p, 'ausente'))}
+                      {/* Ausentes sin justificar */}
+                      {filteredAusentes.map(p => renderFila(p, 'ausente'))}
                       
-                      {/* Licencias */}
-                      {grupo.licencias.map(p => renderFila(p, 'licencia'))}
+                      {/* Licencias / Novedades */}
+                      {filteredLicencias.map(p => renderFila(p, 'licencia'))}
 
-                      {grupo.ausentes.length === 0 && grupo.licencias.length === 0 && (
+                      {filteredAusentes.length === 0 && filteredLicencias.length === 0 && (
                         <tr>
                           <td colSpan={2} className="px-4 py-8 text-center text-slate-400 italic">
-                            Todos los esperados han fichado
+                            No hay inasistencias
                           </td>
                         </tr>
                       )}
