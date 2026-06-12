@@ -74,13 +74,13 @@ export function calcularInconsistenciasPorFecha(fechaStr: string) {
         const exc = matchingDia.find(h => h.legajo === p.legajo);
         if (exc) { t_id = exc.id_turno; } 
         else {
-          const matching = matchingDia.filter(h => h.sector_id == p.sectorPertenencia && (h.cargo_id == p.cargo_id || h.cargo_id === null));
+          const matching = matchingDia.filter(h => h.id_sector == p.sectorPertenencia && (h.id_cargo == p.cargo_id || h.id_cargo === null));
           if (matching.length > 0) t_id = matching[0].id_turno;
         }
       }
       const hs = horarios.filter(h => h.id_turno === t_id && h.dia_semana === dSemana);
       let r = hs.find(h => h.legajo === p.legajo);
-      if (!r) r = hs.find(h => h.sector_id == p.sectorPertenencia && (h.cargo_id == p.cargo_id || h.cargo_id === null));
+      if (!r) r = hs.find(h => h.id_sector == p.sectorPertenencia && (h.id_cargo == p.cargo_id || h.id_cargo === null));
       return { id_turno: t_id, regla: r };
     };
 
