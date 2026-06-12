@@ -396,3 +396,7 @@ A partir de este punto del desarrollo (Tras la auditoría de QA en `AdminTurnos.
 - **Detalle:** El Worker hace polling cada 15 segundos mediante ATTACH DATABASE hacia la unidad remota, extrayendo unicamente los registros donde 
 roFichada es mayor al maximo local. Esto elimina bloqueos y asegura latencia casi en tiempo real.
 - **Configuracion:** Se extrajeron todas las variables duras (rutas de red, intervalos de timer) a server/config.ts para facilitar futuros cambios en el despliegue.
+
+### [2026-06-12] - Configuraciones y Novedades Compartidas
+- **Avance Arquitectónico:** Se migró la configuración estática a un archivo central `server/config.ts` y variables UI al `constants.ts` del frontend para evitar "números mágicos" hardcodeados en los servicios y hooks.
+- **Avance Funcional (Fase 2):** Se añadió la opción de "Compartir en Dashboard" en el administrador de novedades. Ahora las licencias públicas se pueden visualizar en una tabla de sólo lectura al pie del Dashboard Público sin exponer información sensible o controles administrativos.
