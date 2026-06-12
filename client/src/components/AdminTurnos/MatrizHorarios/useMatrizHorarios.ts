@@ -23,7 +23,7 @@ export function useMatrizHorarios(reglas: any[], mutations: any) {
 
   // Filter and Group Reglas
   const [reglaFilter, setReglaFilter] = useState('');
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('calendar');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [collapseToken, setCollapseToken] = useState(0);
 
   // Suggested Filters for Calendar

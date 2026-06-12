@@ -16,8 +16,8 @@ interface ResumenDiaProps {
 
 export default function ResumenDia({ summary, date, sector }: ResumenDiaProps) {
   const formatDate = (dateStr: string) => {
-    const [year, month, day] = dateStr.split("-");
-    return new Date(`${year}-${month}-${day}`).toLocaleDateString("es-ES", {
+    const [year, month, day] = dateStr.split("-").map(Number);
+    return new Date(year, month - 1, day).toLocaleDateString("es-ES", {
       weekday: "long",
       year: "numeric",
       month: "long",
