@@ -84,6 +84,8 @@ export function AdminNovedades() {
   const handleOpenNew = () => {
     setEditingId(null);
     setIsModalOpen(true);
+    // Add timeout to let the modal render before opening the popover
+    setTimeout(() => setOpenCombobox(true), 50);
   };
 
   return (
@@ -230,6 +232,9 @@ export function AdminNovedades() {
                             if (selectedItem) {
                               e.preventDefault();
                               selectedItem.click();
+                              setTimeout(() => {
+                                document.getElementById('tipo-novedad-select')?.focus();
+                              }, 50);
                             }
                           }
                         }}
@@ -265,6 +270,7 @@ export function AdminNovedades() {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Tipo de Novedad</label>
                 <select
+                  id="tipo-novedad-select"
                   required
                   value={formData.tipo}
                   onChange={e => {
@@ -273,8 +279,8 @@ export function AdminNovedades() {
                   }}
                   className="w-full px-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none"
                 >
-                  <option value="Vacaciones">Vacaciones</option>
                   <option value="Enfermedad">Enfermedad</option>
+                  <option value="Vacaciones">Vacaciones</option>
                   <option value="Maternidad/Paternidad">Maternidad/Paternidad</option>
                   <option value="Licencia Especial">Licencia Especial</option>
                   <option value="Otro">Otro (Especifique)</option>
