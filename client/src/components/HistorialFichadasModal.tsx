@@ -99,7 +99,7 @@ export default function HistorialFichadasModal({ isOpen, onOpenChange, legajo, n
               </Table>
             </div>
             );
-          })}
+          })()}
         </div>
       </DialogContent>
     </Dialog>
