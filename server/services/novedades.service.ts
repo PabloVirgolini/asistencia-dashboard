@@ -13,6 +13,7 @@ export interface NovedadRecord {
   fecha_inicio: string;
   fecha_fin: string;
   observaciones: string | null;
+  mostrar_en_dashboard: boolean;
   nombre_empleado?: string; // Para la UI
 }
 
@@ -20,7 +21,7 @@ export function getNovedades(): NovedadRecord[] {
   const db = getDb();
   const query = `
     SELECT 
-      n.id_novedad, n.legajo, n.tipo, n.fecha_inicio, n.fecha_fin, n.observaciones,
+      n.id_novedad, n.legajo, n.tipo, n.fecha_inicio, n.fecha_fin, n.observaciones, n.mostrar_en_dashboard,
       p.nombre as nombre_empleado
     FROM novedades_licencias n
     INNER JOIN personal p ON n.legajo = p.legajo
@@ -30,7 +31,7 @@ export function getNovedades(): NovedadRecord[] {
   return stmt.all() as NovedadRecord[];
 }
 
-export function insertNovedad(legajo: string, tipo: string, fecha_inicio: string, fecha_fin: string, observaciones?: string): void {
+export function insertNovedad(legajo: string, tipo: string, fecha_inicio: string, fecha_fin: string, observaciones?: string, mostrar_en_dashboard: boolean = true): void {
   const db = getDb();
   // Validar solapamientos simples (si empieza antes de que termine otra)
   const checkOverlap = db.prepare(`
@@ -48,10 +49,10 @@ export function insertNovedad(legajo: string, tipo: string, fecha_inicio: string
   }
 
   const stmt = db.prepare(`
-    INSERT INTO novedades_licencias (legajo, tipo, fecha_inicio, fecha_fin, observaciones) 
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO novedades_licencias (legajo, tipo, fecha_inicio, fecha_fin, observaciones, mostrar_en_dashboard) 
+    VALUES (?, ?, ?, ?, ?, ?)
   `);
-  stmt.run(legajo, tipo, fecha_inicio, fecha_fin, observaciones || null);
+  stmt.run(legajo, tipo, fecha_inicio, fecha_fin, observaciones || null, mostrar_en_dashboard ? 1 : 0);
 }
 
 export function deleteNovedad(id_novedad: number): void {
@@ -59,11 +60,11 @@ export function deleteNovedad(id_novedad: number): void {
   db.prepare('DELETE FROM novedades_licencias WHERE id_novedad = ?').run(id_novedad);
 }
 
-export function updateNovedad(id_novedad: number, legajo: string, tipo: string, fecha_inicio: string, fecha_fin: string, observaciones?: string): void {
+export function updateNovedad(id_novedad: number, legajo: string, tipo: string, fecha_inicio: string, fecha_fin: string, observaciones?: string, mostrar_en_dashboard: boolean = true): void {
   const db = getDb();
   db.prepare(`
     UPDATE novedades_licencias 
-    SET legajo = ?, tipo = ?, fecha_inicio = ?, fecha_fin = ?, observaciones = ? 
+    SET legajo = ?, tipo = ?, fecha_inicio = ?, fecha_fin = ?, observaciones = ?, mostrar_en_dashboard = ? 
     WHERE id_novedad = ?
-  `).run(legajo, tipo, fecha_inicio, fecha_fin, observaciones || null, id_novedad);
+  `).run(legajo, tipo, fecha_inicio, fecha_fin, observaciones || null, mostrar_en_dashboard ? 1 : 0, id_novedad);
 }

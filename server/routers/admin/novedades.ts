@@ -9,10 +9,10 @@ export const novedadesProcedures = {
   }),
 
   addNovedad: adminProcedure
-    .input(z.object({ legajo: z.string(), tipo: z.string(), fecha_inicio: z.string(), fecha_fin: z.string(), observaciones: z.string().optional() }))
+    .input(z.object({ legajo: z.string(), tipo: z.string(), fecha_inicio: z.string(), fecha_fin: z.string(), observaciones: z.string().optional(), mostrar_en_dashboard: z.boolean().default(true) }))
     .mutation(({ input }) => {
       try {
-        insertNovedad(input.legajo, input.tipo, input.fecha_inicio, input.fecha_fin, input.observaciones);
+        insertNovedad(input.legajo, input.tipo, input.fecha_inicio, input.fecha_fin, input.observaciones, input.mostrar_en_dashboard);
         return { success: true };
       } catch (e: any) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });
@@ -33,11 +33,12 @@ export const novedadesProcedures = {
       tipo: z.string(), 
       fecha_inicio: z.string(), 
       fecha_fin: z.string(), 
-      observaciones: z.string().optional() 
+      observaciones: z.string().optional(),
+      mostrar_en_dashboard: z.boolean().default(true)
     }))
     .mutation(({ input }) => {
       try {
-        updateNovedad(input.id_novedad, input.legajo, input.tipo, input.fecha_inicio, input.fecha_fin, input.observaciones);
+        updateNovedad(input.id_novedad, input.legajo, input.tipo, input.fecha_inicio, input.fecha_fin, input.observaciones, input.mostrar_en_dashboard);
         return { success: true };
       } catch (e: any) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: e.message });

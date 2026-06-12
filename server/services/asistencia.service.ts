@@ -25,7 +25,7 @@ export interface AttendancePerson {
   id_turno: number | null;
   fichadas: string[];
   llegadaTarde: boolean;
-  novedad_activa: { tipo: string; observaciones: string } | null;
+  novedad_activa: { tipo: string; observaciones: string; mostrar_en_dashboard: boolean; fecha_fin: string; } | null;
 }
 
 export interface TurnoGroup {
@@ -83,7 +83,14 @@ export function getFichadasByLegajo(legajo: string, date: string): FichadaRecord
 /**
  * Obtiene la asistencia estructurada y agrupada por Turnos
  */
-export function getAttendanceGroupedByTurno(date: string, sector?: string, toleranciaMinutos: number = 0): { grupos: TurnoGroup[], summary: AttendanceSummary } {
+export interface NovedadCompartida {
+  legajo: string;
+  nombre: string;
+  tipo: string;
+  fecha_fin: string;
+}
+
+export function getAttendanceGroupedByTurno(date: string, sector?: string, toleranciaMinutos: number = 0): { grupos: TurnoGroup[], summary: AttendanceSummary, novedades_compartidas: NovedadCompartida[] } {
   const db = getDb();
   
   const jsDate = new Date(date + 'T00:00:00');
@@ -123,7 +130,7 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
 
   // 4. Obtener Novedades (Licencias)
   const novedades = db.prepare(`
-    SELECT legajo, tipo, observaciones 
+    SELECT legajo, tipo, observaciones, mostrar_en_dashboard, fecha_fin 
     FROM novedades_licencias 
     WHERE fecha_inicio <= ? AND fecha_fin >= ?
   `).all(date, date) as any[];
@@ -143,7 +150,12 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
   
   const novedadesMap = new Map();
   novedades.forEach(n => {
-    novedadesMap.set(n.legajo, { tipo: n.tipo, observaciones: n.observaciones });
+    novedadesMap.set(n.legajo, { 
+      tipo: n.tipo, 
+      observaciones: n.observaciones, 
+      mostrar_en_dashboard: n.mostrar_en_dashboard === 1,
+      fecha_fin: n.fecha_fin
+    });
   });
 
   const fichadasMap = new Map<string, string[]>();
@@ -276,5 +288,17 @@ export function getAttendanceGroupedByTurno(date: string, sector?: string, toler
     porcentajeAusentes
   };
 
-  return { grupos: gruposFiltrados, summary };
+  const novedades_compartidas: NovedadCompartida[] = [];
+  procesados.forEach(p => {
+    if (p.novedad_activa && p.novedad_activa.mostrar_en_dashboard) {
+      novedades_compartidas.push({
+        legajo: p.legajo,
+        nombre: p.nombre,
+        tipo: p.novedad_activa.tipo,
+        fecha_fin: p.novedad_activa.fecha_fin
+      });
+    }
+  });
+
+  return { grupos: gruposFiltrados, summary, novedades_compartidas };
 }

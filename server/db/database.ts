@@ -51,7 +51,9 @@ export function getDb(): Database.Database {
         tipo TEXT NOT NULL,
         fecha_inicio TEXT NOT NULL,
         fecha_fin TEXT NOT NULL,
-        observaciones TEXT
+        observaciones TEXT,
+        mostrar_en_dashboard INTEGER DEFAULT 1,
+        FOREIGN KEY (legajo) REFERENCES personal(legajo) ON UPDATE CASCADE ON DELETE CASCADE
       )
     `);
   }

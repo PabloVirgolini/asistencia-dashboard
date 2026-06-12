@@ -4,6 +4,8 @@ import { useAdminNovedades } from '../../hooks/useAdminNovedades';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import { cn } from '../../lib/utils';
 import { toast } from 'sonner';
@@ -23,7 +25,8 @@ export function AdminNovedades() {
     tipo: 'Vacaciones',
     fecha_inicio: '',
     fecha_fin: '',
-    observaciones: ''
+    observaciones: '',
+    mostrar_en_dashboard: true
   });
   const [customTipo, setCustomTipo] = useState('');
   const [openCombobox, setOpenCombobox] = useState(false);
@@ -39,7 +42,8 @@ export function AdminNovedades() {
           tipo: isCustomTipo ? 'Otro' : novedadToEdit.tipo,
           fecha_inicio: novedadToEdit.fecha_inicio,
           fecha_fin: novedadToEdit.fecha_fin,
-          observaciones: novedadToEdit.observaciones || ''
+          observaciones: novedadToEdit.observaciones || '',
+          mostrar_en_dashboard: novedadToEdit.mostrar_en_dashboard !== undefined ? novedadToEdit.mostrar_en_dashboard : true
         });
         
         if (isCustomTipo) {
@@ -52,7 +56,8 @@ export function AdminNovedades() {
         tipo: 'Vacaciones',
         fecha_inicio: '',
         fecha_fin: '',
-        observaciones: ''
+        observaciones: '',
+        mostrar_en_dashboard: true
       });
       setCustomTipo('');
     }
@@ -141,6 +146,11 @@ export function AdminNovedades() {
                           }`}>
                             {n.tipo}
                           </span>
+                          {!n.mostrar_en_dashboard && (
+                            <span className="ml-2 text-[10px] text-slate-400 border border-slate-200 px-1 rounded" title="Oculto en Dashboard">
+                              Oculto
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3">{n.fecha_inicio}</td>
                         <td className="px-4 py-3">{n.fecha_fin}</td>
@@ -301,6 +311,17 @@ export function AdminNovedades() {
                   className="w-full px-3 py-2 border border-slate-200 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none h-20"
                   placeholder="Detalles adicionales..."
                 />
+              </div>
+
+              <div className="flex items-center space-x-2 pt-2 pb-2">
+                <Switch 
+                  id="mostrar_dashboard" 
+                  checked={formData.mostrar_en_dashboard} 
+                  onCheckedChange={checked => setFormData({...formData, mostrar_en_dashboard: checked})} 
+                />
+                <Label htmlFor="mostrar_dashboard" className="text-sm text-slate-700 cursor-pointer">
+                  Compartir en Dashboard Público
+                </Label>
               </div>
 
               <div className="pt-4 flex gap-3">

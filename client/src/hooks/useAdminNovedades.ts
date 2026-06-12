@@ -42,7 +42,7 @@ export function useAdminNovedades() {
     }
   });
 
-  const handleAdd = (data: { legajo: string, tipo: string, fecha_inicio: string, fecha_fin: string, observaciones?: string }) => {
+  const handleAdd = (data: { legajo: string, tipo: string, fecha_inicio: string, fecha_fin: string, observaciones?: string, mostrar_en_dashboard: boolean }) => {
     if (editingId) {
       updateMutation.mutate({ id_novedad: editingId, ...data });
     } else {
