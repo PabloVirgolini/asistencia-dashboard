@@ -32,11 +32,12 @@ interface Props {
   grupo: TurnoGroup;
   showEncargados: boolean;
   date: string;
+  inconsistencias?: any[];
 }
 
 import HistorialFichadasModal from './HistorialFichadasModal';
 
-export default function GrupoTurnoAsistencia({ grupo, showEncargados, date }: Props) {
+export default function GrupoTurnoAsistencia({ grupo, showEncargados, date, inconsistencias = [] }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [modalPerson, setModalPerson] = useState<{ legajo: string, nombre: string } | null>(null);
 
@@ -56,6 +57,7 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados, date }: Pr
   const renderFila = (p: AttendancePerson, tipo: 'presente' | 'ausente' | 'licencia' | 'tarde' | 'inesperada') => {
     const isEncargado = p.cargo.toLowerCase().includes('encargado') || p.nivel_criticidad >= 4;
     const highlight = showEncargados && isEncargado;
+    const incs = inconsistencias.filter(i => i.legajo === p.legajo);
 
     return (
       <tr key={`${p.legajo}-${tipo}`} 
@@ -77,6 +79,16 @@ export default function GrupoTurnoAsistencia({ grupo, showEncargados, date }: Pr
                 Fijo
               </span>
             )}
+            {incs.map((inc, i) => (
+              <Badge key={i} variant="outline" className={`text-[10px] py-0 px-1 border-none ${
+                inc.tipo === 'Múltiples Fichadas' || inc.tipo === 'Fichada Inesperada' ? 'bg-purple-100 text-purple-700' :
+                inc.tipo === 'Salida Anticipada' ? 'bg-orange-100 text-orange-700' :
+                inc.tipo === 'Llegada Tarde' ? 'bg-rose-100 text-rose-700' :
+                'bg-red-100 text-red-700'
+              }`} title={inc.detalles}>
+                {inc.tipo}
+              </Badge>
+            ))}
           </div>
           <div className="text-xs text-slate-500 mt-0.5">
             {p.sector} - {p.cargo}

@@ -17,6 +17,7 @@ import SelectorFecha from "@/components/SelectorFecha";
 import ResumenDia from "@/components/ResumenDia";
 import GrupoTurnoAsistencia from "@/components/GrupoTurnoAsistencia";
 import { useAttendanceDashboard } from '@/hooks/useAttendanceDashboard';
+import { useInconsistencias } from '@/hooks/useInconsistencias';
 
 export default function AttendanceDashboard() {
   const {
@@ -30,6 +31,8 @@ export default function AttendanceDashboard() {
     isLoading,
     isError
   } = useAttendanceDashboard();
+
+  const { inconsistencias } = useInconsistencias(selectedDate);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
@@ -147,9 +150,10 @@ export default function AttendanceDashboard() {
             <div className="space-y-2">
               {attendanceQuery.data.grupos.map((grupo) => (
                 <GrupoTurnoAsistencia 
-                  key={grupo.id_turno || 'fuera-de-turno'} 
-                  grupo={grupo}
+                  key={grupo.id_turno ?? 'fuera-de-turno'} 
+                  grupo={grupo} 
                   showEncargados={showEncargados}
+                  inconsistencias={inconsistencias}
                   date={attendanceQuery.data.date}
                 />
               ))}

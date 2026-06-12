@@ -5,6 +5,7 @@ import {
 } from "../services/asistencia.service";
 import { getSectors } from "../services/personal.service";
 import { isValidDate, getTodayDate } from "../services/admin.service";
+import { getInconsistenciasPorFecha } from "../services/inconsistencias.service";
 
 export const attendanceRouter = router({
   getSectors: publicProcedure.query(() => {
@@ -56,5 +57,15 @@ export const attendanceRouter = router({
     )
     .query(({ input }) => {
       return getFichadasByLegajo(input.legajo, input.date);
+    }),
+
+  getInconsistencias: publicProcedure
+    .input(
+      z.object({
+        date: z.string().refine(isValidDate, "Fecha inválida. Use formato YYYY-MM-DD"),
+      })
+    )
+    .query(({ input }) => {
+      return getInconsistenciasPorFecha(input.date);
     }),
 });

@@ -53,6 +53,20 @@ export function getDb(): Database.Database {
         fecha_fin TEXT NOT NULL,
         observaciones TEXT,
         mostrar_en_dashboard INTEGER DEFAULT 1,
+        fecha_carga DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (legajo) REFERENCES personal(legajo) ON UPDATE CASCADE ON DELETE CASCADE
+      )
+    `);
+
+    // Tabla de Inconsistencias (Read Model)
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS inconsistencias_calculadas (
+        id_inconsistencia INTEGER PRIMARY KEY AUTOINCREMENT,
+        legajo VARCHAR(10) NOT NULL,
+        fecha TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        detalles TEXT,
+        fecha_calculo DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (legajo) REFERENCES personal(legajo) ON UPDATE CASCADE ON DELETE CASCADE
       )
     `);

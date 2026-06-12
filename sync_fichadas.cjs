@@ -1,5 +1,6 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const { exec } = require('child_process');
 
 const localDbPath = path.join(__dirname, 'data2.db');
 const remoteDbPath = 'T:/OficinaTecnica/Pablo/X_ COMPUTOS/1. INFRAESTRUCTURA/3. SEGURIDAD - CAMARAS - RELOJES/RELOJES/app2/database/data.db';
@@ -22,6 +23,19 @@ try {
   `).run();
   
   console.log(`¡Sincronización completa! Se importaron ${info.changes} fichadas.`);
+
+  console.log('Disparando Motor de Inconsistencias...');
+  exec('npx tsx scripts/calculate-inconsistencies.ts', (error, stdout, stderr) => {
+    if (error) {
+      console.error(`Error al ejecutar el motor: ${error.message}`);
+      return;
+    }
+    if (stderr) {
+      console.error(`Motor stderr: ${stderr}`);
+    }
+    console.log(stdout);
+  });
+
 } catch (error) {
   console.error('Error durante la sincronización:', error);
 } finally {
