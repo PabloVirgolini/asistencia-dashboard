@@ -66,7 +66,7 @@ Esto descargará e instalará todas las dependencias necesarias (React, Express,
 
 **Tiempo estimado**: 3-5 minutos (depende de tu conexión a Internet)
 
-### Paso 3: Verificar la Base de Datos
+### Paso 3: Configurar la Base de Datos
 
 Asegúrate de que el archivo `data2.db` esté en la raíz del proyecto:
 
@@ -79,7 +79,12 @@ asistencia-dashboard/
 └── ...
 ```
 
-Si no tienes el archivo `data2.db`, cópialo desde tu servidor original.
+*   **Opción A (Copiar base real):** Si tienes el archivo `data2.db` original con los datos históricos de la planta, cópialo y pégalo en la raíz de esta carpeta.
+*   **Opción B (Crear base de prueba nueva):** Si no cuentas con el archivo original, puedes crear una base de datos nueva estructurada y poblada con sectores, cargos, empleados y fichadas de simulación ejecutando en tu terminal:
+    ```bash
+    node seed_db.cjs
+    ```
+    *(Esto generará la base de datos de forma automática y creará un administrador por defecto con el email `admin@frecicar.com` y contraseña `admin123`).*
 
 ### Paso 4: Ejecutar en Modo Desarrollo
 

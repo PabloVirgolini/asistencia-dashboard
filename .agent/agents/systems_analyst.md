@@ -43,6 +43,11 @@ Eres el Analista de Sistemas del proyecto "AsistenciaPersonal". Tu objetivo prin
   - **Invalidación de Caché Obligatoria:** Cualquier operación de escritura, actualización masiva o creación de planes (enroques) proveniente de la interfaz (trpc mutations) que altere el historial de turnos o las reglas base, DEBE **forzar el recalculo inmediato** de las inconsistencias (disparando el motor asíncronamente vía `child_process`). De no hacerlo, el UI mostrará datos precalculados obsoletos (Stale Data), provocando que un supervisor vea a alguien marcado como "Ausente" aun cuando la vista "en vivo" lo muestra en el turno correcto.
   - La planificación de turnos futuros SIEMPRE debe ser cruzada (`LEFT JOIN` o consultas correlacionadas) contra la tabla `novedades_licencias`. Si un empleado tiene una licencia solapada con la fecha a planificar, la interfaz y el backend deben bloquear/excluir la asignación de turno.
 
+
+- **Inicialización de Base de Datos Local (Clean Install)**: Al estar `data2.db` excluida de Git por seguridad y rendimiento, los clones nuevos inician sin base de datos. Se designó el script `seed_db.cjs` como el estándar para construir el esquema relacional completo e inyectar datos de prueba de manera reproducible.
+- **Robustez de la Firma de Sesión (JWT)**: Para evitar fallos por claves de sesión vacías en entornos locales sin variables de entorno configuradas (`Zero-length key is not supported`), la configuración central de entorno en `server/_core/env.ts` debe poseer un fallback dinámico que genere un secreto criptográfico aleatorio al vuelo usando el módulo nativo `crypto`.
+- **Exclusión de Asignaciones por Licencia Activa**: El Planificador Semanal y el motor de asignaciones de turnos futuros deben estar validados contra la tabla de novedades. Si un empleado posee una licencia cargada que solape la fecha, el sistema debe denegar la asignación de turno.
+
 ---
 ## 🔴 REGLAS MAESTRAS DE ARQUITECTURA Y CALIDAD (INELUDIBLES)
 A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones deben respetar rigurosamente:

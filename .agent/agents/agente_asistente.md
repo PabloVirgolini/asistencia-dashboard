@@ -1,4 +1,3 @@
-
 ---
 ## 🔴 REGLAS MAESTRAS DE ARQUITECTURA Y CALIDAD (INELUDIBLES)
 A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones deben respetar rigurosamente:
@@ -43,7 +42,10 @@ A partir de este punto del desarrollo, TODOS los desarrollos y refactorizaciones
 4. **Cero God Classes:** Prohibido crear o expandir componentes React masivos o archivos backend monolíticos. Emplear siempre Patrón Repositorio / Servicios y delegar responsabilidades en hooks o utilidades puras.
 
 ### Quirks Conocidos y Soluciones (UI/UX - Radix UI)
-- **Radix UI Dialog (shadcn/ui) Scroll Jumps:** Al manejar el estado de los di�logos de manera program�tica (\isModalOpen\, \setModalOpen\) y usar botones desencadenantes que NO son expl�citamente \DialogTrigger\, Radix UI intentar� devolver el foco al �nico \DialogTrigger\ que encuentre en el DOM cuando se cierre el modal. Si ese trigger est� en la parte superior de la p�gina, provocar� un salto repentino del scroll hacia arriba que resulta muy molesto. Para solucionar este 'quirk', siempre agregar \onCloseAutoFocus={(e) => e.preventDefault()}\ al \DialogContent\.
+- **Radix UI Dialog (shadcn/ui) Scroll Jumps:** Al manejar el estado de los di�logos de manera program�tica (\isModalOpen\, \setModalOpen\) y usar botones desencadenantes que NO son expl�citamente \DialogTrigger\, Radix UI intentar� devolver el foco al �nico \DialogTrigger\ que encuentre en el DOM cuando se cierre el modal. Si ese trigger est� en la parte superior de la p�gina, provocar� un salto repentino del scroll hacia arriba que resulta muy molesto. Para solucionar este 'quirk', siempre agregar \onCloseAutoFocus={(e) => e.preventDefault()}\ al \DialogContent\.
 
 
 - **Quirk de Stale Data en Inconsistencias**: Si la interfaz muestra correctamente a un empleado en un sector/turno pero tiene una etiqueta errónea ("Ausencia"), esto se debe a que la etiqueta proviene de la tabla `inconsistencias_calculadas` que no se ha refrescado. El UI es dinámico pero las alertas son cacheadas. Si haces cambios en los planes (`historial_turnos`), asegúrate siempre de disparar o reciclar el Motor de Inconsistencias (ej. `npx tsx scripts/calculate-inconsistencias.ts`) para limpiar el stale data y que la interfaz sea coherente.
+
+- **Quirk de Base de Datos Ausente (gitignore)**: Dado que `data2.db` está en `.gitignore`, cualquier clon limpio del proyecto carecerá de base de datos. Al iniciar, el backend generará una base de datos vacía que detonará errores de tabla faltante (`no such table: sectores`/`personal`). **Solución**: Ejecutar `node seed_db.cjs` para crear la estructura relacional e inyectar datos de prueba para el 13 de Junio de 2026 y un administrador inicial (`admin@frecicar.com` / `admin123`).
+- **Quirk de Firma JWT (Zero-length key)**: Si no se configura `JWT_SECRET` en el entorno, `server/_core/env.ts` inicializaba la clave en vacío (`""`), provocando que la librería `jose` lance un error fatal de `Zero-length key is not supported` al intentar iniciar sesión. **Solución**: Se integró un fallback automático usando el módulo `crypto` nativo (`process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex')`) en `env.ts` para generar una firma temporal segura y transparente en modo de desarrollo.

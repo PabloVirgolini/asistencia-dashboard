@@ -26,6 +26,9 @@ Un dashboard elegante y sofisticado para monitorear la asistencia del personal e
 # Instalar dependencias
 pnpm install
 
+# Inicializar base de datos de prueba (opcional, si no tienes data2.db previa)
+node seed_db.cjs
+
 # Iniciar servidor de desarrollo
 pnpm dev
 ```
